@@ -2,10 +2,12 @@ package org.spendoo.app
 
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
+import org.springframework.context.annotation.ComponentScan
 
 @SpringBootApplication
-class AppApplication
+@ComponentScan(basePackages = ["org.spendoo"])
+class SpendooApplication
 
 fun main(args: Array<String>) {
-	runApplication<AppApplication>(*args)
+	runApplication<SpendooApplication>(*args)
 }
