@@ -1,10 +1,10 @@
-package org.spendoo.spendoo
+package org.spendoo.app
 
 import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest
 
 @SpringBootTest
-class SpendooApplicationTests {
+class AppApplicationTests {
 
 	@Test
 	fun contextLoads() {

@@ -1,11 +1,11 @@
-package org.spendoo.spendoo
+package org.spendoo.app
 
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
 
 @SpringBootApplication
-class SpendooApplication
+class AppApplication
 
 fun main(args: Array<String>) {
-	runApplication<SpendooApplication>(*args)
+	runApplication<AppApplication>(*args)
 }
