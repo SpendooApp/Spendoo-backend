@@ -1,5 +1,5 @@
 package org.spendoo.identity.mapper
-import org.spendoo.identity.dto.RegisterRequest
+import org.spendoo.identity.dto.request.RegisterRequest
 import org.spendoo.identity.entity.User
 import java.time.LocalDateTime
 

@@ -10,7 +10,7 @@ data class EmailVerification(
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(columnDefinition = "uuid", updatable = false, nullable = false)
-    val id: UUID? = null,
+    val id: UUID = UUID.randomUUID(),
 
     @Column(nullable = false)
     val verificationCode: String,

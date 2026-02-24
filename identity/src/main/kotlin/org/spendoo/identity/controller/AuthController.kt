@@ -1,10 +1,10 @@
 package org.spendoo.identity.controller
 
 import jakarta.validation.Valid
-import org.spendoo.identity.dto.AuthResponse
-import org.spendoo.identity.dto.LoginRequest
-import org.spendoo.identity.dto.RefreshTokenRequest
-import org.spendoo.identity.dto.RegisterRequest
+import org.spendoo.identity.dto.response.AuthResponse
+import org.spendoo.identity.dto.request.LoginRequest
+import org.spendoo.identity.dto.request.RefreshTokenRequest
+import org.spendoo.identity.dto.request.RegisterRequest
 import org.spendoo.identity.service.AuthService
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController
 
 
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/api/v1/auth")
 class AuthController (
     private val authService: AuthService
 ) {

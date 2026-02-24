@@ -1,9 +1,9 @@
 package org.spendoo.identity.service
 
-import org.spendoo.identity.dto.AuthResponse
-import org.spendoo.identity.dto.LoginRequest
-import org.spendoo.identity.dto.RefreshTokenRequest
-import org.spendoo.identity.dto.RegisterRequest
+import org.spendoo.identity.dto.response.AuthResponse
+import org.spendoo.identity.dto.request.LoginRequest
+import org.spendoo.identity.dto.request.RefreshTokenRequest
+import org.spendoo.identity.dto.request.RegisterRequest
 import org.spendoo.identity.entity.RefreshToken
 import org.spendoo.identity.entity.User
 import org.spendoo.identity.exception.TokenExpiredException

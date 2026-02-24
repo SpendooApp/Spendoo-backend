@@ -1,4 +1,4 @@
-package org.spendoo.identity.dto
+package org.spendoo.identity.dto.response
 
 data class AuthResponse(
     val accessToken: String,

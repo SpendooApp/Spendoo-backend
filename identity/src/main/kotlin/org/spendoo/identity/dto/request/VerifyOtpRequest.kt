@@ -1,18 +1,15 @@
-package org.spendoo.identity.dto
+package org.spendoo.identity.dto.request
 
 import jakarta.validation.constraints.Email
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
 
-data class ResetPasswordRequest(
+data class VerifyOtpRequest(
     @field:NotBlank(message = "Email is required")
     @field:Email(message = "Invalid email format")
     val email: String,
 
     @field:NotBlank(message = "OTP is required")
-    val otp: String,
-
-    @field:NotBlank(message = "New password is required")
-    @field:Size(min = 8, message = "Password must be at least 8 characters long")
-    val newPassword: String
+    @field:Size(min = 4, max = 4, message = "OTP must be exactly 4 characters")
+    val otp: String
 )

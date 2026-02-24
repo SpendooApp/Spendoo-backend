@@ -1,4 +1,4 @@
-package org.spendoo.identity.dto
+package org.spendoo.identity.dto.request
 
 import jakarta.validation.constraints.NotBlank
 
