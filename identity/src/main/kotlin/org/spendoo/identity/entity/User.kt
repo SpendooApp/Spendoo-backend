@@ -1,36 +1,41 @@
 package org.spendoo.identity.entity
 
 import jakarta.persistence.*
-import jakarta.validation.constraints.Email
+import org.spendoo.identity.enums.Gender
+import java.time.LocalDate
 import java.time.LocalDateTime
+import java.util.UUID
 
 @Entity
 @Table(name = "users", schema = "identity" )
-class User(
+data class User(
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "user_id")
-    val id: Long = 0,
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(columnDefinition = "uuid", updatable = false, nullable = false)
+    val id: UUID? = null,
 
-    @Column(name = "full_name", nullable = false)
-    var fullName: String = "",
+    @Column(nullable = false)
+    val fullName: String,
 
     @Column(nullable = false, unique = true)
-    @Email
-    var email: String = "",
-
-    @Column(name = "password_hash", nullable = false)
-    var passwordHash: String = "",
+    val email: String,
 
     @Column(nullable = false)
-    var gender: String = "",
+    val passwordHash: String,
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    val gender: Gender,
 
     @Column(nullable = false)
-    var age: Int = 0,
+    val birthDate: LocalDate,
 
-    @Column(name = "created_at", nullable = false)
-    val createdAt: LocalDateTime = LocalDateTime.now(),
+    @Column(nullable = false, updatable = false)
+    val createdAt: LocalDateTime,
 
     @OneToMany(mappedBy = "user", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
-    var emailVerifications: MutableList<EmailVerification> = mutableListOf()
+    val emailVerifications: List<EmailVerification> = emptyList(),
+
+    @OneToMany(mappedBy = "user", cascade = [CascadeType.ALL], orphanRemoval = true)
+    val refreshTokens: List<RefreshToken> = emptyList()
 )

@@ -2,31 +2,32 @@ package org.spendoo.identity.entity
 
 import jakarta.persistence.*
 import java.time.LocalDateTime
+import java.util.UUID
 
 @Entity
 @Table(name = "email_verification", schema = "identity")
-class EmailVerification(
+data class EmailVerification(
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "verification_id")
-    val id: Long = 0,
-
-    @Column(name = "verification_code", nullable = false)
-    var verificationCode: String = "",
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(columnDefinition = "uuid", updatable = false, nullable = false)
+    val id: UUID? = null,
 
     @Column(nullable = false)
-    var email: String = "",
+    val verificationCode: String,
 
-    @Column(name = "sent_at", nullable = false)
-    val sentAt: LocalDateTime = LocalDateTime.now(),
+    @Column(nullable = false)
+    val email: String,
 
-    @Column(name = "is_used", nullable = false)
-    var isUsed: Boolean = false,
+    @Column(nullable = false)
+    val sentAt: LocalDateTime,
+
+    @Column(nullable = false)
+    val isUsed: Boolean,
 
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    var user: User = User()
+    @JoinColumn(nullable = false)
+    val user: User
 ) {
     fun isExpired(): Boolean {
         return sentAt.plusMinutes(1).isBefore(LocalDateTime.now())
