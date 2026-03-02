@@ -1,13 +1,8 @@
 package org.spendoo.identity.api.controller
 
 import jakarta.validation.Valid
-import org.spendoo.identity.api.dto.request.ForgotPasswordRequest
+import org.spendoo.identity.api.dto.request.*
 import org.spendoo.identity.api.dto.response.AuthResponse
-import org.spendoo.identity.api.dto.request.LoginRequest
-import org.spendoo.identity.api.dto.request.RefreshTokenRequest
-import org.spendoo.identity.api.dto.request.RegisterRequest
-import org.spendoo.identity.api.dto.request.ResetPasswordRequest
-import org.spendoo.identity.api.dto.request.VerifyOtpRequest
 import org.spendoo.identity.service.AuthService
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -16,7 +11,7 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
-import java.util.UUID
+import java.util.*
 
 
 @RestController

@@ -2,31 +2,23 @@ package org.spendoo.identity.service
 
 import jakarta.persistence.EntityNotFoundException
 import jakarta.transaction.Transactional
-import org.apache.coyote.BadRequestException
-import org.spendoo.identity.api.dto.request.ForgotPasswordRequest
+import org.spendoo.identity.api.dto.request.*
 import org.spendoo.identity.api.dto.response.AuthResponse
-import org.spendoo.identity.api.dto.request.LoginRequest
-import org.spendoo.identity.api.dto.request.RefreshTokenRequest
-import org.spendoo.identity.api.dto.request.RegisterRequest
-import org.spendoo.identity.api.dto.request.ResetPasswordRequest
-import org.spendoo.identity.api.dto.request.VerifyOtpRequest
 import org.spendoo.identity.entity.EmailVerification
 import org.spendoo.identity.entity.RefreshToken
 import org.spendoo.identity.entity.User
 import org.spendoo.identity.exception.TokenExpiredException
 import org.spendoo.identity.exception.UnauthorizedException
 import org.spendoo.identity.exception.UserAlreadyExistsException
-import org.spendoo.identity.service.mapper.toEntity
 import org.spendoo.identity.repository.EmailVerificationRepository
 import org.spendoo.identity.repository.RefreshTokenRepository
 import org.spendoo.identity.repository.UserRepository
 import org.spendoo.identity.security.JwtUtil
-import org.springframework.security.authentication.AuthenticationManager
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
+import org.spendoo.identity.service.mapper.toEntity
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
-import java.util.UUID
+import java.util.*
 
 @Service
 @Transactional
@@ -37,7 +29,6 @@ class AuthService(
     private val emailService: EmailService,
     private val passwordEncoder: PasswordEncoder,
     private val jwtUtil: JwtUtil,
-    private val authenticationManager: AuthenticationManager
 ) {
 
     fun register(request: RegisterRequest): String {
@@ -77,8 +68,8 @@ class AuthService(
         val usedToken = token.copy(isUsed = true, user = savedUser)
         otpRepository.save(usedToken)
 
-        val accessToken = jwtUtil.generateAccessToken(verifiedUser.email)
-        val refreshToken = jwtUtil.generateRefreshToken(verifiedUser.email)
+        val accessToken = jwtUtil.generateAccessToken(verifiedUser.id)
+        val refreshToken = jwtUtil.generateRefreshToken(verifiedUser.id)
         saveRefreshToken(verifiedUser, refreshToken)
 
         return AuthResponse(accessToken, refreshToken)
@@ -90,11 +81,9 @@ class AuthService(
         if (!user.isVerified) {
             throw UnauthorizedException("Please verify your email before logging in.")
         }
-        authenticationManager.authenticate(
-            UsernamePasswordAuthenticationToken(request.email, request.password)
-        )
-        val accessToken = jwtUtil.generateAccessToken(request.email)
-        val refreshToken = jwtUtil.generateRefreshToken(request.email)
+
+        val accessToken = jwtUtil.generateAccessToken(user.id)
+        val refreshToken = jwtUtil.generateRefreshToken(user.id)
 
         saveRefreshToken(user, refreshToken)
 
@@ -105,7 +94,7 @@ class AuthService(
     fun refreshToken(request: RefreshTokenRequest): AuthResponse {
 
         val refreshTokenEntity = refreshTokenRepository.findByToken(request.refreshToken)
-            .orElseThrow { UnauthorizedException("Invalid refresh token") }
+            ?: throw UnauthorizedException("Invalid refresh token")
 
         val user = refreshTokenEntity.user
 
@@ -116,10 +105,10 @@ class AuthService(
         }
 
         if (jwtUtil.validateRefreshToken(request.refreshToken) &&
-            jwtUtil.validateTokenForUser(request.refreshToken, user.email)) {
+            jwtUtil.validateTokenForUser(request.refreshToken, user.id)) {
 
-            val newAccessToken = jwtUtil.generateAccessToken(user.email)
-            val newRefreshToken = jwtUtil.generateRefreshToken(user.email)
+            val newAccessToken = jwtUtil.generateAccessToken(user.id)
+            val newRefreshToken = jwtUtil.generateRefreshToken(user.id)
 
 
             saveRefreshToken(user, newRefreshToken)
@@ -139,7 +128,7 @@ class AuthService(
     }
 
     fun logout(userId: UUID, request: RefreshTokenRequest) {
-        refreshTokenRepository.findByUserIdAndToken(userId = userId, request.refreshToken).ifPresent { tokenEntity ->
+        refreshTokenRepository.findByUserIdAndToken(userId = userId, request.refreshToken)?.let { tokenEntity ->
             refreshTokenRepository.delete(tokenEntity)
         }
     }
@@ -181,7 +170,7 @@ class AuthService(
         val token = otpRepository.findByOtpAndUser(request.otp, user)
             ?: throw RuntimeException("Invalid OTP")
 
-        if (token.isExpired() || token.isUsed) throw BadRequestException("Invalid or expired OTP")
+        if (token.isExpired() || token.isUsed) throw RuntimeException("Invalid or expired OTP")
         val updatedUser = user.copy(
             passwordHash = passwordEncoder.encode(request.newPassword)!!
         )

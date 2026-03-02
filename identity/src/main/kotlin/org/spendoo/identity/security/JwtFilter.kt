@@ -1,8 +1,12 @@
 package org.spendoo.identity.security
 
+import io.jsonwebtoken.ExpiredJwtException
+import io.jsonwebtoken.MalformedJwtException
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
+import org.spendoo.identity.security.handler.AuthErrorResponder
+import org.spendoo.identity.service.UserService
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource
@@ -12,7 +16,8 @@ import org.springframework.web.filter.OncePerRequestFilter
 @Component
 class JwtFilter(
     private val jwtUtil: JwtUtil,
-    private val userDetailsService: CustomUserDetailsService
+    private val userService: UserService,
+    private val authErrorResponder: AuthErrorResponder
 ) : OncePerRequestFilter() {
 
     override fun doFilterInternal(
@@ -20,31 +25,39 @@ class JwtFilter(
         response: HttpServletResponse,
         filterChain: FilterChain
     ) {
-        val authHeader = request.getHeader("Authorization")
+        try {
+            val authHeader = request.getHeader("Authorization")
 
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            filterChain.doFilter(request, response)
-            return
-        }
-
-        val token = authHeader.substring(7)
-        val username = jwtUtil.extractUsername(token)
-
-        if (username != null && SecurityContextHolder.getContext().authentication == null) {
-            if (jwtUtil.validateAccessToken(token) &&
-                jwtUtil.validateTokenForUser(token, username)
-            ) {
-                val userDetails = userDetailsService.loadUserByUsername(username)
-                val authToken = UsernamePasswordAuthenticationToken(
-                    userDetails,
-                    null,
-                    userDetails.authorities
-                )
-                authToken.details = WebAuthenticationDetailsSource().buildDetails(request)
-                SecurityContextHolder.getContext().authentication = authToken
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                filterChain.doFilter(request, response)
+                return
             }
-        }
 
-        filterChain.doFilter(request, response)
+            val token = authHeader.substring(7)
+            val userId = jwtUtil.extractUserId(token)
+            if (userId != null && SecurityContextHolder.getContext().authentication == null) {
+                if (jwtUtil.validateAccessToken(token) &&
+                    jwtUtil.validateTokenForUser(token, userId)
+                ) {
+                    if (!userService.existById(userId)) throw IllegalStateException("Not authorized")
+                    val authToken = UsernamePasswordAuthenticationToken(
+                        userId,
+                        null,
+                        emptyList()
+                    )
+                    authToken.details = WebAuthenticationDetailsSource().buildDetails(request)
+                    SecurityContextHolder.getContext().authentication = authToken
+                }
+            }
+
+            filterChain.doFilter(request, response)
+        } catch (_: ExpiredJwtException) {
+            authErrorResponder.handleJwtExpired(response)
+        } catch (_: MalformedJwtException) {
+            authErrorResponder.handleInvalidToken(response)
+        } catch (e: Exception) {
+            logger.info("Error processing JWT: ${e.message}")
+            authErrorResponder.handleGeneralAuthError(response)
+        }
     }
 }
