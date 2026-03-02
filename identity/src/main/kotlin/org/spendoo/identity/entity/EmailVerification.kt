@@ -17,9 +17,6 @@ data class EmailVerification(
     @Column(nullable = false)
     val sentAt: LocalDateTime = LocalDateTime.now(),
 
-    @Column(nullable = false)
-    val isUsed: Boolean,
-
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(nullable = false)

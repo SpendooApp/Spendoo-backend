@@ -15,6 +15,7 @@ import org.spendoo.identity.repository.RefreshTokenRepository
 import org.spendoo.identity.repository.UserRepository
 import org.spendoo.identity.security.JwtUtil
 import org.spendoo.identity.service.mapper.toEntity
+import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
@@ -44,11 +45,7 @@ class AuthService(
         val savedUser = userRepository.save(userToSave)
 
         val otpCode = emailService.generateOtp()
-        val verificationToken = EmailVerification(
-            otp = otpCode,
-            isUsed = false,
-            user = savedUser
-        )
+        val verificationToken = EmailVerification(otp = otpCode, user = savedUser)
         otpRepository.save(verificationToken)
         emailService.sendWelcomeVerificationOtp(savedUser.email, otpCode)
 
@@ -58,15 +55,15 @@ class AuthService(
     fun verifyAccount(request: VerifyOtpRequest): AuthResponse {
         val user = getUserByEmailOrThrow(request.email)
 
-        val token = otpRepository.findByOtpAndUser(request.otp, user) ?: throw RuntimeException("Invalid OTP")
+        val token = otpRepository.findByOtpAndUser(request.otp, user) ?: throw RuntimeException("Invalid or expired OTP")
 
-        if (token.isExpired() || token.isUsed) throw RuntimeException("Invalid or expired OTP")
+        if (token.isExpired()) otpRepository.delete(token).also {
+            throw RuntimeException("OTP has expired")
+        }
 
         val verifiedUser = user.copy(isVerified = true)
-        val savedUser = userRepository.save(verifiedUser)
-
-        val usedToken = token.copy(isUsed = true, user = savedUser)
-        otpRepository.save(usedToken)
+        userRepository.save(verifiedUser)
+        otpRepository.delete(token)
 
         val accessToken = jwtUtil.generateAccessToken(verifiedUser.id)
         val refreshToken = jwtUtil.generateRefreshToken(verifiedUser.id)
@@ -142,11 +139,8 @@ class AuthService(
 
         val otpCode = emailService.generateOtp()
 
-        val resetToken = EmailVerification(
-            otp = otpCode,
-            isUsed = false,
-            user = user
-        )
+        val resetToken = EmailVerification(otp = otpCode, user = user)
+
         otpRepository.save(resetToken)
         emailService.sendOtp(user.email, otpCode)
         return "OTP sent successfully to your email."
@@ -156,10 +150,11 @@ class AuthService(
         val user = getUserByEmailOrThrow(request.email)
 
         val token = otpRepository.findByOtpAndUser(request.otp, user)
-            ?: throw RuntimeException("Invalid OTP")
+            ?: throw RuntimeException("Invalid or expired OTP")
 
-        if (token.isExpired()) throw RuntimeException("OTP has expired")
-        if (token.isUsed) throw RuntimeException("OTP has already been used")
+        if (token.isExpired()) otpRepository.delete(token).also {
+            throw RuntimeException("OTP has expired")
+        }
 
         return "OTP verified successfully. You can now reset your password."
     }
@@ -170,17 +165,14 @@ class AuthService(
         val token = otpRepository.findByOtpAndUser(request.otp, user)
             ?: throw RuntimeException("Invalid OTP")
 
-        if (token.isExpired() || token.isUsed) throw RuntimeException("Invalid or expired OTP")
+        if (token.isExpired()) otpRepository.delete(token).also {
+            throw RuntimeException("Invalid or expired OTP")
+        }
+
         val updatedUser = user.copy(
             passwordHash = passwordEncoder.encode(request.newPassword)!!
         )
-        val savedUser = userRepository.save(updatedUser)
-
-        val usedToken = token.copy(
-            isUsed = true,
-            user = savedUser
-        )
-        otpRepository.save(usedToken)
+        userRepository.save(updatedUser)
 
         return "Password reset successfully. You can now login."
     }
@@ -188,13 +180,8 @@ class AuthService(
     fun resendOtp(request: ForgotPasswordRequest): String {
         val user = getUserByEmailOrThrow(request.email)
 
-
         val otpCode = emailService.generateOtp()
-        val verificationToken = EmailVerification(
-            otp = otpCode,
-            isUsed = false,
-            user = user
-        )
+        val verificationToken = EmailVerification(otp = otpCode, user = user)
         otpRepository.save(verificationToken)
 
         if (!user.isVerified) {
@@ -208,5 +195,23 @@ class AuthService(
 
     private fun getUserByEmailOrThrow(email: String): User {
         return userRepository.findByEmail(email) ?: throw EntityNotFoundException("User not found with this email")
+    }
+
+    @Scheduled(cron = "0 0 0 * * *")
+    fun clearExpiredRefreshTokens() {
+        val now = LocalDateTime.now()
+        refreshTokenRepository.deleteAllByExpiryDateBefore(now)
+    }
+
+    @Scheduled(cron = "0 0 0 * * *")
+    fun clearExpiredOtps() {
+        val now = LocalDateTime.now()
+        otpRepository.deleteAllBySentAtBefore(now.minusMinutes(15))
+    }
+
+    @Scheduled(cron = "0 0 0 * * *")
+    fun clearUnverifiedUsers() {
+        val cutoffDate = LocalDateTime.now().minusDays(1)
+        userRepository.deleteAllByIsVerifiedIsFalseAndCreatedAtBefore(cutoffDate)
     }
 }
