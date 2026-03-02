@@ -10,6 +10,6 @@ data class VerifyOtpRequest(
     val email: String,
 
     @field:NotBlank(message = "OTP is required")
-    @field:Size(min = 4, max = 4, message = "OTP must be exactly 4 characters")
+    @field:Size(min = 5, max = 5, message = "OTP must be exactly 5 characters")
     val otp: String
 )

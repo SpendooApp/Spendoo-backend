@@ -8,15 +8,11 @@ import java.util.UUID
 @Table(name = "email_verification", schema = "identity")
 data class EmailVerification(
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(columnDefinition = "uuid", updatable = false, nullable = false)
     val id: UUID = UUID.randomUUID(),
 
     @Column(nullable = false)
-    val verificationCode: String,
-
-    @Column(nullable = false)
-    val email: String,
+    val otp: String,
 
     @Column(nullable = false)
     val sentAt: LocalDateTime,
@@ -30,6 +26,6 @@ data class EmailVerification(
     val user: User
 ) {
     fun isExpired(): Boolean {
-        return sentAt.plusMinutes(1).isBefore(LocalDateTime.now())
+        return sentAt.plusMinutes(15).isBefore(LocalDateTime.now())
     }
 }

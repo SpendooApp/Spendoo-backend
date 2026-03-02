@@ -10,7 +10,6 @@ import java.util.UUID
 @Table(name = "users", schema = "identity" )
 data class User(
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(columnDefinition = "uuid", updatable = false, nullable = false)
     val id: UUID = UUID.randomUUID(),
 
@@ -29,6 +28,9 @@ data class User(
 
     @Column(nullable = false)
     val birthDate: LocalDate,
+
+    @Column(nullable = false)
+    val isVerified: Boolean = false,
 
     @Column(nullable = false, updatable = false)
     val createdAt: LocalDateTime,

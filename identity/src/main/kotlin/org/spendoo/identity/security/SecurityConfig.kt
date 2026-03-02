@@ -22,7 +22,15 @@ class SecurityConfig(
     fun securityFilterChain(http: HttpSecurity): SecurityFilterChain {
         http.csrf { it.disable() }
             .authorizeHttpRequests {
-                it.requestMatchers("/api/auth/**").permitAll()
+                it.requestMatchers(
+                    "/api/v1/auth/**",
+                    "/v3/api-docs",
+                    "/v3/api-docs/**",
+                    "/swagger-ui/**",
+                    "/swagger-ui.html",
+                    "/error"
+                )
+                    .permitAll()
                 it.anyRequest().authenticated()
             }
             .sessionManagement {

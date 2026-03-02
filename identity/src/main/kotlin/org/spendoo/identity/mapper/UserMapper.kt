@@ -12,6 +12,7 @@ fun RegisterRequest.toEntity(hashedPassword: String): User {
         birthDate = this.birthDate,
         createdAt = LocalDateTime.now(),
         emailVerifications = emptyList(),
-        refreshTokens = emptyList()
+        refreshTokens = emptyList(),
+        isVerified = false
     )
 }
