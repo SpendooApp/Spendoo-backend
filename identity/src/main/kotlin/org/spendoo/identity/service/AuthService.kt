@@ -1,20 +1,22 @@
 package org.spendoo.identity.service
 
+import jakarta.persistence.EntityNotFoundException
 import jakarta.transaction.Transactional
-import org.spendoo.identity.dto.request.ForgotPasswordRequest
-import org.spendoo.identity.dto.response.AuthResponse
-import org.spendoo.identity.dto.request.LoginRequest
-import org.spendoo.identity.dto.request.RefreshTokenRequest
-import org.spendoo.identity.dto.request.RegisterRequest
-import org.spendoo.identity.dto.request.ResetPasswordRequest
-import org.spendoo.identity.dto.request.VerifyOtpRequest
+import org.apache.coyote.BadRequestException
+import org.spendoo.identity.api.dto.request.ForgotPasswordRequest
+import org.spendoo.identity.api.dto.response.AuthResponse
+import org.spendoo.identity.api.dto.request.LoginRequest
+import org.spendoo.identity.api.dto.request.RefreshTokenRequest
+import org.spendoo.identity.api.dto.request.RegisterRequest
+import org.spendoo.identity.api.dto.request.ResetPasswordRequest
+import org.spendoo.identity.api.dto.request.VerifyOtpRequest
 import org.spendoo.identity.entity.EmailVerification
 import org.spendoo.identity.entity.RefreshToken
 import org.spendoo.identity.entity.User
 import org.spendoo.identity.exception.TokenExpiredException
 import org.spendoo.identity.exception.UnauthorizedException
 import org.spendoo.identity.exception.UserAlreadyExistsException
-import org.spendoo.identity.mapper.toEntity
+import org.spendoo.identity.service.mapper.toEntity
 import org.spendoo.identity.repository.EmailVerificationRepository
 import org.spendoo.identity.repository.RefreshTokenRepository
 import org.spendoo.identity.repository.UserRepository
@@ -24,6 +26,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
+import java.util.UUID
 
 @Service
 @Transactional
@@ -38,30 +41,20 @@ class AuthService(
 ) {
 
     fun register(request: RegisterRequest): String {
-        val existingUserOpt = userRepository.findByEmail(request.email)
+        val user = userRepository.findByEmail(request.email)
 
-        val userToSave = if (existingUserOpt.isPresent) {
-            val user = existingUserOpt.get()
-
-            if (user.isVerified) {
-                throw UserAlreadyExistsException("Email is already registered and verified.")
-            }
-            user.copy(
-                fullName = request.fullName,
-                passwordHash = passwordEncoder.encode(request.password)!!,
-                gender = request.gender,
-                birthDate = request.birthDate,
-                isVerified = false
-            )
-        } else {
+        val userToSave = user?.let {
+            if (user.isVerified) throw UserAlreadyExistsException("Email is already registered and verified.")
+            request.toEntity(passwordEncoder.encode(request.password)!!, id = user.id)
+        } ?: run {
             request.toEntity(passwordEncoder.encode(request.password)!!)
         }
+
         val savedUser = userRepository.save(userToSave)
 
         val otpCode = emailService.generateOtp()
         val verificationToken = EmailVerification(
             otp = otpCode,
-            sentAt = LocalDateTime.now(),
             isUsed = false,
             user = savedUser
         )
@@ -72,21 +65,16 @@ class AuthService(
     }
 
     fun verifyAccount(request: VerifyOtpRequest): AuthResponse {
-        val user = userRepository.findByEmail(request.email)
-            .orElseThrow { RuntimeException("User not found") }
+        val user = getUserByEmailOrThrow(request.email)
 
-        val token = otpRepository.findByOtpAndUser(request.otp, user)
-            ?: throw RuntimeException("Invalid OTP")
+        val token = otpRepository.findByOtpAndUser(request.otp, user) ?: throw RuntimeException("Invalid OTP")
 
         if (token.isExpired() || token.isUsed) throw RuntimeException("Invalid or expired OTP")
 
         val verifiedUser = user.copy(isVerified = true)
         val savedUser = userRepository.save(verifiedUser)
 
-        val usedToken = token.copy(
-            isUsed = true,
-            user = savedUser
-        )
+        val usedToken = token.copy(isUsed = true, user = savedUser)
         otpRepository.save(usedToken)
 
         val accessToken = jwtUtil.generateAccessToken(verifiedUser.email)
@@ -97,8 +85,7 @@ class AuthService(
     }
 
     fun login(request: LoginRequest): AuthResponse {
-        val user = userRepository.findByEmail(request.email)
-            .orElseThrow{ RuntimeException("User not found") }
+        val user = getUserByEmailOrThrow(request.email)
 
         if (!user.isVerified) {
             throw UnauthorizedException("Please verify your email before logging in.")
@@ -151,15 +138,14 @@ class AuthService(
         )
     }
 
-    fun logout(request: RefreshTokenRequest) {
-        refreshTokenRepository.findByToken(request.refreshToken).ifPresent { tokenEntity ->
+    fun logout(userId: UUID, request: RefreshTokenRequest) {
+        refreshTokenRepository.findByUserIdAndToken(userId = userId, request.refreshToken).ifPresent { tokenEntity ->
             refreshTokenRepository.delete(tokenEntity)
         }
     }
 
     fun forgotPassword(request: ForgotPasswordRequest): String {
-        val user = userRepository.findByEmail(request.email)
-            .orElseThrow { RuntimeException("User not found with this email") }
+        val user = getUserByEmailOrThrow(request.email)
 
         if (!user.isVerified) {
             throw RuntimeException("Account is not verified yet. Please verify your email first.")
@@ -169,7 +155,6 @@ class AuthService(
 
         val resetToken = EmailVerification(
             otp = otpCode,
-            sentAt = LocalDateTime.now(),
             isUsed = false,
             user = user
         )
@@ -179,8 +164,7 @@ class AuthService(
     }
 
     fun verifyOtp(request: VerifyOtpRequest): String {
-        val user = userRepository.findByEmail(request.email)
-            .orElseThrow { RuntimeException("User not found with this email") }
+        val user = getUserByEmailOrThrow(request.email)
 
         val token = otpRepository.findByOtpAndUser(request.otp, user)
             ?: throw RuntimeException("Invalid OTP")
@@ -192,13 +176,12 @@ class AuthService(
     }
 
     fun resetPassword(request: ResetPasswordRequest): String {
-        val user = userRepository.findByEmail(request.email)
-            .orElseThrow { RuntimeException("User not found with this email") }
+        val user = getUserByEmailOrThrow(request.email)
 
         val token = otpRepository.findByOtpAndUser(request.otp, user)
             ?: throw RuntimeException("Invalid OTP")
 
-        if (token.isExpired() || token.isUsed) throw RuntimeException("Invalid or expired OTP")
+        if (token.isExpired() || token.isUsed) throw BadRequestException("Invalid or expired OTP")
         val updatedUser = user.copy(
             passwordHash = passwordEncoder.encode(request.newPassword)!!
         )
@@ -214,14 +197,12 @@ class AuthService(
     }
 
     fun resendOtp(request: ForgotPasswordRequest): String {
-        val user = userRepository.findByEmail(request.email)
-            .orElseThrow { RuntimeException("User not found with this email") }
+        val user = getUserByEmailOrThrow(request.email)
 
 
         val otpCode = emailService.generateOtp()
         val verificationToken = EmailVerification(
             otp = otpCode,
-            sentAt = LocalDateTime.now(),
             isUsed = false,
             user = user
         )
@@ -236,4 +217,7 @@ class AuthService(
         }
     }
 
+    private fun getUserByEmailOrThrow(email: String): User {
+        return userRepository.findByEmail(email) ?: throw EntityNotFoundException("User not found with this email")
+    }
 }

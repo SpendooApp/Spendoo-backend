@@ -5,11 +5,13 @@ import org.spendoo.identity.entity.User
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.stereotype.Repository
 import java.util.Optional
+import java.util.UUID
 
 @Repository
 interface RefreshTokenRepository : JpaRepository<RefreshToken, Long> {
 
     fun findByToken(token: String): Optional<RefreshToken>
+    fun findByUserIdAndToken(userId: UUID, token: String): Optional<RefreshToken>
     fun findByUser(user: User): Optional<RefreshToken>
     fun deleteByUser(user: User)
 }

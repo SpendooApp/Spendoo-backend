@@ -1,7 +1,7 @@
 package org.spendoo.identity.entity
 
 import jakarta.persistence.*
-import org.spendoo.identity.enums.Gender
+import org.spendoo.identity.entity.Gender
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.UUID

@@ -1,5 +1,4 @@
-package org.spendoo.identity.response
-
+package org.spendoo.identity.api.dto.response
 
 data class ErrorResponse(
     val message: String,

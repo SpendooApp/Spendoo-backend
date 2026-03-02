@@ -1,24 +1,26 @@
-package org.spendoo.identity.controller
+package org.spendoo.identity.api.controller
 
 import jakarta.validation.Valid
-import org.spendoo.identity.dto.request.ForgotPasswordRequest
-import org.spendoo.identity.dto.response.AuthResponse
-import org.spendoo.identity.dto.request.LoginRequest
-import org.spendoo.identity.dto.request.RefreshTokenRequest
-import org.spendoo.identity.dto.request.RegisterRequest
-import org.spendoo.identity.dto.request.ResetPasswordRequest
-import org.spendoo.identity.dto.request.VerifyOtpRequest
+import org.spendoo.identity.api.dto.request.ForgotPasswordRequest
+import org.spendoo.identity.api.dto.response.AuthResponse
+import org.spendoo.identity.api.dto.request.LoginRequest
+import org.spendoo.identity.api.dto.request.RefreshTokenRequest
+import org.spendoo.identity.api.dto.request.RegisterRequest
+import org.spendoo.identity.api.dto.request.ResetPasswordRequest
+import org.spendoo.identity.api.dto.request.VerifyOtpRequest
 import org.spendoo.identity.service.AuthService
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
+import java.util.UUID
 
 
 @RestController
-@RequestMapping("/api/v1/auth")
+@RequestMapping("/api/v1/identity/auth")
 class AuthController (
     private val authService: AuthService
 ) {
@@ -49,8 +51,11 @@ class AuthController (
     }
 
     @PostMapping("/logout")
-    fun logout(@Valid @RequestBody request: RefreshTokenRequest): ResponseEntity<Map<String, String>> {
-        authService.logout(request)
+    fun logout(
+        @AuthenticationPrincipal userId: UUID,
+        @Valid @RequestBody request: RefreshTokenRequest
+    ): ResponseEntity<Map<String, String>> {
+        authService.logout(userId, request)
         return ResponseEntity.ok(mapOf("message" to "Logged out successfully"))
     }
 
@@ -78,11 +83,4 @@ class AuthController (
         val response = authService.resendOtp(request)
         return ResponseEntity.ok(response)
     }
-
-
-
-
-
-
-
 }

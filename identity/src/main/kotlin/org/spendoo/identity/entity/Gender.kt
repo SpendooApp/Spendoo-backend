@@ -1,4 +1,4 @@
-package org.spendoo.identity.enums
+package org.spendoo.identity.entity
 
 enum class Gender {
     MALE,
