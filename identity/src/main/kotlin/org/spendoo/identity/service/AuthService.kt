@@ -2,6 +2,7 @@ package org.spendoo.identity.service
 
 import jakarta.persistence.EntityNotFoundException
 import jakarta.transaction.Transactional
+import org.spendoo.events.publisher.SpendooEventPublisher
 import org.spendoo.identity.api.dto.request.*
 import org.spendoo.identity.api.dto.response.AuthResponse
 import org.spendoo.identity.entity.EmailVerification
@@ -15,6 +16,7 @@ import org.spendoo.identity.repository.RefreshTokenRepository
 import org.spendoo.identity.repository.UserRepository
 import org.spendoo.identity.security.JwtUtil
 import org.spendoo.identity.service.mapper.toEntity
+import org.spendoo.identity.service.mapper.toUserCreatedEvent
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
@@ -30,6 +32,7 @@ class AuthService(
     private val emailService: EmailService,
     private val passwordEncoder: PasswordEncoder,
     private val jwtUtil: JwtUtil,
+    private val spendooEventPublisher: SpendooEventPublisher
 ) {
 
     fun register(request: RegisterRequest): String {
@@ -63,6 +66,7 @@ class AuthService(
 
         val verifiedUser = user.copy(isVerified = true)
         userRepository.save(verifiedUser)
+        spendooEventPublisher.publish(verifiedUser.toUserCreatedEvent())
         otpRepository.delete(token)
 
         val accessToken = jwtUtil.generateAccessToken(verifiedUser.id)

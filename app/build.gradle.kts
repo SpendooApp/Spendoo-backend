@@ -11,6 +11,8 @@ repositories {
 
 dependencies {
 	implementation(projects.identity)
+	implementation(projects.notifications)
+	implementation(projects.events)
 	implementation("org.springframework.boot:spring-boot-starter-web")
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 	runtimeOnly("org.postgresql:postgresql")

@@ -4,9 +4,6 @@ plugins {
 	id("org.springframework.boot") version "4.0.1"
 	id("io.spring.dependency-management") version "1.1.7"
 }
-
-group = "org.spendoo"
-version = "0.0.1-SNAPSHOT"
 description = "Spendoo"
 
 java {
@@ -15,8 +12,13 @@ java {
 	}
 }
 
-repositories {
-	mavenCentral()
+allprojects {
+	group = "org.spendoo"
+	version = "0.0.1-SNAPSHOT"
+
+	repositories {
+		mavenCentral()
+	}
 }
 
 dependencies {
