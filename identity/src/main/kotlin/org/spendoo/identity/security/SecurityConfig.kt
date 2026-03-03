@@ -1,5 +1,6 @@
 package org.spendoo.identity.security
 
+import org.spendoo.identity.security.handler.CustomAuthenticationEntryPoint
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.security.authentication.AuthenticationManager
@@ -15,15 +16,17 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @Configuration
 @EnableWebSecurity
 class SecurityConfig(
-    private val jwtFilter: JwtFilter
-) {
+    private val jwtFilter: JwtFilter,
+    private val authenticationEntryPoint: CustomAuthenticationEntryPoint,
+    ) {
 
     @Bean
     fun securityFilterChain(http: HttpSecurity): SecurityFilterChain {
         http.csrf { it.disable() }
             .authorizeHttpRequests {
+                it.requestMatchers("/api/v1/identity/auth/logout").authenticated()
                 it.requestMatchers(
-                    "/api/v1/auth/**",
+                    "/api/v1/identity/auth/**",
                     "/v3/api-docs",
                     "/v3/api-docs/**",
                     "/swagger-ui/**",
@@ -36,7 +39,10 @@ class SecurityConfig(
             .sessionManagement {
                 it.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             }
-        http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter::class.java)
+            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter::class.java)
+            .exceptionHandling { exception ->
+                exception.authenticationEntryPoint(authenticationEntryPoint)
+            }
         return http.build()
     }
 

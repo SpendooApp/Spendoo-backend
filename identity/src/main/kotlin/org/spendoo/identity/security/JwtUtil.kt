@@ -5,10 +5,9 @@ import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.security.Keys
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
-import java.util.Base64
-import java.util.Date
-import javax.crypto.SecretKey
 import java.time.Duration
+import java.util.*
+import javax.crypto.SecretKey
 
 @Component
 class JwtUtil(
@@ -23,9 +22,9 @@ class JwtUtil(
 
     // ================== Generate ==================
 
-    private fun createToken(email: String, expirationTimeMillis: Long, type: String): String {
+    private fun createToken(id: UUID, expirationTimeMillis: Long, type: String): String {
         return Jwts.builder()
-            .setSubject(email)
+            .setSubject(id.toString())
             .claim("type", type)
             .setIssuedAt(Date(System.currentTimeMillis()))
             .setExpiration(Date(System.currentTimeMillis() + expirationTimeMillis))
@@ -33,12 +32,12 @@ class JwtUtil(
             .compact()
     }
 
-    fun generateAccessToken(email: String): String {
-        return createToken(email, accessExpiration.toMillis(), "access")
+    fun generateAccessToken(id: UUID): String {
+        return createToken(id, accessExpiration.toMillis(), "access")
     }
 
-    fun generateRefreshToken(email: String): String {
-        return createToken(email, refreshExpiration.toMillis(), "refresh")
+    fun generateRefreshToken(id: UUID): String {
+        return createToken(id, refreshExpiration.toMillis(), "refresh")
     }
 
     // ================== Parsing ==================
@@ -54,8 +53,8 @@ class JwtUtil(
             null
         }
 
-    fun extractUsername(token: String): String? {
-        return parseAllClaims(token)?.subject
+    fun extractUserId(token: String): UUID? {
+        return UUID.fromString(parseAllClaims(token)?.subject)
     }
 
     // ================== Validation ==================
@@ -80,9 +79,9 @@ class JwtUtil(
         return claims["type"] == "refresh"
     }
 
-    fun validateTokenForUser(token: String, username: String): Boolean {
+    fun validateTokenForUser(token: String, userId: UUID): Boolean {
         val claims = validateTokenInternal(token) ?: return false
-        return claims.subject == username
+        return claims.subject == userId.toString()
     }
 
 }

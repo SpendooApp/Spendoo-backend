@@ -1,20 +1,16 @@
 package org.spendoo.identity.service
 
-import org.springframework.mail.SimpleMailMessage
-import org.springframework.mail.javamail.JavaMailSender
+import org.spendoo.events.notifications.EmailEvent
+import org.spendoo.events.publisher.SpendooEventPublisher
 import org.springframework.stereotype.Service
 import java.security.SecureRandom
 
 @Service
-class EmailService (
-    private val mailSender: JavaMailSender,
-){
-    fun sendOtp (email: String, otp: String) {
-        val message = SimpleMailMessage()
-        message.from = "noreply@spendoo.com"
-        message.setTo(email)
-        message.subject = "Spendoo - Password Reset Code"
-        message.text = """
+class EmailService(
+    private val publisher: SpendooEventPublisher,
+) {
+    fun sendOtp(email: String, otp: String) {
+        val text = """
             Hello,
             
             you have requested to reset your password.
@@ -26,15 +22,18 @@ class EmailService (
             Thanks,
             Spendoo Team
         """.trimIndent()
-        mailSender.send(message)
+
+        val event = EmailEvent(
+            to = email,
+            subject = "Spendoo - Password Reset Code",
+            text = text,
+        )
+
+        publisher.publish(event)
     }
 
     fun sendWelcomeVerificationOtp(email: String, otp: String) {
-        val message = SimpleMailMessage()
-        message.from = "noreply@spendoo.com"
-        message.setTo(email)
-        message.subject = "Spendoo - Welcome! Verify your email"
-        message.text = """
+        val text = """
             Welcome to Spendoo!
             
             To complete your registration, please use the following OTP code: $otp
@@ -44,7 +43,14 @@ class EmailService (
             Thanks,
             Spendoo Team
         """.trimIndent()
-        mailSender.send(message)
+
+        val event = EmailEvent(
+            to = email,
+            subject = "Spendoo - Welcome! Verify your email",
+            text = text,
+        )
+
+        publisher.publish(event)
     }
 
     fun generateOtp(): String {
@@ -52,6 +58,5 @@ class EmailService (
         val number = secureRandom.nextInt(10000)
         return String.format("%05d", number)
     }
-
 
 }

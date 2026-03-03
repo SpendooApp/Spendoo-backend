@@ -15,10 +15,7 @@ data class EmailVerification(
     val otp: String,
 
     @Column(nullable = false)
-    val sentAt: LocalDateTime,
-
-    @Column(nullable = false)
-    val isUsed: Boolean,
+    val sentAt: LocalDateTime = LocalDateTime.now(),
 
 
     @ManyToOne(fetch = FetchType.LAZY)
