@@ -13,6 +13,7 @@ dependencies {
 	implementation(projects.identity)
 	implementation(projects.notifications)
 	implementation(projects.events)
+	implementation(projects.storage)
 	implementation("org.springframework.boot:spring-boot-starter-web")
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 	runtimeOnly("org.postgresql:postgresql")
@@ -21,6 +22,8 @@ dependencies {
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
 	testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+	implementation(platform("software.amazon.awssdk:bom:2.33.8"))
+	implementation("software.amazon.awssdk:s3")
 }
 
 tasks.withType<Test> {

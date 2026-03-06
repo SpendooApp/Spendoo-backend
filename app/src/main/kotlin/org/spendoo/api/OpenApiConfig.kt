@@ -1,4 +1,4 @@
-package org.spendoo.app.api
+package org.spendoo.api
 
 import io.swagger.v3.oas.annotations.OpenAPIDefinition
 import io.swagger.v3.oas.annotations.enums.SecuritySchemeType
