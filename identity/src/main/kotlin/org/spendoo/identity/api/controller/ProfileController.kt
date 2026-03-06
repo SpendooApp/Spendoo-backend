@@ -1,5 +1,6 @@
 package org.spendoo.identity.api.controller
 
+import org.spendoo.identity.api.dto.response.ProfileResponse
 import org.spendoo.identity.api.dto.response.UpdateImageResponse
 import org.spendoo.identity.service.UserService
 import org.spendoo.identity.service.mapper.toProfileResponse

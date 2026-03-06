@@ -1,7 +1,7 @@
 package org.spendoo.identity.service.mapper
 
 import org.spendoo.events.identity.UserCreatedEvent
-import org.spendoo.identity.api.controller.ProfileResponse
+import org.spendoo.identity.api.dto.response.ProfileResponse
 import org.spendoo.identity.api.dto.request.RegisterRequest
 import org.spendoo.identity.entity.Gender
 import org.spendoo.identity.entity.User

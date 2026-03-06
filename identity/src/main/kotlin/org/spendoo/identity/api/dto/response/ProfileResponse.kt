@@ -1,4 +1,4 @@
-package org.spendoo.identity.api.controller
+package org.spendoo.identity.api.dto.response
 
 data class ProfileResponse(
     val id: String,
