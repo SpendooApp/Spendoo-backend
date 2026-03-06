@@ -18,7 +18,7 @@ class ProfileController(
     @Value("\${storage.spendoo.cdn-endpoint}") cdnEndpoint: String,
     @Value("\${identity.resources.profile-image-directory}") profileImageDirectory: String,
 ) {
-    private val imagesBaseUrl: String = "$cdnEndpoint$profileImageDirectory"
+    private val imagesBaseUrl: String = "$cdnEndpoint/$profileImageDirectory"
 
     @GetMapping
     fun getUserProfile(@AuthenticationPrincipal userId: UUID): ResponseEntity<ProfileResponse> {

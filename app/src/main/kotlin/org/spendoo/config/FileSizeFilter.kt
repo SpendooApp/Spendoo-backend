@@ -38,7 +38,18 @@ class FileSizeFilter(
     }
 
     private fun getMaxSizeForPath(path: String): Long {
-        val module = path.trim('/').split('/').firstOrNull() ?: ""
+        val segments = path.trim('/').split('/').filter { it.isNotEmpty() }
+        val module = when {
+            segments.isEmpty() -> ""
+            // Handle common API prefix with version, e.g. /api/v1/identity/...
+            segments[0] == "api" && segments.size >= 3 && segments[1].matches(Regex("v\\d+")) ->
+                segments[2]
+            // Handle API prefix without version, e.g. /api/identity/...
+            segments[0] == "api" && segments.size >= 2 ->
+                segments[1]
+            // Default: first segment is the module
+            else -> segments[0]
+        }
         val maxSizeMB = fileSizeProperties.getMaxSize(module)
         return maxSizeMB * 1024L * 1024L
     }

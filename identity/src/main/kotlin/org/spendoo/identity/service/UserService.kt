@@ -45,7 +45,7 @@ class UserService(
         val user = findById(userId)
         user.imageUrl?.let { imageUrl ->
             imageStorageService.deleteImage(
-                fileName = imageUrl,
+                fileName = imageUrl.substringBefore("?"),
                 folderName = profileImageDirectory
             )
             val savedUser = userRepository.save(user.copy(imageUrl = null))
