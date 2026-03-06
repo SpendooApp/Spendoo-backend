@@ -35,6 +35,9 @@ data class User(
     @Column(nullable = false, updatable = false)
     val createdAt: LocalDateTime,
 
+    @Column(nullable = true)
+    val imageUrl: String? = null,
+
     @OneToMany(mappedBy = "user", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
     val emailVerifications: List<EmailVerification> = emptyList(),
 

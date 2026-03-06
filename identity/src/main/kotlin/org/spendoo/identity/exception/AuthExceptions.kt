@@ -1,5 +1,7 @@
 package org.spendoo.identity.exception
 
+import org.springframework.security.core.AuthenticationException
+
 class InvalidCredentialsException(
     message: String = "Invalid email or password") : RuntimeException(message)
 
@@ -13,4 +15,6 @@ class UnauthorizedException (
 
 class UserAlreadyExistsException(
     message: String = "User already exists") : RuntimeException(message)
+
+class UserNotFoundException(message: String) : AuthenticationException(message)
 
