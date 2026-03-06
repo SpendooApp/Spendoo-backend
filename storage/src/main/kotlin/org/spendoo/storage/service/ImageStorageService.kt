@@ -33,10 +33,6 @@ class ImageStorageService(
             val putReq = createObjectRequest(key, mimeType)
             spendooS3Client.putObject(putReq, RequestBody.fromBytes(file.bytes))
             val imageUri = "$fileName?time=$randomParameter"
-            println(folderName)
-            println(fileName)
-            println(imageUri)
-            println(key)
             return imageUri
         } catch (e: Exception) {
             throw UnknownErrorException(e.message ?: "Unknown error occurred")
