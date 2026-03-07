@@ -44,4 +44,4 @@ jobs:
             -e STORAGE_SPENDOO_ENDPOINT=${{ secrets.STORAGE_SPENDOO_ENDPOINT }} \
             -e STORAGE_SPENDOO_KEY=${{ secrets.STORAGE_SPENDOO_KEY }} \
             -e STORAGE_SPENDOO_SECRET=${{ secrets.STORAGE_SPENDOO_SECRET }} \
-              josephsameh/spendoo-backend:latest
+            josephsameh/spendoo-backend:latest
