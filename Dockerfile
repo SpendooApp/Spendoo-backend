@@ -8,14 +8,14 @@ COPY gradle gradle
 COPY settings.gradle.kts .
 COPY build.gradle.kts .
 
-# Ensure gradlew is executable
-RUN chmod +x gradlew
-
 # Download dependencies
 RUN ./gradlew build --no-daemon --stacktrace -x test || return 0
 
 # copy source code
 COPY . .
+
+# Ensure gradlew is executable
+RUN chmod +x gradlew
 
 # Build application
 RUN ./gradlew :app:bootJar --no-daemon -x test
