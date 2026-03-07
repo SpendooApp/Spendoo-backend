@@ -1,8 +1,7 @@
 name: Deploy Spring Boot
 
 on:
-#  push:
-  pull_request:
+  push:
     branches:
       - develop
 
