@@ -1,7 +1,8 @@
 name: Deploy Spring Boot
 
 on:
-  push:
+#  push:
+  pull_request:
     branches:
       - develop
 
@@ -32,3 +33,4 @@ jobs:
             docker rm springboot-container || true
             docker run -d --restart=always --name springboot-container -p 8080:8080 \
               -e DATABASE_URL="${{ secrets.DATABASE_URL }}" -e DATABASE_USERNAME="${{ secrets.DATABASE_USERNAME }}" -e DATABASE_PASSWORD="${{ secrets.DATABASE_PASSWORD }}" -e JWT_SECRET="${{ secrets.JWT_SECRET }}" -e MAIL_USERNAME="${{ secrets.MAIL_USERNAME }}" -e MAIL_PASSWORD="${{ secrets.MAIL_PASSWORD }}" -e PROFILE_IMAGE_DIRECTORY="${{ secrets.PROFILE_IMAGE_DIRECTORY }}" -e STORAGE_SPENDOO_BUCKET="${{ secrets.STORAGE_SPENDOO_BUCKET }}" -e STORAGE_SPENDOO_CDN_ENDPOINT="${{ secrets.STORAGE_SPENDOO_CDN_ENDPOINT }}" -e STORAGE_SPENDOO_ENDPOINT="${{ secrets.STORAGE_SPENDOO_ENDPOINT }}" -e STORAGE_SPENDOO_KEY="${{ secrets.STORAGE_SPENDOO_KEY }}" -e STORAGE_SPENDOO_SECRET="${{ secrets.STORAGE_SPENDOO_SECRET }}" josephsameh/spendoo-backend:latest
+            docker image prune -f
