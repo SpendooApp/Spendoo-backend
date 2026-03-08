@@ -5,7 +5,7 @@ import org.spendoo.events.identity.utils.Gender
 import java.time.LocalDate
 import java.util.*
 
-data class UserCreatedEvent(
+data class UserUpdatedEvent(
     val id: UUID,
     val password: String,
     val fullName: String,

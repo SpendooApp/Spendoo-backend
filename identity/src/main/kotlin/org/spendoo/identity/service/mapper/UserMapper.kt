@@ -1,7 +1,9 @@
 package org.spendoo.identity.service.mapper
 
 import org.spendoo.events.identity.UserCreatedEvent
+import org.spendoo.events.identity.UserUpdatedEvent
 import org.spendoo.identity.api.dto.request.RegisterRequest
+import org.spendoo.identity.api.dto.response.ProfileResponse
 import org.spendoo.identity.entity.Gender
 import org.spendoo.identity.entity.User
 import java.time.LocalDateTime
@@ -29,7 +31,34 @@ fun User.toUserCreatedEvent(): UserCreatedEvent {
         password = passwordHash,
         fullName = fullName,
         birthDate = birthDate,
-        gender = gender.toEventGender()
+        gender = gender.toEventGender(),
+        imageUrl = imageUrl,
+    )
+}
+
+fun User.toUserUpdatedEvent(): UserUpdatedEvent {
+    return UserUpdatedEvent(
+        id = id,
+        password = passwordHash,
+        fullName = fullName,
+        birthDate = birthDate,
+        gender = gender.toEventGender(),
+        imageUrl = imageUrl,
+    )
+}
+
+fun User.toProfileResponse(imageBaseUrl: String): ProfileResponse {
+    val resolvedImageUrl = if (imageUrl.isNullOrBlank()) {
+        null
+    } else {
+        "$imageBaseUrl/$imageUrl"
+    }
+    return ProfileResponse(
+        id = id.toString(),
+        fullName = fullName,
+        birthDate = birthDate.toString(),
+        gender = gender.name,
+        imageUrl = resolvedImageUrl,
     )
 }
 
