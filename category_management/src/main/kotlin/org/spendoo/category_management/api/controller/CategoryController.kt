@@ -1,4 +1,5 @@
 package org.spendoo.category_management.api.controller
+
 import jakarta.validation.Valid
 import org.spendoo.category_management.api.dto.request.CategoryCreateRequest
 import org.spendoo.category_management.api.dto.response.CategoryResponse
@@ -7,7 +8,7 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
-import java.util.UUID
+import java.util.*
 
 @RestController
 @RequestMapping("/api/v1/categories")
@@ -16,7 +17,10 @@ class CategoryController(
 ) {
 
     @PostMapping
-    fun createCategory(@Valid @RequestBody request: CategoryCreateRequest, @AuthenticationPrincipal userId: UUID): CategoryResponse {
+    fun createCategory(
+        @Valid @RequestBody request: CategoryCreateRequest,
+        @AuthenticationPrincipal userId: UUID
+    ): CategoryResponse {
         return categoryService.create(request, userId)
     }
 
@@ -32,7 +36,11 @@ class CategoryController(
 
 
     @PutMapping("/{categoryId}")
-    fun updateCategory(@PathVariable categoryId: UUID, @Valid @RequestBody request: CategoryCreateRequest, @AuthenticationPrincipal userId: UUID): CategoryResponse {
+    fun updateCategory(
+        @PathVariable categoryId: UUID,
+        @Valid @RequestBody request: CategoryCreateRequest,
+        @AuthenticationPrincipal userId: UUID
+    ): CategoryResponse {
         return categoryService.update(categoryId, request, userId)
     }
 

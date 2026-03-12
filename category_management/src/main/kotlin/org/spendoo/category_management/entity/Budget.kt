@@ -1,10 +1,11 @@
 package org.spendoo.category_management.entity
+
 import jakarta.persistence.*
 import java.time.LocalDate
-import java.util.UUID
+import java.util.*
 
 @Entity
-@Table(name = "budgets",schema = "category_management")
+@Table(name = "budgets", schema = "category_management")
 
 data class Budget(
     @Id
@@ -21,12 +22,12 @@ data class Budget(
     val period: Int,
 
     @Column(nullable = false)
-    val startDate : LocalDate,
+    val startDate: LocalDate,
 
     @Column(nullable = false)
-    val endDate : LocalDate,
+    val endDate: LocalDate,
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(nullable = false)
     val category: Category
-    )
+)

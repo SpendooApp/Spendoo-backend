@@ -7,21 +7,21 @@ import org.spendoo.category_management.entity.Budget
 import org.spendoo.category_management.entity.Category
 import org.spendoo.category_management.entity.CategoryIcon
 import org.spendoo.category_management.entity.LeftOverOptions
-import org.springframework.stereotype.Component
 import java.util.UUID
 
-@Component
+//@Component
+
+fun CategoryCreateRequest.toEntity(userId: UUID): Category {
+    return Category(
+        userId = userId,
+        categoryName = this.categoryName,
+        categoryIcon = CategoryIcon.valueOf(this.categoryIcon.uppercase()),
+        leftOverOptions = LeftOverOptions.valueOf(this.leftOverOptions.uppercase()),
+        priority = this.priority,
+    )
+}
 class CategoryMapper {
 
-    fun toEntity(request: CategoryCreateRequest, userId: UUID): Category {
-        return Category(
-            userId = userId,
-            categoryName = request.categoryName,
-            categoryIcon = CategoryIcon.valueOf(request.categoryIcon.uppercase()),
-            leftOverOptions = LeftOverOptions.valueOf(request.leftOverOptions.uppercase()),
-            priority = request.priority,
-        )
-    }
 
     fun toResponse(category: Category, budget: Budget? = null): CategoryResponse {
         return CategoryResponse(

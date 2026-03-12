@@ -1,10 +1,10 @@
 package org.spendoo.category_management.entity
+
 import jakarta.persistence.*
-import java.util.UUID
-import org.spendoo.category_management.entity.CategoryIcon
+import java.util.*
 
 @Entity
-@Table(name = "categories",schema = "category_management")
+@Table(name = "categories", schema = "category_management")
 data class Category(
     @Id
     @Column(columnDefinition = "uuid", updatable = false, nullable = false)
@@ -30,6 +30,6 @@ data class Category(
     @Column(nullable = false)
     val isDeleted: Boolean = false,
 
-@OneToMany(mappedBy = "category", cascade = [CascadeType.ALL], fetch = FetchType.LAZY, orphanRemoval = true)
-    val budgets: List<Budget> = emptyList()
+    @OneToMany(mappedBy = "category", cascade = [CascadeType.ALL], fetch = FetchType.LAZY, orphanRemoval = true)
+    val budgets: MutableList<Budget> = mutableListOf()
 )
