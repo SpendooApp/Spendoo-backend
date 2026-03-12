@@ -6,9 +6,11 @@ plugins {
 }
 description = "Spendoo"
 
+val javaVersion = 21
+
 java {
 	toolchain {
-		languageVersion = JavaLanguageVersion.of(17)
+		languageVersion = JavaLanguageVersion.of(javaVersion)
 	}
 }
 
@@ -18,6 +20,23 @@ allprojects {
 
 	repositories {
 		mavenCentral()
+	}
+}
+
+// Enforce a single JVM/toolchain configuration for all modules
+subprojects {
+	plugins.withType<JavaPlugin> {
+		java {
+			toolchain {
+				languageVersion = JavaLanguageVersion.of(javaVersion)
+			}
+		}
+	}
+
+	plugins.withId("org.jetbrains.kotlin.jvm") {
+		kotlin {
+			jvmToolchain(javaVersion)
+		}
 	}
 }
 
