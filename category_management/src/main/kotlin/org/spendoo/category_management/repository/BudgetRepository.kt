@@ -1,0 +1,12 @@
+package org.spendoo.category_management.repository
+
+import org.spendoo.category_management.entity.Budget
+import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.stereotype.Repository
+import java.time.LocalDate
+import java.util.UUID
+@Repository
+interface BudgetRepository: JpaRepository<Budget, UUID> {
+    fun findByCategoryCategoryId(categoryId: UUID): Budget?
+    fun findByEndDateBefore(date: LocalDate): List<Budget>
+}
