@@ -28,8 +28,8 @@ interface CategoryRepository : JpaRepository<Category, UUID> {
             FROM Category c
             LEFT JOIN Budget b
                 ON c.id = b.category.id
-            WHERE c.userId = :userId
                 AND b.isActive = true
+            WHERE c.userId = :userId
                 AND c.isDeleted = false
         """
     )
@@ -53,10 +53,10 @@ interface CategoryRepository : JpaRepository<Category, UUID> {
             FROM Category c
             LEFT JOIN Budget b
                 ON c.id = b.category.id
+                AND b.isActive = true
             WHERE
                 c.id = :categoryId
                 AND c.userId = :userId
-                AND b.isActive = true
                 AND c.isDeleted = false
         """
     )

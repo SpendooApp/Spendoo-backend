@@ -25,9 +25,20 @@ class BudgetService(private val budgetRepository: BudgetRepository) {
     }
 
     fun updateBudget(request: BudgetCreateRequest, category: Category): Budget {
-        var carryOver = processExpiredBudget(category.id)
-        if (carryOver < BigDecimal.ZERO) carryOver = BigDecimal.ZERO
-        return createBudget(request, category, carryOver)
+        val activeBudget = budgetRepository.findByCategoryIdAndIsActiveIsTrue(category.id)
+            ?: throw IllegalArgumentException("Active budget not found")
+
+        val alignedStartDate = alignStartDateToActiveCycle(request.startDate, request.period)
+        val updatedBudget = activeBudget.copy(
+            amount = request.amount.toBigDecimal(),
+            carryOver = BigDecimal.ZERO,
+            period = request.period,
+            startDate = alignedStartDate,
+            endDate = alignedStartDate.plusDays(request.period.toLong()),
+            isActive = true
+        )
+
+        return budgetRepository.save(updatedBudget)
     }
 
     fun processExpiredBudget(categoryId: UUID): BigDecimal {
@@ -84,5 +95,11 @@ class BudgetService(private val budgetRepository: BudgetRepository) {
         val cyclesToShift = (overdueDays / period) + 1
 
         return startDate.plusDays(cyclesToShift * period)
+    }
+
+    fun deactivateBudgetForCategory(categoryId: UUID) {
+        budgetRepository.findByCategoryIdAndIsActiveIsTrue(categoryId)?.let { expiredBudget ->
+            budgetRepository.save(expiredBudget.copy(isActive = false))
+        }
     }
 }

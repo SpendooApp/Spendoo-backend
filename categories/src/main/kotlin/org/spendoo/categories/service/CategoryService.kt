@@ -23,7 +23,9 @@ class CategoryService(
     fun create(request: CategoryCreateRequest, userId: UUID): CategoryResponse {
         val category = request.toEntity(userId)
         val savedCategory = categoryRepository.save(category)
-        val budget = budgetService.createBudget(request.budget, savedCategory)
+        val budget = request.budget?.let {
+            budgetService.createBudget(request.budget, savedCategory)
+        }
         return savedCategory.toResponse(budget)
     }
 
@@ -59,5 +61,6 @@ class CategoryService(
 
         val updatedCategory = category.copy(isDeleted = true)
         categoryRepository.save(updatedCategory)
+        budgetService.deactivateBudgetForCategory(categoryId)
     }
 }

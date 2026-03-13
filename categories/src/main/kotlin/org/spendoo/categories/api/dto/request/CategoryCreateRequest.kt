@@ -16,7 +16,7 @@ data class CategoryCreateRequest(
 
     val priority: Int,
 
-    val budget: BudgetCreateRequest
+    val budget: BudgetCreateRequest?
 )
 
 fun CategoryCreateRequest.toEntity(userId: UUID): Category {
