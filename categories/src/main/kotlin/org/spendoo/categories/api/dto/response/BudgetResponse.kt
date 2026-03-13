@@ -13,6 +13,8 @@ data class BudgetResponse(
 
     val spendingPercentage: Int,
 
+    val period: Int,
+
     val startDate: LocalDateTime,
 
     val endDate: LocalDateTime
@@ -28,6 +30,7 @@ fun Budget.toBudgetResponse(): BudgetResponse {
         amount = this.amount,
         spentAmount = spentAmount,
         spendingPercentage = spendingPercentage,
+        period = this.period,
         startDate = this.startDate,
         endDate = this.endDate
     )
@@ -43,6 +46,7 @@ fun CategoryParams.toBudgetResponse(): BudgetResponse {
         amount = amount,
         spentAmount = spentAmount,
         spendingPercentage = spendingPercentage,
+        period = period ?: 0,
         startDate = startDate ?: LocalDateTime.now(),
         endDate = endDate ?: LocalDateTime.now()
     )
