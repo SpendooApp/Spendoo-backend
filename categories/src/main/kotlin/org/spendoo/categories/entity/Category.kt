@@ -8,7 +8,7 @@ import java.util.*
 data class Category(
     @Id
     @Column(columnDefinition = "uuid", updatable = false, nullable = false)
-    val categoryId: UUID = UUID.randomUUID(),
+    val id: UUID = UUID.randomUUID(),
 
     @Column(columnDefinition = "uuid", nullable = false)
     val userId: UUID = UUID.randomUUID(),

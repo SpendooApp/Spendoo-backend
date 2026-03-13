@@ -1,7 +1,8 @@
 package org.spendoo.categories.entity
 
 import jakarta.persistence.*
-import java.time.LocalDate
+import java.math.BigDecimal
+import java.time.LocalDateTime
 import java.util.*
 
 @Entity
@@ -10,22 +11,25 @@ import java.util.*
 data class Budget(
     @Id
     @Column(columnDefinition = "uuid", updatable = false, nullable = false)
-    val budgetId: UUID = UUID.randomUUID(),
+    val id: UUID = UUID.randomUUID(),
 
     @Column(nullable = false)
-    val amount: Double,
+    val amount: BigDecimal,
 
     @Column(nullable = false)
-    val carryOver: Double = 0.0,
+    val carryOver: BigDecimal = BigDecimal.ZERO,
 
     @Column(nullable = false)
     val period: Int,
 
     @Column(nullable = false)
-    val startDate: LocalDate,
+    val startDate: LocalDateTime,
 
     @Column(nullable = false)
-    val endDate: LocalDate,
+    val endDate: LocalDateTime,
+
+    @Column(nullable = false)
+    val isActive: Boolean,
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(nullable = false)
