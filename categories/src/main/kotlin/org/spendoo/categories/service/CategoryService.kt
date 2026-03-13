@@ -1,6 +1,7 @@
 package org.spendoo.categories.service
 
 import org.spendoo.categories.api.dto.request.CategoryCreateRequest
+import org.spendoo.categories.api.dto.request.CategoryUpdateRequest
 import org.spendoo.categories.api.dto.response.CategoryResponse
 import org.spendoo.categories.entity.CategoryIcon
 import org.spendoo.categories.entity.LeftOverOptions
@@ -49,7 +50,7 @@ class CategoryService(
     }
 
     @Transactional
-    fun update(categoryId: UUID, request: CategoryCreateRequest, userId: UUID): CategoryResponse {
+    fun update(categoryId: UUID, request: CategoryUpdateRequest, userId: UUID): CategoryResponse {
         val category =
             categoryRepository.findById(categoryId).orElseThrow { IllegalArgumentException("Category not found") }
         if (category.userId != userId || category.isDeleted) {

@@ -2,10 +2,13 @@ package org.spendoo.categories.api.controller
 
 import jakarta.validation.Valid
 import org.spendoo.categories.api.dto.request.CategoryCreateRequest
+import org.spendoo.categories.api.dto.request.CategoryUpdateRequest
 import org.spendoo.categories.api.dto.response.CategoryResponse
 import org.spendoo.categories.service.CategoryService
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
+import org.springframework.http.HttpStatus
+import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
 import java.util.*
@@ -20,32 +23,43 @@ class CategoryController(
     fun createCategory(
         @Valid @RequestBody request: CategoryCreateRequest,
         @AuthenticationPrincipal userId: UUID
-    ): CategoryResponse {
-        return categoryService.create(request, userId)
+    ): ResponseEntity<Unit> {
+        categoryService.create(request, userId)
+        return ResponseEntity.status(HttpStatus.CREATED).build()
     }
 
     @GetMapping("/{categoryId}")
-    fun getCategoryById(@PathVariable categoryId: UUID, @AuthenticationPrincipal userId: UUID): CategoryResponse {
-        return categoryService.getById(categoryId, userId)
+    fun getCategoryById(
+        @PathVariable categoryId: UUID,
+        @AuthenticationPrincipal userId: UUID
+    ): ResponseEntity<CategoryResponse> {
+        val category = categoryService.getById(categoryId, userId)
+        return ResponseEntity.ok(category)
     }
 
     @GetMapping
-    fun getAllCategories(@AuthenticationPrincipal userId: UUID, pageable: Pageable): Page<CategoryResponse> {
-        return categoryService.getAll(userId, pageable)
+    fun getAllCategories(
+        @AuthenticationPrincipal userId: UUID,
+        pageable: Pageable
+    ): ResponseEntity<Page<CategoryResponse>> {
+        val page = categoryService.getAll(userId, pageable)
+        return ResponseEntity.ok(page)
     }
 
 
-    @PutMapping("/{categoryId}")
+    @PatchMapping("/{categoryId}")
     fun updateCategory(
         @PathVariable categoryId: UUID,
-        @Valid @RequestBody request: CategoryCreateRequest,
+        @Valid @RequestBody request: CategoryUpdateRequest,
         @AuthenticationPrincipal userId: UUID
-    ): CategoryResponse {
-        return categoryService.update(categoryId, request, userId)
+    ): ResponseEntity<Unit> {
+        categoryService.update(categoryId, request, userId)
+        return ResponseEntity.ok().build()
     }
 
     @DeleteMapping("/{categoryId}")
-    fun deleteCategory(@PathVariable categoryId: UUID, @AuthenticationPrincipal userId: UUID) {
+    fun deleteCategory(@PathVariable categoryId: UUID, @AuthenticationPrincipal userId: UUID): ResponseEntity<Void> {
         categoryService.delete(categoryId, userId)
+        return ResponseEntity.ok().build()
     }
 }
