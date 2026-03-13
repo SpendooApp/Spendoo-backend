@@ -22,7 +22,8 @@ class BudgetService(private val budgetRepository: BudgetRepository) {
     }
 
     fun updateBudget(request: BudgetCreateRequest, category: Category): Budget {
-        val carryOver = processExpiredBudget(category.id)
+        var carryOver = processExpiredBudget(category.id)
+        if (carryOver < BigDecimal.ZERO) carryOver = BigDecimal.ZERO
         return createBudget(request, category, carryOver)
     }
 
