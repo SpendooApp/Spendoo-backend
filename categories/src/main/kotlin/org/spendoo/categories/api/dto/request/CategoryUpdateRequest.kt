@@ -1,20 +1,18 @@
 package org.spendoo.categories.api.dto.request
 
 import jakarta.validation.constraints.NotBlank
-import jakarta.validation.constraints.NotNull
+import org.spendoo.categories.entity.CategoryIcon
+import org.spendoo.categories.entity.LeftOverOptions
 
 data class CategoryUpdateRequest(
     @field:NotBlank(message = "Category name must not be blank")
-    val categoryName: String,
+    val categoryName: String?,
 
-    @field:NotNull(message = "Category icon is required")
-    val categoryIcon: String,
+    val categoryIcon: CategoryIcon?,
 
-    @field:NotNull(message = "Left over option is required")
-    val leftOverOptions: String,
+    val leftOverOptions: LeftOverOptions?,
 
-    @field:NotNull(message = "Priority is required")
-    val priority: Int,
+    val priority: Int?,
 
-    val budget: BudgetCreateRequest
+    val budget: BudgetCreateRequest?
 )

@@ -4,7 +4,9 @@ import jakarta.validation.Valid
 import org.spendoo.categories.api.dto.request.CategoryCreateRequest
 import org.spendoo.categories.api.dto.request.CategoryUpdateRequest
 import org.spendoo.categories.api.dto.response.CategoryResponse
+import org.spendoo.categories.api.dto.response.toResponse
 import org.spendoo.categories.service.CategoryService
+import org.spendoo.categories.service.model.CategoryParams
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.http.HttpStatus
@@ -34,7 +36,7 @@ class CategoryController(
         @AuthenticationPrincipal userId: UUID
     ): ResponseEntity<CategoryResponse> {
         val category = categoryService.getById(categoryId, userId)
-        return ResponseEntity.ok(category)
+        return ResponseEntity.ok(category.toResponse())
     }
 
     @GetMapping
@@ -43,7 +45,7 @@ class CategoryController(
         pageable: Pageable
     ): ResponseEntity<Page<CategoryResponse>> {
         val page = categoryService.getAll(userId, pageable)
-        return ResponseEntity.ok(page)
+        return ResponseEntity.ok(page.map(CategoryParams::toResponse))
     }
 
 

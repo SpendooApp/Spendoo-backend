@@ -1,22 +1,33 @@
 package org.spendoo.categories.api.dto.request
 
 import jakarta.validation.constraints.Min
-import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Positive
-import java.time.LocalDate
+import org.spendoo.categories.entity.Budget
+import org.spendoo.categories.entity.Category
+import java.math.BigDecimal
+import java.time.LocalDateTime
 
 data class BudgetCreateRequest(
 
-    @field:NotNull(message = "Amount is required")
     @field:Positive(message = "Amount must be greater than 0")
     val amount: Double,
 
-    @field:NotNull(message = "Period is required")
     @field:Min(value = 1, message = "Period must be at least 1")
     val period: Int,
 
-    @field:NotNull(message = "Start date is required")
-    val startDate: LocalDate,
+    val startDate: LocalDateTime
+)
 
+fun BudgetCreateRequest.toBudget(category: Category, carryOver: BigDecimal, isActive: Boolean = true): Budget {
+
+    val endDate = this.startDate.plusDays(this.period.toLong())
+    return Budget(
+        category = category,
+        amount = this.amount.toBigDecimal() + carryOver,
+        carryOver = carryOver,
+        startDate = this.startDate,
+        endDate = endDate,
+        period = this.period,
+        isActive = isActive
     )
-
+}
