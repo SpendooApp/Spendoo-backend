@@ -10,5 +10,5 @@ data class CategoryResponse(
 
     val leftOverOptions: String,
 
-    val budget : BudgetResponse?
-    )
+    val budget: BudgetResponse?
+)

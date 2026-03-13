@@ -7,10 +7,10 @@ import org.spendoo.categories.entity.LeftOverOptions
 import org.spendoo.categories.repository.BudgetRepository
 import org.springframework.stereotype.Service
 import java.time.LocalDate
-import java.util.UUID
+import java.util.*
 
 @Service
-class BudgetService (private val budgetRepository: BudgetRepository) {
+class BudgetService(private val budgetRepository: BudgetRepository) {
 
     fun createBudget(request: BudgetCreateRequest, category: Category): Budget {
         val endDate = request.startDate.plusDays(request.period.toLong())
@@ -65,6 +65,7 @@ class BudgetService (private val budgetRepository: BudgetRepository) {
             }
         }
     }
+
     fun moveToSavings(amount: Double) {
         // call savings service
     }
@@ -85,6 +86,7 @@ class BudgetService (private val budgetRepository: BudgetRepository) {
 
         budgetRepository.save(newBudget)
     }
+
     fun calculateSpentAmount(categoryId: UUID): Int {
         // call transaction service to get total spent amount for the category
         return 0

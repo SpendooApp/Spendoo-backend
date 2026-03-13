@@ -7,7 +7,7 @@ import org.spendoo.categories.entity.Budget
 import org.spendoo.categories.entity.Category
 import org.spendoo.categories.entity.CategoryIcon
 import org.spendoo.categories.entity.LeftOverOptions
-import java.util.UUID
+import java.util.*
 
 //@Component
 
@@ -20,6 +20,7 @@ fun CategoryCreateRequest.toEntity(userId: UUID): Category {
         priority = this.priority,
     )
 }
+
 class CategoryMapper {
 
 

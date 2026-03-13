@@ -1,11 +1,9 @@
 package org.spendoo.categories.api.dto.request
 
-import jakarta.validation.constraints.FutureOrPresent
 import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Positive
 import java.time.LocalDate
-import java.util.UUID
 
 data class BudgetCreateRequest(
 
@@ -20,5 +18,5 @@ data class BudgetCreateRequest(
     @field:NotNull(message = "Start date is required")
     val startDate: LocalDate,
 
-)
+    )
 

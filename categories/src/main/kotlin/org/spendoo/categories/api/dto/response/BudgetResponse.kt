@@ -1,6 +1,6 @@
 package org.spendoo.categories.api.dto.response
+
 import java.time.LocalDate
-import java.util.UUID
 
 data class BudgetResponse(
 
