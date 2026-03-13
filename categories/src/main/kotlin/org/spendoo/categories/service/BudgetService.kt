@@ -8,6 +8,8 @@ import org.spendoo.categories.entity.LeftOverOptions
 import org.spendoo.categories.repository.BudgetRepository
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
+import java.time.LocalDateTime
+import java.time.temporal.ChronoUnit
 import java.util.*
 
 @Service
@@ -18,7 +20,8 @@ class BudgetService(private val budgetRepository: BudgetRepository) {
         category: Category,
         carryOver: BigDecimal = BigDecimal.ZERO
     ): Budget {
-        return budgetRepository.save(request.toBudget(category, carryOver))
+        val alignedStartDate = alignStartDateToActiveCycle(request.startDate, request.period)
+        return budgetRepository.save(request.copy(startDate = alignedStartDate).toBudget(category, carryOver))
     }
 
     fun updateBudget(request: BudgetCreateRequest, category: Category): Budget {
@@ -65,5 +68,21 @@ class BudgetService(private val budgetRepository: BudgetRepository) {
     fun calculateSpentAmount(categoryId: UUID): Double {
         // call transaction service to get total spent amount for the category
         return 0.0
+    }
+
+    private fun alignStartDateToActiveCycle(
+        startDate: LocalDateTime,
+        periodDays: Int,
+        now: LocalDateTime = LocalDateTime.now()
+    ): LocalDateTime {
+        val period = periodDays.toLong()
+        val initialEndDate = startDate.plusDays(period)
+
+        if (initialEndDate.isAfter(now)) return startDate
+
+        val overdueDays = ChronoUnit.DAYS.between(initialEndDate, now)
+        val cyclesToShift = (overdueDays / period) + 1
+
+        return startDate.plusDays(cyclesToShift * period)
     }
 }
