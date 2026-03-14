@@ -14,6 +14,7 @@ dependencies {
 	implementation(projects.notifications)
 	implementation(projects.events)
 	implementation(projects.storage)
+	implementation(projects.categories)
 	implementation("org.springframework.boot:spring-boot-starter-web")
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 	runtimeOnly("org.postgresql:postgresql")
@@ -29,3 +30,4 @@ dependencies {
 tasks.withType<Test> {
 	useJUnitPlatform()
 }
+
