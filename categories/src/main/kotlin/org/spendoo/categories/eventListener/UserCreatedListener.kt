@@ -12,7 +12,7 @@ class UserCreatedListener(
 ) {
     @Async
     @EventListener
-    fun handleEmailEvent(user: UserCreatedEvent) {
+    fun handleUserCreatedEvent(user: UserCreatedEvent) {
         categoryRepository.insertDefaultCategoriesForUser(user.id)
     }
 }
