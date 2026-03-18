@@ -8,6 +8,7 @@ import org.spendoo.identity.api.dto.response.AuthResponse
 import org.spendoo.identity.entity.EmailVerification
 import org.spendoo.identity.entity.RefreshToken
 import org.spendoo.identity.entity.User
+import org.spendoo.identity.exception.InvalidCredentialsException
 import org.spendoo.identity.exception.TokenExpiredException
 import org.spendoo.identity.exception.UnauthorizedException
 import org.spendoo.identity.exception.UserAlreadyExistsException
@@ -78,6 +79,10 @@ class AuthService(
 
     fun login(request: LoginRequest): AuthResponse {
         val user = getUserByEmailOrThrow(request.email)
+
+        if (!passwordEncoder.matches(request.password, user.passwordHash)) {
+            throw InvalidCredentialsException()
+        }
 
         if (!user.isVerified) {
             throw UnauthorizedException("Please verify your email before logging in.")
