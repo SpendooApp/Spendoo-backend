@@ -1,9 +1,7 @@
-package com.spendoo.transactions.entity
+package org.spendoo.transactions.entity
 
 import jakarta.persistence.*
 import org.hibernate.annotations.CreationTimestamp
-import org.spendoo.transactions.entity.Category
-import org.spendoo.transactions.entity.TransactionType
 import java.math.BigDecimal
 import java.time.LocalDateTime
 import java.util.UUID
