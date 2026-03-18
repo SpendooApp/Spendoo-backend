@@ -1,6 +1,6 @@
 package org.spendoo.transactions.repository
 
-import com.spendoo.transactions.entity.Transaction
+import org.spendoo.transactions.entity.Transaction
 import org.spendoo.transactions.api.dto.response.CategorySpendingDto
 import org.spendoo.transactions.entity.TransactionType
 import org.springframework.data.domain.Pageable

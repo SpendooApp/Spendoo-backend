@@ -1,6 +1,5 @@
 package org.spendoo.transactions.entity
 
-import com.spendoo.transactions.entity.Transaction
 import jakarta.persistence.*
 import java.util.*
 
