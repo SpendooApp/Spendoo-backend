@@ -14,7 +14,7 @@ data class CreateTransactionRequest(
     val type: TransactionType,
 
     @field:PastOrPresent(message = "Date cannot be in the future")
-    val date: LocalDate,
+    val transactionDate: LocalDate,
 
     @field:Size(max = 500, message = "Note cannot exceed 500 characters")
     val note: String?,

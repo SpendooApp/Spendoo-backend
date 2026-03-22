@@ -3,6 +3,7 @@ package org.spendoo.transactions.entity
 import jakarta.persistence.*
 import org.hibernate.annotations.CreationTimestamp
 import java.math.BigDecimal
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.UUID
 
@@ -24,14 +25,14 @@ data class Transaction(
     val amount: BigDecimal,
 
     @Column(length = 500)
-    val description: String?,
+    val note: String?,
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     val type: TransactionType,
 
     @Column(nullable = false)
-    val transactionDate: LocalDateTime,
+    val transactionDate: LocalDate,
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
