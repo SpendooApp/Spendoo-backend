@@ -6,7 +6,7 @@ import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.PastOrPresent
 import jakarta.validation.constraints.Size
 import org.spendoo.transactions.entity.TransactionType
-import java.time.LocalDate
+import java.time.LocalDateTime
 
 data class CreateTransactionRequest(
 
@@ -14,7 +14,7 @@ data class CreateTransactionRequest(
     val type: TransactionType,
 
     @field:PastOrPresent(message = "Date cannot be in the future")
-    val transactionDate: LocalDate,
+    val transactionDate: LocalDateTime,
 
     @field:Size(max = 500, message = "Note cannot exceed 500 characters")
     val note: String?,

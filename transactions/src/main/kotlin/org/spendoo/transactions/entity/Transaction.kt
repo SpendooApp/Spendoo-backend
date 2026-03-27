@@ -3,7 +3,6 @@ package org.spendoo.transactions.entity
 import jakarta.persistence.*
 import org.hibernate.annotations.CreationTimestamp
 import java.math.BigDecimal
-import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.UUID
 
@@ -32,7 +31,7 @@ data class Transaction(
     val type: TransactionType,
 
     @Column(nullable = false)
-    val transactionDate: LocalDate,
+    val transactionDate: LocalDateTime,
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)

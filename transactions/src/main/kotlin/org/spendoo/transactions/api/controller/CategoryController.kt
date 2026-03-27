@@ -23,8 +23,7 @@ class CategoryController(
 
     @PostMapping
     fun createCategory(
-        @Valid @RequestBody request: CategoryCreateRequest,
-        @AuthenticationPrincipal userId: UUID
+        @Valid @RequestBody request: CategoryCreateRequest, @AuthenticationPrincipal userId: UUID
     ): ResponseEntity<Unit> {
         categoryService.create(request, userId)
         return ResponseEntity.status(HttpStatus.CREATED).build()
@@ -32,8 +31,7 @@ class CategoryController(
 
     @GetMapping("/{categoryId}")
     fun getCategoryById(
-        @PathVariable categoryId: UUID,
-        @AuthenticationPrincipal userId: UUID
+        @PathVariable categoryId: UUID, @AuthenticationPrincipal userId: UUID
     ): ResponseEntity<CategoryResponse> {
         val category = categoryService.getById(categoryId, userId)
         return ResponseEntity.ok(category.toResponse())
@@ -41,8 +39,7 @@ class CategoryController(
 
     @GetMapping
     fun getAllCategories(
-        @AuthenticationPrincipal userId: UUID,
-        pageable: Pageable
+        @AuthenticationPrincipal userId: UUID, pageable: Pageable
     ): ResponseEntity<Page<CategoryResponse>> {
         val page = categoryService.getAll(userId, pageable)
         return ResponseEntity.ok(page.map(CategoryParams::toResponse))
