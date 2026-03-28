@@ -3,6 +3,7 @@ package org.spendoo.transactions.repository
 import org.spendoo.transactions.api.dto.response.CategorySpendingDto
 import org.spendoo.transactions.entity.Transaction
 import org.spendoo.transactions.entity.TransactionType
+import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
@@ -13,13 +14,14 @@ import java.util.*
 
 interface TransactionRepository : JpaRepository<Transaction, UUID> {
 
-    fun findAllByUserId(userId: UUID): List<Transaction>
+    fun findAllByUserId(userId: UUID, pageable: Pageable): Page<Transaction>
 
     fun findAllByUserIdAndTransactionDateBetween(
         userId: UUID,
         startDate: LocalDateTime,
-        endDate: LocalDateTime
-    ): List<Transaction>
+        endDate: LocalDateTime,
+        pageable: Pageable
+    ): Page<Transaction>
 
     @Query("SELECT SUM(t.amount) FROM Transaction t WHERE t.userId = :userId AND t.type = :type")
 

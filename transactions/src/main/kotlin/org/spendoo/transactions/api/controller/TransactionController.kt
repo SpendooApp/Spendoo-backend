@@ -3,11 +3,17 @@ package org.spendoo.transactions.api.controller
 import jakarta.validation.Valid
 import org.spendoo.transactions.api.dto.request.CreateTransactionRequest
 import org.spendoo.transactions.api.dto.request.TransactionUpdateRequest
+import org.spendoo.transactions.api.dto.response.TransactionResponse
+import org.spendoo.transactions.api.dto.response.toResponse
 import org.spendoo.transactions.service.TransactionService
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
+import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
+import java.time.LocalDateTime
 import java.util.*
 
 @RestController
@@ -33,6 +39,32 @@ class TransactionController(
     ): ResponseEntity<Unit> {
         transactionService.updateTransaction(transactionId, userId, request)
         return ResponseEntity.ok().build()
+    }
+
+    @GetMapping("/{transactionId}")
+    fun getTransactionById(
+        @PathVariable transactionId: UUID, @AuthenticationPrincipal userId: UUID
+    ): ResponseEntity<TransactionResponse> {
+        val transaction = transactionService.getTransactionById(transactionId, userId)
+        return ResponseEntity.ok(transaction.toResponse())
+    }
+
+    @GetMapping
+    fun getAllTransactions(
+        @AuthenticationPrincipal userId: UUID, pageable: Pageable
+    ): ResponseEntity<Page<TransactionResponse>> {
+        val page = transactionService.getAll(userId, pageable)
+        return ResponseEntity.ok(page.map { it.toResponse() })
+    }
+
+    @GetMapping("/range")
+    fun getTransactionsByDateRange(
+        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) startDate: LocalDateTime,
+        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) endDate: LocalDateTime,
+        @AuthenticationPrincipal userId: UUID, pageable: Pageable
+    ): ResponseEntity<Page<TransactionResponse>> {
+        val page = transactionService.getTransactionsByDateRange(userId, startDate, endDate, pageable)
+        return ResponseEntity.ok(page.map { it.toResponse() })
     }
 
     @DeleteMapping("/{transactionId}")
