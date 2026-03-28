@@ -3,58 +3,28 @@ plugins {
     kotlin("plugin.spring") version "2.2.21"
     id("org.springframework.boot") version "4.0.1"
     id("io.spring.dependency-management") version "1.1.7"
-}
-description = "Spendoo"
-
-val javaVersion = 21
-
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(javaVersion)
-    }
+    kotlin("plugin.jpa") version "1.9.22"
 }
 
-allprojects {
-    group = "org.spendoo"
-    version = "0.0.1-SNAPSHOT"
-
-    repositories {
-        mavenCentral()
-    }
+repositories {
+    mavenCentral()
 }
 
-// Enforce a single JVM/toolchain configuration for all modules
-subprojects {
-    // Configure java toolchain only if the Java plugin (or a plugin that adds the java extension) is applied
-    plugins.withType<JavaPlugin> {
-        java {
-            toolchain {
-                languageVersion = JavaLanguageVersion.of(javaVersion)
-            }
-        }
-    }
-
-    // If a subproject applies the Kotlin JVM plugin, configure its Kotlin jvm toolchain
-    plugins.withId("org.jetbrains.kotlin.jvm") {
-        kotlin {
-            jvmToolchain(javaVersion)
-        }
-    }
-}
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
+    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+    implementation("org.springframework.boot:spring-boot-starter-security")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    implementation("org.springframework.boot:spring-boot-starter-validation")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    runtimeOnly("org.postgresql:postgresql")
+    implementation(projects.events)
 }
 
-kotlin {
-    compilerOptions {
-        freeCompilerArgs.addAll("-Xjsr305=strict", "-Xannotation-default-target=param-property")
-    }
-}
 
 tasks.withType<Test> {
     useJUnitPlatform()
