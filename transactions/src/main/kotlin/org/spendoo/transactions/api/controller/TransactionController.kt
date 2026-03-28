@@ -31,7 +31,7 @@ class TransactionController(
         @Valid @RequestBody request: TransactionUpdateRequest,
         @AuthenticationPrincipal userId: UUID
     ): ResponseEntity<Unit> {
-        transactionService.updateTransaction(userId, transactionId, request)
+        transactionService.updateTransaction(transactionId, userId, request)
         return ResponseEntity.ok().build()
     }
 

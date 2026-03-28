@@ -30,11 +30,8 @@ class TransactionService(
     }
 
     @Transactional
-    fun updateTransaction(
-        transactionId: UUID,
-        userId: UUID,
-        updateRequest: TransactionUpdateRequest
-    ): Transaction {
+    fun updateTransaction(transactionId: UUID, userId: UUID, updateRequest: TransactionUpdateRequest): Transaction
+    {
         val transaction = transactionRepository.findByIdAndUserId(transactionId, userId)
             ?: throw IllegalArgumentException("Transaction not found")
 
