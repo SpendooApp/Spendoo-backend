@@ -3,6 +3,8 @@ package org.spendoo.transactions.api.controller
 import jakarta.validation.Valid
 import org.spendoo.transactions.api.dto.request.CreateTransactionRequest
 import org.spendoo.transactions.api.dto.request.TransactionUpdateRequest
+import org.spendoo.transactions.api.dto.response.BalanceSummary
+import org.spendoo.transactions.api.dto.response.CategorySpendingDto
 import org.spendoo.transactions.api.dto.response.TransactionResponse
 import org.spendoo.transactions.api.dto.response.toResponse
 import org.spendoo.transactions.service.TransactionService
@@ -75,4 +77,22 @@ class TransactionController(
         transactionService.deleteTransaction(userId, transactionId)
         return ResponseEntity.ok().build()
     }
+
+
+    @GetMapping("/summary")
+    fun getTransactionSummary(@AuthenticationPrincipal userId: UUID): ResponseEntity<BalanceSummary> {
+        val summary = transactionService.getBalanceSummary(userId)
+        return ResponseEntity.ok(summary)
+    }
+
+    @GetMapping("/top-spending")
+    fun getTopSpending(@AuthenticationPrincipal userId: UUID,
+        @RequestParam(defaultValue = "3") limit: Int
+    ): ResponseEntity<List<CategorySpendingDto>> {
+        val topSpending = transactionService.getTopSpendingCategories(userId, limit)
+        return ResponseEntity.ok(topSpending)
+    }
+
+
+
 }

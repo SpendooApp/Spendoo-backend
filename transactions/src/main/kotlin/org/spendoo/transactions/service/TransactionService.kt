@@ -2,16 +2,19 @@ package org.spendoo.transactions.service
 
 import org.spendoo.transactions.api.dto.request.CreateTransactionRequest
 import org.spendoo.transactions.api.dto.request.TransactionUpdateRequest
-import org.spendoo.transactions.api.dto.response.TransactionResponse
-import org.spendoo.transactions.api.dto.response.toResponse
+import org.spendoo.transactions.api.dto.response.BalanceSummary
+import org.spendoo.transactions.api.dto.response.CategorySpendingDto
 import org.spendoo.transactions.entity.Transaction
+import org.spendoo.transactions.entity.TransactionType
 import org.spendoo.transactions.mapper.toEntity
 import org.spendoo.transactions.repository.CategoryRepository
 import org.spendoo.transactions.repository.TransactionRepository
 import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.math.BigDecimal
 import java.time.LocalDateTime
 import java.util.*
 
@@ -55,13 +58,13 @@ class TransactionService(
         return transactionRepository.save(updatedTransaction)
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     fun getTransactionById(transactionId: UUID, userId: UUID): Transaction {
         return transactionRepository.findByIdAndUserId(transactionId, userId)
             ?: throw IllegalArgumentException("Transaction not found")
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     fun getTransactionsByDateRange(
         userId: UUID,
         startDate: LocalDateTime,
@@ -71,7 +74,7 @@ class TransactionService(
         return transactionRepository.findAllByUserIdAndTransactionDateBetween(userId, startDate, endDate, pageable)
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     fun getAll(userId: UUID, pageable: Pageable): Page<Transaction> {
         return transactionRepository.findAllByUserId(userId, pageable)
     }
@@ -82,5 +85,27 @@ class TransactionService(
             ?: throw IllegalArgumentException("Transaction not found")
 
         transactionRepository.deleteById(transactionId)
+    }
+
+    fun getBalanceSummary(userId: UUID): BalanceSummary {
+        val income = transactionRepository.sumAmountByUserIdAndType(userId, TransactionType.INCOME)
+            ?: BigDecimal.ZERO
+
+        val expenses = transactionRepository.sumAmountByUserIdAndType(userId, TransactionType.EXPENSE)
+            ?: BigDecimal.ZERO
+
+        val totalBalance = income.subtract(expenses)
+
+        return BalanceSummary(
+            totalBalance = totalBalance,
+            income = income,
+            expenses = expenses
+        )
+    }
+
+
+    fun getTopSpendingCategories(userId: UUID, limit: Int = 3): List<CategorySpendingDto> {
+        val pageable = PageRequest.of(0, limit)
+        return transactionRepository.findTopSpendingCategories(userId, pageable)
     }
 }
