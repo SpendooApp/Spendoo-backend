@@ -6,6 +6,8 @@ import org.spendoo.transactions.entity.Budget
 import org.spendoo.transactions.entity.Category
 import org.spendoo.transactions.entity.LeftOverOptions
 import org.spendoo.transactions.repository.BudgetRepository
+import org.spendoo.transactions.repository.CategoryRepository
+import org.spendoo.transactions.repository.TransactionRepository
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
 import java.time.LocalDateTime
@@ -13,7 +15,10 @@ import java.time.temporal.ChronoUnit
 import java.util.*
 
 @Service
-class BudgetService(private val budgetRepository: BudgetRepository) {
+class BudgetService(
+    private val budgetRepository: BudgetRepository,
+    private val transactionRepository: TransactionRepository,
+) {
 
     fun createBudget(
         request: BudgetCreateRequest,
@@ -46,9 +51,9 @@ class BudgetService(private val budgetRepository: BudgetRepository) {
 
             val category = expiredBudget.category
 
-            val spentAmount = calculateSpentAmount(category.id)
+            val spentAmount = calculateSpentAmount(category.userId, category.id)
 
-            val leftover = expiredBudget.amount - spentAmount.toBigDecimal()
+            val leftover = expiredBudget.amount - spentAmount
 
             budgetRepository.save(
                 expiredBudget.copy(isActive = false)
@@ -76,9 +81,9 @@ class BudgetService(private val budgetRepository: BudgetRepository) {
         // call savings service
     }
 
-    fun calculateSpentAmount(categoryId: UUID): Double {
-        // call transaction service to get total spent amount for the category
-        return 0.0
+    fun calculateSpentAmount(userId: UUID, categoryId: UUID): BigDecimal {
+        return transactionRepository.sumAmountByUserIdAndCategoryId(userId, categoryId)
+            ?: BigDecimal.ZERO
     }
 
     private fun alignStartDateToActiveCycle(

@@ -20,9 +20,8 @@ data class BudgetResponse(
     val endDate: LocalDateTime
 )
 
-fun Budget.toBudgetResponse(): BudgetResponse {
+fun Budget.toBudgetResponse(spentAmount: BigDecimal = BigDecimal.ZERO): BudgetResponse {
 
-    val spentAmount = BigDecimal.ZERO
     val spendingPercentage =
         if (this.amount > BigDecimal.ZERO) ((spentAmount / this.amount) * BigDecimal(100)).toInt() else 0
 
@@ -36,10 +35,9 @@ fun Budget.toBudgetResponse(): BudgetResponse {
     )
 }
 
-fun CategoryParams.toBudgetResponse(): BudgetResponse {
-    val amount = this.amount ?: BigDecimal.ZERO
+fun CategoryParams.toBudgetResponse(spentAmount: BigDecimal = BigDecimal.ZERO): BudgetResponse {
 
-    val spentAmount = BigDecimal.ZERO
+    val amount = this.amount ?: BigDecimal.ZERO
     val spendingPercentage =
         if (amount > BigDecimal.ZERO) ((spentAmount / amount) * BigDecimal(100)).toInt() else 0
     return BudgetResponse(

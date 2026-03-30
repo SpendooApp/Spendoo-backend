@@ -5,6 +5,7 @@ import org.spendoo.transactions.entity.Category
 import org.spendoo.transactions.entity.CategoryIcon
 import org.spendoo.transactions.entity.LeftOverOptions
 import org.spendoo.transactions.service.model.CategoryParams
+import java.math.BigDecimal
 import java.util.*
 
 data class CategoryResponse(
@@ -21,24 +22,24 @@ data class CategoryResponse(
     val budget: BudgetResponse?
 )
 
-fun Category.toResponse(budget: Budget? = null): CategoryResponse {
+fun Category.toResponse(budget: Budget? = null, spentAmount: BigDecimal = BigDecimal.ZERO): CategoryResponse {
     return CategoryResponse(
         categoryId = this.id,
         categoryName = this.categoryName,
         categoryIcon = this.categoryIcon,
         priority = this.priority,
         leftOverOptions = this.leftOverOptions,
-        budget = budget?.toBudgetResponse()
+        budget = budget?.toBudgetResponse(spentAmount)
     )
 }
 
-fun CategoryParams.toResponse(): CategoryResponse {
+fun CategoryParams.toResponse(spentAmount: BigDecimal = BigDecimal.ZERO): CategoryResponse {
     return CategoryResponse(
         categoryId = this.categoryId,
         categoryName = this.categoryName,
         categoryIcon = this.categoryIcon,
         priority = this.priority,
         leftOverOptions = this.leftOverOptions,
-        budget = budgetId?.let { this.toBudgetResponse() }
+        budget = budgetId?.let { this.toBudgetResponse(spentAmount) }
     )
 }

@@ -45,5 +45,20 @@ interface TransactionRepository : JpaRepository<Transaction, UUID> {
         pageable: Pageable
     ): List<CategorySpendingDto>
 
+    @Query(
+        """
+            SELECT SUM(t.amount)
+            FROM Transaction t
+            JOIN t.category c
+            WHERE t.userId = :userId
+                AND t.type = org.spendoo.transactions.entity.TransactionType.EXPENSE
+                AND c.id = :categoryId
+        """
+    )
+    fun sumAmountByUserIdAndCategoryId(
+        @Param("userId") userId: UUID,
+        @Param("categoryId") categoryId: UUID
+    ): BigDecimal?
+
     fun findByIdAndUserId(id: UUID, userId: UUID): Transaction?
 }

@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
+import java.math.BigDecimal
 import java.util.*
 
 interface CategoryRepository : JpaRepository<Category, UUID> {
@@ -64,6 +65,17 @@ interface CategoryRepository : JpaRepository<Category, UUID> {
 
     fun findByIdAndUserIdAndIsDeletedFalse(id: UUID, userId: UUID): Category?
 
+    @Query(
+        """
+            SELECT SUM(b.amount)
+            FROM Category c
+            JOIN Budget b ON c.id = b.category.id
+            WHERE c.userId = :userId
+                AND c.isDeleted = false
+                AND b.isActive = true
+        """
+    )
+    fun sumActiveBudget(userId: UUID): BigDecimal?
 
     @Modifying
     @Query(

@@ -6,7 +6,6 @@ import org.spendoo.transactions.api.dto.request.toEntity
 import org.spendoo.transactions.api.dto.response.CategoryResponse
 import org.spendoo.transactions.api.dto.response.toResponse
 import org.spendoo.transactions.repository.CategoryRepository
-import org.spendoo.transactions.service.model.CategoryParams
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
@@ -26,20 +25,37 @@ class CategoryService(
         val budget = request.budget?.let {
             budgetService.createBudget(request.budget, savedCategory)
         }
-        return savedCategory.toResponse(budget)
+        val spentAmount = budgetService.calculateSpentAmount(userId, savedCategory.id)
+        return savedCategory.toResponse(budget, spentAmount)
     }
 
-    fun getById(categoryId: UUID, userId: UUID): CategoryParams {
-        return categoryRepository.getExistCategoryWithBudget(categoryId, userId)
+    //    fun getById(categoryId: UUID, userId: UUID): CategoryParams {
+//        return categoryRepository.getExistCategoryWithBudget(categoryId, userId)
+//            ?: throw IllegalArgumentException("Category not found")
+//    }
+
+    fun getById(categoryId: UUID, userId: UUID): CategoryResponse {
+
+        val categoryParams = categoryRepository.getExistCategoryWithBudget(categoryId, userId)
             ?: throw IllegalArgumentException("Category not found")
+        val spentAmount = budgetService.calculateSpentAmount(userId, categoryId)
+        return categoryParams.toResponse(spentAmount = spentAmount)
     }
 
-    fun getAll(userId: UUID, pageable: Pageable): Page<CategoryParams> {
+    //    fun getAll(userId: UUID, pageable: Pageable): Page<CategoryParams> {
+//        return categoryRepository.getExistCategoriesWithBudget(userId, pageable)
+//    }
+
+    fun getAll(userId: UUID, pageable: Pageable): Page<CategoryResponse> {
         return categoryRepository.getExistCategoriesWithBudget(userId, pageable)
+            .map { categoryParams ->
+                val spentAmount = budgetService.calculateSpentAmount(userId, categoryParams.categoryId)
+                categoryParams.toResponse(spentAmount = spentAmount)
+            }
     }
 
     @Transactional
-    fun update(categoryId: UUID, request: CategoryUpdateRequest, userId: UUID) {
+    fun update(categoryId: UUID, request: CategoryUpdateRequest, userId: UUID): CategoryResponse {
         val category =
             categoryRepository.findByIdAndUserIdAndIsDeletedFalse(categoryId, userId)
                 ?: throw IllegalArgumentException("Category not found")
@@ -52,6 +68,8 @@ class CategoryService(
         )
         categoryRepository.save(updatedCategory)
         request.budget?.let { budgetService.updateBudget(request.budget, category) }
+        val spentAmount = budgetService.calculateSpentAmount(userId, categoryId)
+        return updatedCategory.toResponse(budget = null, spentAmount = spentAmount)
     }
 
     @Transactional

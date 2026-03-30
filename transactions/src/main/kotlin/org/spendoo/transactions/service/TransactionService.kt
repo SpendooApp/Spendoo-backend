@@ -88,8 +88,11 @@ class TransactionService(
     }
 
     fun getBalanceSummary(userId: UUID): BalanceSummary {
-        val income = transactionRepository.sumAmountByUserIdAndType(userId, TransactionType.INCOME)
-            ?: BigDecimal.ZERO
+
+        val budgets = categoryRepository.sumActiveBudget(userId) ?: BigDecimal.ZERO
+
+        val income = budgets + (transactionRepository.sumAmountByUserIdAndType(userId, TransactionType.INCOME)
+            ?: BigDecimal.ZERO)
 
         val expenses = transactionRepository.sumAmountByUserIdAndType(userId, TransactionType.EXPENSE)
             ?: BigDecimal.ZERO
