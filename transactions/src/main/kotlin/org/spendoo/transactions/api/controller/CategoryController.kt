@@ -4,9 +4,7 @@ import jakarta.validation.Valid
 import org.spendoo.transactions.api.dto.request.CategoryCreateRequest
 import org.spendoo.transactions.api.dto.request.CategoryUpdateRequest
 import org.spendoo.transactions.api.dto.response.CategoryResponse
-import org.spendoo.transactions.api.dto.response.toResponse
 import org.spendoo.transactions.service.CategoryService
-import org.spendoo.transactions.service.model.CategoryParams
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.http.HttpStatus
@@ -34,7 +32,7 @@ class CategoryController(
         @PathVariable categoryId: UUID, @AuthenticationPrincipal userId: UUID
     ): ResponseEntity<CategoryResponse> {
         val category = categoryService.getById(categoryId, userId)
-        return ResponseEntity.ok(category.toResponse())
+        return ResponseEntity.ok(category)
     }
 
     @GetMapping
@@ -42,7 +40,7 @@ class CategoryController(
         @AuthenticationPrincipal userId: UUID, pageable: Pageable
     ): ResponseEntity<Page<CategoryResponse>> {
         val page = categoryService.getAll(userId, pageable)
-        return ResponseEntity.ok(page.map(CategoryParams::toResponse))
+        return ResponseEntity.ok(page)
     }
 
 
@@ -51,9 +49,9 @@ class CategoryController(
         @PathVariable categoryId: UUID,
         @Valid @RequestBody request: CategoryUpdateRequest,
         @AuthenticationPrincipal userId: UUID
-    ): ResponseEntity<Unit> {
-        categoryService.update(categoryId, request, userId)
-        return ResponseEntity.ok().build()
+    ): ResponseEntity<CategoryResponse> {
+        val category = categoryService.update(categoryId, request, userId)
+        return ResponseEntity.ok(category)
     }
 
     @DeleteMapping("/{categoryId}")
