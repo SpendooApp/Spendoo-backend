@@ -6,7 +6,6 @@ import org.spendoo.transactions.entity.Budget
 import org.spendoo.transactions.entity.Category
 import org.spendoo.transactions.entity.LeftOverOptions
 import org.spendoo.transactions.repository.BudgetRepository
-import org.spendoo.transactions.repository.CategoryRepository
 import org.spendoo.transactions.repository.TransactionRepository
 import org.springframework.stereotype.Service
 import java.math.BigDecimal

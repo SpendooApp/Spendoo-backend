@@ -81,7 +81,7 @@ class TransactionService(
 
     @Transactional
     fun deleteTransaction(userId: UUID, transactionId: UUID) {
-        val transaction = transactionRepository.findByIdAndUserId(transactionId, userId)
+        transactionRepository.findByIdAndUserId(transactionId, userId)
             ?: throw IllegalArgumentException("Transaction not found")
 
         transactionRepository.deleteById(transactionId)
