@@ -29,10 +29,6 @@ class CategoryService(
         return savedCategory.toResponse(budget, spentAmount)
     }
 
-    //    fun getById(categoryId: UUID, userId: UUID): CategoryParams {
-//        return categoryRepository.getExistCategoryWithBudget(categoryId, userId)
-//            ?: throw IllegalArgumentException("Category not found")
-//    }
 
     fun getById(categoryId: UUID, userId: UUID): CategoryResponse {
 
@@ -42,16 +38,26 @@ class CategoryService(
         return categoryParams.toResponse(spentAmount = spentAmount)
     }
 
-    //    fun getAll(userId: UUID, pageable: Pageable): Page<CategoryParams> {
-//        return categoryRepository.getExistCategoriesWithBudget(userId, pageable)
-//    }
 
+    // fun getAll(userId: UUID, pageable: Pageable): Page<CategoryResponse> {
+    //     return categoryRepository.getExistCategoriesWithBudget(userId, pageable)
+    //         .map { categoryParams ->
+    //             val spentAmount = budgetService.calculateSpentAmount(userId, categoryParams.categoryId)
+    //             categoryParams.toResponse(spentAmount = spentAmount)
+    //         }
+    // }
+
+    
     fun getAll(userId: UUID, pageable: Pageable): Page<CategoryResponse> {
-        return categoryRepository.getExistCategoriesWithBudget(userId, pageable)
-            .map { categoryParams ->
-                val spentAmount = budgetService.calculateSpentAmount(userId, categoryParams.categoryId)
-                categoryParams.toResponse(spentAmount = spentAmount)
-            }
+        val categoriesPage = categoryRepository.getExistCategoriesWithBudget(userId, pageable)
+
+        val categoryIds = categoriesPage.content.map { it.categoryId }
+        val spentAmountsMap = budgetService.calculateSpentAmountsForCategories(userId, categoryIds)
+        
+        return categoriesPage.map { categoryParams ->
+            val spentAmount = spentAmountsMap[categoryParams.categoryId] ?: BigDecimal.ZERO
+            categoryParams.toResponse(spentAmount = spentAmount)
+        }
     }
 
     @Transactional
