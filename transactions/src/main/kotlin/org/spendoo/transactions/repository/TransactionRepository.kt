@@ -61,4 +61,28 @@ interface TransactionRepository : JpaRepository<Transaction, UUID> {
     ): BigDecimal?
 
     fun findByIdAndUserId(id: UUID, userId: UUID): Transaction?
+
+
+    interface CategoryExpenseProjection {
+        fun getCategoryId(): UUID
+        fun getTotalAmount(): BigDecimal?
+    }
+
+    @Query("""
+        SELECT c.id AS categoryId, SUM(t.amount) AS totalAmount
+        FROM Transaction t
+        JOIN t.category c
+        WHERE t.userId = :userId
+            AND t.type = org.spendoo.transactions.entity.TransactionType.EXPENSE
+            AND c.id IN :categoryIds
+        GROUP BY c.id
+    """)
+    fun sumExpensesByCategoryIds(
+        @Param("userId") userId: UUID,
+        @Param("categoryIds") categoryIds: List<UUID>
+    ): List<CategoryExpenseProjection>
+
+
+
+    
 }
