@@ -85,17 +85,6 @@ class BudgetService(
             ?: BigDecimal.ZERO
     }
 
-    fun calculateSpentAmountsForCategories(userId: UUID, categoryIds: List<UUID>): Map<UUID, BigDecimal> {
-
-        if (categoryIds.isEmpty()) return emptyMap() 
-
-        val projections = transactionRepository.sumExpensesByCategoryIds(userId, categoryIds)
-        
-        return projections.associate { 
-            it.getCategoryId() to (it.getTotalAmount() ?: BigDecimal.ZERO) 
-        }
-    }
-
     private fun alignStartDateToActiveCycle(
         startDate: LocalDateTime,
         periodDays: Int,

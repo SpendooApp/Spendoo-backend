@@ -83,4 +83,19 @@ interface TransactionRepository : JpaRepository<Transaction, UUID> {
         @Param("categoryIds") categoryIds: List<UUID>
     ): List<CategoryExpenseProjection>
 
+    @Query("""
+        SELECT c.id AS categoryId, SUM(t.amount) AS totalAmount
+        FROM Transaction t
+        JOIN t.category c
+        LEFT JOIN c.budgets b ON b.isActive = true
+        WHERE t.userId = :userId
+            AND t.amount < 0
+            AND c.isDeleted = false
+            AND t.transactionDate BETWEEN b.startDate AND b.endDate
+        GROUP BY c.id
+    """)
+    fun sumCategoriesExpensesByUserId(
+        @Param("userId") userId: UUID,
+    ): List<CategoryExpenseProjection>
+
 }

@@ -33,7 +33,7 @@ fun Category.toResponse(budget: Budget? = null, spentAmount: BigDecimal = BigDec
     )
 }
 
-fun CategoryParams.toResponse(spentAmount: BigDecimal = BigDecimal.ZERO): CategoryResponse {
+fun CategoryParams.toResponse(): CategoryResponse {
     return CategoryResponse(
         categoryId = this.categoryId,
         categoryName = this.categoryName,

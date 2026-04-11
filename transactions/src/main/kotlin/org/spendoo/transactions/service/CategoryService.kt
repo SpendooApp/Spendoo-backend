@@ -6,11 +6,11 @@ import org.spendoo.transactions.api.dto.request.toEntity
 import org.spendoo.transactions.api.dto.response.CategoryResponse
 import org.spendoo.transactions.api.dto.response.toResponse
 import org.spendoo.transactions.repository.CategoryRepository
+import org.spendoo.transactions.service.model.CategoryParams
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.math.BigDecimal
 import java.util.*
 
 @Service
@@ -31,32 +31,14 @@ class CategoryService(
 
     fun getById(categoryId: UUID, userId: UUID): CategoryResponse {
 
-        val categoryParams = categoryRepository.getExistCategoryWithBudget(categoryId, userId)
+        val categoryParams = categoryRepository.getExistCategoryWithBudgetAndSpending(categoryId, userId)
             ?: throw IllegalArgumentException("Category not found")
-        val spentAmount = budgetService.calculateSpentAmount(userId, categoryId)
-        return categoryParams.toResponse(spentAmount = spentAmount)
+        return categoryParams.toResponse()
     }
-
-
-    // fun getAll(userId: UUID, pageable: Pageable): Page<CategoryResponse> {
-    //     return categoryRepository.getExistCategoriesWithBudget(userId, pageable)
-    //         .map { categoryParams ->
-    //             val spentAmount = budgetService.calculateSpentAmount(userId, categoryParams.categoryId)
-    //             categoryParams.toResponse(spentAmount = spentAmount)
-    //         }
-    // }
-
     
     fun getAll(userId: UUID, pageable: Pageable): Page<CategoryResponse> {
-        val categoriesPage = categoryRepository.getExistCategoriesWithBudget(userId, pageable)
-
-        val categoryIds = categoriesPage.content.map { it.categoryId }
-        val spentAmountsMap = budgetService.calculateSpentAmountsForCategories(userId, categoryIds)
-        
-        return categoriesPage.map { categoryParams ->
-            val spentAmount = spentAmountsMap[categoryParams.categoryId] ?: BigDecimal.ZERO
-            categoryParams.toResponse(spentAmount = spentAmount)
-        }
+        val categoriesPage = categoryRepository.getExistCategoriesWithBudgetAndSpending(userId, pageable)
+        return categoriesPage.map (CategoryParams::toResponse)
     }
 
     @Transactional
