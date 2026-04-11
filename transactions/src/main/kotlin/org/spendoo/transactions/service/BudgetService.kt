@@ -30,7 +30,7 @@ class BudgetService(
 
     fun updateBudget(request: BudgetCreateRequest, category: Category): Budget {
         val activeBudget = budgetRepository.findByCategoryIdAndIsActiveIsTrue(category.id)
-            ?: throw IllegalArgumentException("Active budget not found")
+        activeBudget ?: return createBudget(request, category)
 
         val alignedStartDate = alignStartDateToActiveCycle(request.startDate, request.period)
         val updatedBudget = activeBudget.copy(

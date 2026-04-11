@@ -10,8 +10,8 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.util.*
 import java.math.BigDecimal
+import java.util.*
 
 @Service
 class CategoryService(
@@ -20,14 +20,12 @@ class CategoryService(
 ) {
 
     @Transactional
-    fun create(request: CategoryCreateRequest, userId: UUID): CategoryResponse {
+    fun create(request: CategoryCreateRequest, userId: UUID) {
         val category = request.toEntity(userId)
         val savedCategory = categoryRepository.save(category)
-        val budget = request.budget?.let {
+        request.budget?.let {
             budgetService.createBudget(request.budget, savedCategory)
         }
-        val spentAmount = budgetService.calculateSpentAmount(userId, savedCategory.id)
-        return savedCategory.toResponse(budget, spentAmount)
     }
 
 
@@ -62,21 +60,15 @@ class CategoryService(
     }
 
     @Transactional
-    fun update(categoryId: UUID, request: CategoryUpdateRequest, userId: UUID): CategoryResponse {
+    fun update(categoryId: UUID, request: CategoryUpdateRequest, userId: UUID) {
         val category =
             categoryRepository.findByIdAndUserIdAndIsDeletedFalse(categoryId, userId)
                 ?: throw IllegalArgumentException("Category not found")
 
-        val updatedCategory = category.copy(
-            categoryName = request.categoryName ?: category.categoryName,
-            categoryIcon = request.categoryIcon ?: category.categoryIcon,
-            leftOverOptions = request.leftOverOptions ?: category.leftOverOptions,
-            priority = request.priority ?: category.priority,
-        )
+        val updatedCategory = request.toEntity(categoryId = categoryId, userId = userId)
+
         categoryRepository.save(updatedCategory)
         request.budget?.let { budgetService.updateBudget(request.budget, category) }
-        val spentAmount = budgetService.calculateSpentAmount(userId, categoryId)
-        return updatedCategory.toResponse(budget = null, spentAmount = spentAmount)
     }
 
     @Transactional

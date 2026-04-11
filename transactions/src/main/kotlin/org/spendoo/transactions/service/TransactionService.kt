@@ -1,16 +1,15 @@
 package org.spendoo.transactions.service
 
-import org.spendoo.transactions.api.dto.request.CreateTransactionRequest
+import org.spendoo.transactions.api.dto.request.CreateExpenseTransactionRequest
+import org.spendoo.transactions.api.dto.request.CreateIncomeTransactionRequest
 import org.spendoo.transactions.api.dto.request.TransactionUpdateRequest
+import org.spendoo.transactions.api.dto.request.toEntity
 import org.spendoo.transactions.api.dto.response.BalanceSummary
 import org.spendoo.transactions.api.dto.response.CategorySpendingDto
 import org.spendoo.transactions.entity.Transaction
-import org.spendoo.transactions.entity.TransactionType
-import org.spendoo.transactions.mapper.toEntity
 import org.spendoo.transactions.repository.CategoryRepository
 import org.spendoo.transactions.repository.TransactionRepository
 import org.springframework.data.domain.Page
-import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -25,37 +24,41 @@ class TransactionService(
 ) {
 
     @Transactional
-    fun createTransactions(userId: UUID, request: CreateTransactionRequest) {
+    fun createExpenseTransactions(userId: UUID, request: CreateExpenseTransactionRequest) {
 
         val transactionsToSave = request.entries.map { entry ->
             val category =
                 categoryRepository.findByIdAndUserIdAndIsDeletedFalse(entry.categoryId, userId)
                     ?: throw IllegalArgumentException("Category not found with ID: ${entry.categoryId}")
-            entry.toEntity(userId, request, category)
+            entry.toEntity(userId, category)
         }
 
         transactionRepository.saveAll(transactionsToSave)
     }
 
     @Transactional
-    fun updateTransaction(transactionId: UUID, userId: UUID, updateRequest: TransactionUpdateRequest): Transaction {
+    fun createIncomeTransactions(userId: UUID, request: CreateIncomeTransactionRequest) {
+        val transactionsToSave = request.entries.map { it.toEntity(userId) }
+        transactionRepository.saveAll(transactionsToSave)
+    }
+
+    @Transactional
+    fun updateTransaction(transactionId: UUID, userId: UUID, updateRequest: TransactionUpdateRequest) {
         val transaction = transactionRepository.findByIdAndUserId(transactionId, userId)
             ?: throw IllegalArgumentException("Transaction not found")
 
-        val category = updateRequest.categoryId?.let { categoryId ->
-            categoryRepository.findByIdAndUserIdAndIsDeletedFalse(categoryId, userId)
-                ?: throw IllegalArgumentException("Category not found with ID: $categoryId")
-        } ?: transaction.category
+        if (transaction.amount < BigDecimal.ZERO && updateRequest.categoryId == null) {
+            throw IllegalArgumentException("Expense transactions must have a category")
+        }
 
-        val updatedTransaction = transaction.copy(
-            title = updateRequest.title,
-            transactionDate = updateRequest.transactionDate ?: transaction.transactionDate,
-            note = updateRequest.note ?: transaction.note,
-            amount = updateRequest.amount ?: transaction.amount,
-            category = category
-        )
+        val category = updateRequest.categoryId?.let {
+            categoryRepository.findByIdAndUserIdAndIsDeletedFalse(it, userId)
+                ?: throw IllegalArgumentException("Category not found with ID: $it")
+        }
 
-        return transactionRepository.save(updatedTransaction)
+        val updatedTransaction = updateRequest.toEntity(transactionId, userId, category)
+
+        transactionRepository.save(updatedTransaction)
     }
 
     @Transactional(readOnly = true)
@@ -91,24 +94,23 @@ class TransactionService(
 
         val budgets = categoryRepository.sumActiveBudget(userId) ?: BigDecimal.ZERO
 
-        val income = budgets + (transactionRepository.sumAmountByUserIdAndType(userId, TransactionType.INCOME)
+        val income = budgets + (transactionRepository.sumIncomeByUserId(userId)
             ?: BigDecimal.ZERO)
 
-        val expenses = transactionRepository.sumAmountByUserIdAndType(userId, TransactionType.EXPENSE)
+        val expenses = transactionRepository.sumExpensesByUserId(userId)
             ?: BigDecimal.ZERO
 
-        val totalBalance = income.subtract(expenses)
+        val totalBalance = income.plus(expenses)
 
         return BalanceSummary(
             totalBalance = totalBalance,
             income = income,
-            expenses = expenses
+            expenses = -expenses
         )
     }
 
 
-    fun getTopSpendingCategories(userId: UUID, limit: Int = 3): List<CategorySpendingDto> {
-        val pageable = PageRequest.of(0, limit)
+    fun getTopSpendingCategories(userId: UUID, pageable: Pageable): Page<CategorySpendingDto> {
         return transactionRepository.findTopSpendingCategories(userId, pageable)
     }
 }

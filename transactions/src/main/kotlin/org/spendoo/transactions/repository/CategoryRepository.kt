@@ -27,9 +27,8 @@ interface CategoryRepository : JpaRepository<Category, UUID> {
                 b.endDate
             )
             FROM Category c
-            LEFT JOIN Budget b
-                ON c.id = b.category.id
-                AND b.isActive = true
+            LEFT JOIN c.budgets b
+                ON b.isActive = true
             WHERE c.userId = :userId
                 AND c.isDeleted = false
         """
@@ -52,9 +51,8 @@ interface CategoryRepository : JpaRepository<Category, UUID> {
                 b.endDate
             )
             FROM Category c
-            LEFT JOIN Budget b
-                ON c.id = b.category.id
-                AND b.isActive = true
+            LEFT JOIN c.budgets b
+                ON b.isActive = true
             WHERE
                 c.id = :categoryId
                 AND c.userId = :userId
@@ -69,7 +67,7 @@ interface CategoryRepository : JpaRepository<Category, UUID> {
         """
             SELECT SUM(b.amount)
             FROM Category c
-            JOIN Budget b ON c.id = b.category.id
+            JOIN c.budgets b
             WHERE c.userId = :userId
                 AND c.isDeleted = false
                 AND b.isActive = true
@@ -80,13 +78,14 @@ interface CategoryRepository : JpaRepository<Category, UUID> {
     @Modifying
     @Query(
         """
-            INSERT INTO categories.categories
+            INSERT INTO spending.categories
             (id, category_name, category_icon, priority, left_over_options, user_id, is_deleted)
             VALUES (gen_random_uuid(), 'Food', 'FOOD', 2, 'RESET_TO_ORIGINAL_AMOUNT', :userId, false),
                    (gen_random_uuid(), 'Transport', 'TRANSPORT', 2, 'RESET_TO_ORIGINAL_AMOUNT', :userId, false),
                    (gen_random_uuid(), 'Shopping', 'SHOPPING', 2, 'RESET_TO_ORIGINAL_AMOUNT', :userId, false),
                    (gen_random_uuid(), 'HealthCare', 'HEALTHCARE', 3, 'RESET_TO_ORIGINAL_AMOUNT', :userId, false),
-                   (gen_random_uuid(), 'Entertainment', 'ENTERTAINMENT', 2, 'RESET_TO_ORIGINAL_AMOUNT', :userId, false);
+                   (gen_random_uuid(), 'Entertainment', 'ENTERTAINMENT', 2, 'RESET_TO_ORIGINAL_AMOUNT', :userId, false),
+                   (gen_random_uuid(), 'Other', 'DEFAULT', 1, 'RESET_TO_ORIGINAL_AMOUNT', :userId, false);
         """,
         nativeQuery = true
     )

@@ -2,7 +2,6 @@ package org.spendoo.transactions.repository
 
 import org.spendoo.transactions.api.dto.response.CategorySpendingDto
 import org.spendoo.transactions.entity.Transaction
-import org.spendoo.transactions.entity.TransactionType
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
@@ -23,19 +22,21 @@ interface TransactionRepository : JpaRepository<Transaction, UUID> {
         pageable: Pageable
     ): Page<Transaction>
 
-    @Query("SELECT SUM(t.amount) FROM Transaction t WHERE t.userId = :userId AND t.type = :type")
+    @Query("""SELECT SUM(t.amount) FROM Transaction t WHERE t.userId = :userId AND t.amount > 0""")
+    fun sumIncomeByUserId(@Param("userId") userId: UUID): BigDecimal?
 
-    fun sumAmountByUserIdAndType(
-        @Param("userId") userId: UUID,
-        @Param("type") type: TransactionType
-    ): BigDecimal?
+    @Query("""SELECT SUM(t.amount) FROM Transaction t WHERE t.userId = :userId AND t.amount < 0""")
+    fun sumExpensesByUserId(@Param("userId") userId: UUID): BigDecimal?
+
+    @Query("""SELECT SUM(t.amount) FROM Transaction t WHERE t.userId = :userId""")
+    fun sumAmountByUserId(@Param("userId") userId: UUID): BigDecimal?
 
     @Query(
         """
         SELECT new org.spendoo.transactions.api.dto.response.CategorySpendingDto(c.categoryName, c.categoryIcon, SUM(t.amount)) 
         FROM Transaction t 
         JOIN t.category c 
-        WHERE t.userId = :userId AND t.type = 'EXPENSE' 
+        WHERE t.userId = :userId AND t.amount < 0
         GROUP BY c.id, c.categoryName, c.categoryIcon 
         ORDER BY SUM(t.amount) DESC
     """
@@ -43,7 +44,7 @@ interface TransactionRepository : JpaRepository<Transaction, UUID> {
     fun findTopSpendingCategories(
         @Param("userId") userId: UUID,
         pageable: Pageable
-    ): List<CategorySpendingDto>
+    ): Page<CategorySpendingDto>
 
     @Query(
         """
@@ -51,7 +52,7 @@ interface TransactionRepository : JpaRepository<Transaction, UUID> {
             FROM Transaction t
             JOIN t.category c
             WHERE t.userId = :userId
-                AND t.type = org.spendoo.transactions.entity.TransactionType.EXPENSE
+                AND t.amount < 0
                 AND c.id = :categoryId
         """
     )
@@ -73,7 +74,7 @@ interface TransactionRepository : JpaRepository<Transaction, UUID> {
         FROM Transaction t
         JOIN t.category c
         WHERE t.userId = :userId
-            AND t.type = org.spendoo.transactions.entity.TransactionType.EXPENSE
+            AND t.amount < 0
             AND c.id IN :categoryIds
         GROUP BY c.id
     """)
@@ -82,7 +83,4 @@ interface TransactionRepository : JpaRepository<Transaction, UUID> {
         @Param("categoryIds") categoryIds: List<UUID>
     ): List<CategoryExpenseProjection>
 
-
-
-    
 }
