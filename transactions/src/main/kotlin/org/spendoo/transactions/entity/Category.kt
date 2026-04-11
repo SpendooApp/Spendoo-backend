@@ -33,7 +33,6 @@ data class Category(
     @OneToMany(mappedBy = "category", cascade = [CascadeType.ALL], fetch = FetchType.LAZY, orphanRemoval = true)
     val budgets: MutableList<Budget> = mutableListOf(),
 
-
     @OneToMany(mappedBy = "category", cascade = [CascadeType.ALL], fetch = FetchType.LAZY, orphanRemoval = true)
     val transactions: MutableList<Transaction> = mutableListOf()
 )
