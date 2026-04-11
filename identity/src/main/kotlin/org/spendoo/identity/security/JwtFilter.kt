@@ -27,7 +27,8 @@ class JwtFilter(
         "/v3/api-docs/**",
         "/swagger-ui/**",
         "/swagger-ui.html",
-        "/error"
+        "/error",
+        "/"
     )
 
     override fun shouldNotFilter(request: HttpServletRequest): Boolean {
