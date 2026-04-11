@@ -1,7 +1,8 @@
 package org.spendoo.transactions.api.controller
 
 import jakarta.validation.Valid
-import org.spendoo.transactions.api.dto.request.CreateTransactionRequest
+import org.spendoo.transactions.api.dto.request.CreateExpenseTransactionRequest
+import org.spendoo.transactions.api.dto.request.CreateIncomeTransactionRequest
 import org.spendoo.transactions.api.dto.request.TransactionUpdateRequest
 import org.spendoo.transactions.api.dto.response.BalanceSummary
 import org.spendoo.transactions.api.dto.response.CategorySpendingDto
@@ -10,6 +11,7 @@ import org.spendoo.transactions.api.dto.response.toResponse
 import org.spendoo.transactions.service.TransactionService
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
+import org.springframework.data.web.PageableDefault
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -24,28 +26,38 @@ class TransactionController(
     private val transactionService: TransactionService
 ) {
 
-    @PostMapping
-    fun createTransactions(
-        @Valid @RequestBody request: CreateTransactionRequest,
+    @PostMapping("/expense")
+    fun createExpenseTransactions(
+        @Valid @RequestBody request: CreateExpenseTransactionRequest,
         @AuthenticationPrincipal userId: UUID
     ): ResponseEntity<Unit> {
-        transactionService.createTransactions(userId, request)
+        transactionService.createExpenseTransactions(userId, request)
+        return ResponseEntity.status(HttpStatus.CREATED).build()
+    }
+
+    @PostMapping("/income")
+    fun createIncomeTransactions(
+        @Valid @RequestBody request: CreateIncomeTransactionRequest,
+        @AuthenticationPrincipal userId: UUID
+    ): ResponseEntity<Unit> {
+        transactionService.createIncomeTransactions(userId, request)
         return ResponseEntity.status(HttpStatus.CREATED).build()
     }
 
     @PatchMapping("/{transactionId}")
     fun updateTransaction(
         @PathVariable transactionId: UUID,
-        @Valid @RequestBody request: TransactionUpdateRequest,
+        @Valid @RequestBody updateRequest: TransactionUpdateRequest,
         @AuthenticationPrincipal userId: UUID
     ): ResponseEntity<Unit> {
-        transactionService.updateTransaction(transactionId, userId, request)
+        transactionService.updateTransaction(transactionId, userId, updateRequest)
         return ResponseEntity.ok().build()
     }
 
     @GetMapping("/{transactionId}")
     fun getTransactionById(
-        @PathVariable transactionId: UUID, @AuthenticationPrincipal userId: UUID
+        @PathVariable transactionId: UUID,
+        @AuthenticationPrincipal userId: UUID
     ): ResponseEntity<TransactionResponse> {
         val transaction = transactionService.getTransactionById(transactionId, userId)
         return ResponseEntity.ok(transaction.toResponse())
@@ -53,7 +65,8 @@ class TransactionController(
 
     @GetMapping
     fun getAllTransactions(
-        @AuthenticationPrincipal userId: UUID, pageable: Pageable
+        @AuthenticationPrincipal userId: UUID,
+        pageable: Pageable
     ): ResponseEntity<Page<TransactionResponse>> {
         val page = transactionService.getAll(userId, pageable)
         return ResponseEntity.ok(page.map { it.toResponse() })
@@ -63,7 +76,8 @@ class TransactionController(
     fun getTransactionsByDateRange(
         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) startDate: LocalDateTime,
         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) endDate: LocalDateTime,
-        @AuthenticationPrincipal userId: UUID, pageable: Pageable
+        @AuthenticationPrincipal userId: UUID,
+        pageable: Pageable
     ): ResponseEntity<Page<TransactionResponse>> {
         val page = transactionService.getTransactionsByDateRange(userId, startDate, endDate, pageable)
         return ResponseEntity.ok(page.map { it.toResponse() })
@@ -86,13 +100,12 @@ class TransactionController(
     }
 
     @GetMapping("/top-spending")
-    fun getTopSpending(@AuthenticationPrincipal userId: UUID,
-        @RequestParam(defaultValue = "3") limit: Int
-    ): ResponseEntity<List<CategorySpendingDto>> {
-        val topSpending = transactionService.getTopSpendingCategories(userId, limit)
+    fun getTopSpending(
+        @AuthenticationPrincipal userId: UUID,
+        @PageableDefault(size = 5)
+        pageable: Pageable,
+    ): ResponseEntity<Page<CategorySpendingDto>> {
+        val topSpending = transactionService.getTopSpendingCategories(userId, pageable)
         return ResponseEntity.ok(topSpending)
     }
-
-
-
 }

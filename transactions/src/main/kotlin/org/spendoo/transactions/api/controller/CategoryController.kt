@@ -21,7 +21,8 @@ class CategoryController(
 
     @PostMapping
     fun createCategory(
-        @Valid @RequestBody request: CategoryCreateRequest, @AuthenticationPrincipal userId: UUID
+        @Valid @RequestBody request: CategoryCreateRequest,
+        @AuthenticationPrincipal userId: UUID
     ): ResponseEntity<Unit> {
         categoryService.create(request, userId)
         return ResponseEntity.status(HttpStatus.CREATED).build()
@@ -29,7 +30,8 @@ class CategoryController(
 
     @GetMapping("/{categoryId}")
     fun getCategoryById(
-        @PathVariable categoryId: UUID, @AuthenticationPrincipal userId: UUID
+        @PathVariable categoryId: UUID,
+        @AuthenticationPrincipal userId: UUID
     ): ResponseEntity<CategoryResponse> {
         val category = categoryService.getById(categoryId, userId)
         return ResponseEntity.ok(category)
@@ -37,7 +39,8 @@ class CategoryController(
 
     @GetMapping
     fun getAllCategories(
-        @AuthenticationPrincipal userId: UUID, pageable: Pageable
+        @AuthenticationPrincipal userId: UUID,
+        pageable: Pageable
     ): ResponseEntity<Page<CategoryResponse>> {
         val page = categoryService.getAll(userId, pageable)
         return ResponseEntity.ok(page)
@@ -49,13 +52,16 @@ class CategoryController(
         @PathVariable categoryId: UUID,
         @Valid @RequestBody request: CategoryUpdateRequest,
         @AuthenticationPrincipal userId: UUID
-    ): ResponseEntity<CategoryResponse> {
-        val category = categoryService.update(categoryId, request, userId)
-        return ResponseEntity.ok(category)
+    ): ResponseEntity<Unit> {
+        categoryService.update(categoryId, request, userId)
+        return ResponseEntity.ok().build()
     }
 
     @DeleteMapping("/{categoryId}")
-    fun deleteCategory(@PathVariable categoryId: UUID, @AuthenticationPrincipal userId: UUID): ResponseEntity<Void> {
+    fun deleteCategory(
+        @PathVariable categoryId: UUID,
+        @AuthenticationPrincipal userId: UUID
+    ): ResponseEntity<Unit> {
         categoryService.delete(categoryId, userId)
         return ResponseEntity.ok().build()
     }
