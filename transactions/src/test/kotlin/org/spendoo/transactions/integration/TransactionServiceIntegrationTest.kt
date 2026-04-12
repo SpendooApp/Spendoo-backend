@@ -90,6 +90,28 @@ class TransactionServiceIntegrationTest {
     }
 
     @Test
+    fun `createExpenseTransactions throw IllegalArgumentException if category is soft deleted`() {
+        categoryRepository.save(existingCategory.copy(isDeleted = true))
+        val createExpenseTransactionRequest = CreateExpenseTransactionRequest(
+            entries = listOf(
+                ExpenseTransactionEntryDto(
+                    title = "Taxi",
+                    amount = BigDecimal.valueOf(30.0),
+                    categoryId = existingCategory.id,
+                    transactionDate = LocalDateTime.now(),
+                    note = null
+                )
+            )
+        )
+
+        val thrownException = assertThrows<IllegalArgumentException> {
+            transactionService.createExpenseTransactions(existingUserId, createExpenseTransactionRequest)
+        }
+
+        assertThat(thrownException).hasMessageThat().contains("Category not found with ID")
+    }
+
+    @Test
     fun `createIncomeTransactions returns by saving income transactions if request is valid`() {
         val createIncomeTransactionRequest = CreateIncomeTransactionRequest(
             entries = listOf(
@@ -240,6 +262,67 @@ class TransactionServiceIntegrationTest {
     }
 
     @Test
+    fun `getTransactionsByDateRange includes start and end boundaries`() {
+        val start = LocalDateTime.now().minusDays(5)
+        val end = LocalDateTime.now().minusDays(1)
+        transactionRepository.save(
+            Transaction(
+                userId = existingUserId,
+                title = "At start",
+                amount = BigDecimal.valueOf(10.0),
+                note = null,
+                transactionDate = start,
+                category = null
+            )
+        )
+        transactionRepository.save(
+            Transaction(
+                userId = existingUserId,
+                title = "At end",
+                amount = BigDecimal.valueOf(20.0),
+                note = null,
+                transactionDate = end,
+                category = null
+            )
+        )
+
+        val transactionsPage = transactionService.getTransactionsByDateRange(
+            existingUserId,
+            start,
+            end,
+            PageRequest.of(0, 10)
+        )
+
+        assertThat(transactionsPage.totalElements).isEqualTo(2)
+        assertThat(transactionsPage.content.map { it.title }).containsAtLeast("At start", "At end")
+    }
+
+    @Test
+    fun `getTransactionsByDateRange excludes transactions from other users`() {
+        val otherUserId = UUID.randomUUID()
+        val now = LocalDateTime.now()
+        transactionRepository.save(
+            Transaction(
+                userId = otherUserId,
+                title = "Other user tx",
+                amount = BigDecimal.valueOf(99.0),
+                note = null,
+                transactionDate = now,
+                category = null
+            )
+        )
+
+        val transactionsPage = transactionService.getTransactionsByDateRange(
+            existingUserId,
+            now.minusDays(1),
+            now.plusDays(1),
+            PageRequest.of(0, 10)
+        )
+
+        assertThat(transactionsPage.totalElements).isEqualTo(0)
+    }
+
+    @Test
     fun `getAll returns user transactions if user has transactions`() {
         createIncomeTransaction(existingUserId, BigDecimal.valueOf(2000.0))
         createIncomeTransaction(existingUserId, BigDecimal.valueOf(3000.0))
@@ -305,6 +388,17 @@ class TransactionServiceIntegrationTest {
     }
 
     @Test
+    fun `getBalanceSummary returns zero income and positive expenses if user has only expenses`() {
+        createExpenseTransaction(existingUserId, existingCategory, BigDecimal.valueOf(-120.0))
+
+        val balanceSummary = transactionService.getBalanceSummary(existingUserId)
+
+        assertThat(balanceSummary.income).isEqualTo(BigDecimal.ZERO)
+        assertThat(balanceSummary.expenses.compareTo(BigDecimal.valueOf(120.0))).isEqualTo(0)
+        assertThat(balanceSummary.totalBalance.compareTo(BigDecimal.valueOf(-120.0))).isEqualTo(0)
+    }
+
+    @Test
     fun `getTopSpendingCategories returns categories with spending if expense data exists`() {
         val secondCategory = createCategory(existingUserId, "Transport")
         createExpenseTransaction(existingUserId, existingCategory, BigDecimal.valueOf(-500.0))
@@ -314,6 +408,15 @@ class TransactionServiceIntegrationTest {
 
         assertThat(topSpendingPage.totalElements).isEqualTo(2)
         assertThat(topSpendingPage.content.map { it.categoryName }).containsAtLeast("Food", "Transport")
+    }
+
+    @Test
+    fun `getTopSpendingCategories returns empty page if user has no expense data`() {
+        createIncomeTransaction(existingUserId, BigDecimal.valueOf(3000.0))
+
+        val topSpendingPage = transactionService.getTopSpendingCategories(existingUserId, PageRequest.of(0, 10))
+
+        assertThat(topSpendingPage.totalElements).isEqualTo(0)
     }
 
 

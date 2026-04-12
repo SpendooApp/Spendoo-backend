@@ -9,6 +9,7 @@ import org.spendoo.transactions.entity.Budget
 import org.spendoo.transactions.entity.Category
 import org.spendoo.transactions.entity.CategoryIcon
 import org.spendoo.transactions.entity.LeftOverOptions
+import org.spendoo.transactions.entity.Transaction
 import org.spendoo.transactions.repository.BudgetRepository
 import org.spendoo.transactions.repository.CategoryRepository
 import org.spendoo.transactions.repository.TransactionRepository
@@ -174,6 +175,90 @@ class BudgetServiceIntegrationTest {
     }
 
     @Test
+    fun `calculateSpentAmount returns only expense sum for requested user and category`() {
+        val userId = UUID.randomUUID()
+        val targetCategory = createCategory(userId = userId)
+        val anotherCategory = createCategory(userId = userId)
+        val otherUserCategory = createCategory(userId = UUID.randomUUID())
+
+        transactionRepository.save(
+            Transaction(
+                userId = userId,
+                title = "Target expense A",
+                amount = BigDecimal.valueOf(-120.0),
+                note = null,
+                transactionDate = LocalDateTime.now(),
+                category = targetCategory
+            )
+        )
+        transactionRepository.save(
+            Transaction(
+                userId = userId,
+                title = "Target expense B",
+                amount = BigDecimal.valueOf(-30.0),
+                note = null,
+                transactionDate = LocalDateTime.now(),
+                category = targetCategory
+            )
+        )
+        transactionRepository.save(
+            Transaction(
+                userId = userId,
+                title = "Target income ignored",
+                amount = BigDecimal.valueOf(999.0),
+                note = null,
+                transactionDate = LocalDateTime.now(),
+                category = targetCategory
+            )
+        )
+        transactionRepository.save(
+            Transaction(
+                userId = userId,
+                title = "Other category ignored",
+                amount = BigDecimal.valueOf(-400.0),
+                note = null,
+                transactionDate = LocalDateTime.now(),
+                category = anotherCategory
+            )
+        )
+        transactionRepository.save(
+            Transaction(
+                userId = UUID.randomUUID(),
+                title = "Other user ignored",
+                amount = BigDecimal.valueOf(-700.0),
+                note = null,
+                transactionDate = LocalDateTime.now(),
+                category = otherUserCategory
+            )
+        )
+
+        val spentAmount = budgetService.calculateSpentAmount(userId, targetCategory.id)
+
+        assertThat(spentAmount.compareTo(BigDecimal.valueOf(-150.0))).isEqualTo(0)
+    }
+
+    @Test
+    fun `calculateSpentAmount returns zero if expenses exist only in other categories`() {
+        val userId = UUID.randomUUID()
+        val targetCategory = createCategory(userId = userId)
+        val anotherCategory = createCategory(userId = userId)
+        transactionRepository.save(
+            Transaction(
+                userId = userId,
+                title = "Other category expense",
+                amount = BigDecimal.valueOf(-80.0),
+                note = null,
+                transactionDate = LocalDateTime.now(),
+                category = anotherCategory
+            )
+        )
+
+        val spentAmount = budgetService.calculateSpentAmount(userId, targetCategory.id)
+
+        assertThat(spentAmount).isEqualTo(BigDecimal.ZERO)
+    }
+
+    @Test
     fun `deactivateBudgetForCategory returns by deactivating budget if active budget exists`() {
         val savedCategory = createCategory()
         val activeBudget = budgetRepository.save(
@@ -203,10 +288,13 @@ class BudgetServiceIntegrationTest {
         assertThat(budgetRepository.count()).isEqualTo(0)
     }
 
-    private fun createCategory(leftOverOptions: LeftOverOptions = LeftOverOptions.MOVE_TO_NEXT_PERIOD): Category {
+    private fun createCategory(
+        leftOverOptions: LeftOverOptions = LeftOverOptions.MOVE_TO_NEXT_PERIOD,
+        userId: UUID = UUID.randomUUID()
+    ): Category {
         return categoryRepository.save(
             Category(
-                userId = UUID.randomUUID(),
+                userId = userId,
                 categoryName = "Food",
                 categoryIcon = CategoryIcon.FOOD,
                 leftOverOptions = leftOverOptions,

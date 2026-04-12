@@ -1,7 +1,9 @@
 package org.spendoo.identity.integration
 
 import com.google.common.truth.Truth.assertThat
+import io.mockk.clearMocks
 import io.mockk.every
+import io.mockk.verify
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -40,6 +42,7 @@ class UserServiceIntegrationTest {
     @BeforeEach
     fun setUp() {
         userRepository.deleteAll()
+        clearMocks(imageStorageService, answers = false, recordedCalls = true)
     }
 
     @Test
@@ -113,6 +116,9 @@ class UserServiceIntegrationTest {
 
         val updatedUser = userRepository.findByEmail(existingUser.email)
         assertThat(updatedUser?.imageUrl).isNull()
+        verify(exactly = 1) {
+            imageStorageService.deleteImage(any(), "existing-image.jpg")
+        }
     }
 
     @Test
@@ -123,6 +129,9 @@ class UserServiceIntegrationTest {
 
         val userAfterDelete = userRepository.findByEmail(existingUser.email)
         assertThat(userAfterDelete?.imageUrl).isNull()
+        verify(exactly = 0) {
+            imageStorageService.deleteImage(any(), any())
+        }
     }
 
     @Test

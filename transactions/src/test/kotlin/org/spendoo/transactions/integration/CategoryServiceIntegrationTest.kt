@@ -12,6 +12,7 @@ import org.spendoo.transactions.entity.Budget
 import org.spendoo.transactions.entity.Category
 import org.spendoo.transactions.entity.CategoryIcon
 import org.spendoo.transactions.entity.LeftOverOptions
+import org.spendoo.transactions.entity.Transaction
 import org.spendoo.transactions.repository.BudgetRepository
 import org.spendoo.transactions.repository.CategoryRepository
 import org.spendoo.transactions.repository.TransactionRepository
@@ -97,6 +98,81 @@ class CategoryServiceIntegrationTest {
     }
 
     @Test
+    fun `getById returns zero spent amount when category budget has no spending`() {
+        val savedCategory = createCategory(existingUserId, "Gym")
+        budgetRepository.save(
+            Budget(
+                amount = BigDecimal.valueOf(500.0),
+                carryOver = BigDecimal.ZERO,
+                period = 30,
+                startDate = LocalDateTime.now().minusDays(2),
+                endDate = LocalDateTime.now().plusDays(28),
+                isActive = true,
+                category = savedCategory
+            )
+        )
+
+        val categoryResponse = categoryService.getById(savedCategory.id, existingUserId)
+
+        assertThat(categoryResponse.budget).isNotNull()
+        assertThat(categoryResponse.budget?.spentAmount).isEqualTo(BigDecimal.ZERO)
+        assertThat(categoryResponse.budget?.spendingPercentage).isEqualTo(0)
+    }
+
+    @Test
+    fun `getById returns only in-range expense spending for active budget`() {
+        val savedCategory = createCategory(existingUserId, "Bills")
+        val startDate = LocalDateTime.now().minusDays(5)
+        val endDate = LocalDateTime.now().plusDays(5)
+        budgetRepository.save(
+            Budget(
+                amount = BigDecimal.valueOf(1000.0),
+                carryOver = BigDecimal.ZERO,
+                period = 30,
+                startDate = startDate,
+                endDate = endDate,
+                isActive = true,
+                category = savedCategory
+            )
+        )
+        transactionRepository.save(
+            Transaction(
+                userId = existingUserId,
+                title = "In range expense",
+                amount = BigDecimal.valueOf(-120.0),
+                note = null,
+                transactionDate = LocalDateTime.now(),
+                category = savedCategory
+            )
+        )
+        transactionRepository.save(
+            Transaction(
+                userId = existingUserId,
+                title = "Out of range expense",
+                amount = BigDecimal.valueOf(-300.0),
+                note = null,
+                transactionDate = LocalDateTime.now().minusDays(10),
+                category = savedCategory
+            )
+        )
+        transactionRepository.save(
+            Transaction(
+                userId = existingUserId,
+                title = "Income ignored",
+                amount = BigDecimal.valueOf(900.0),
+                note = null,
+                transactionDate = LocalDateTime.now(),
+                category = savedCategory
+            )
+        )
+
+        val categoryResponse = categoryService.getById(savedCategory.id, existingUserId)
+
+        assertThat(categoryResponse.budget).isNotNull()
+        assertThat(categoryResponse.budget?.spentAmount?.compareTo(BigDecimal.valueOf(-120.0))).isEqualTo(0)
+    }
+
+    @Test
     fun `getById throw IllegalArgumentException if category does not exist`() {
         val missingCategoryId = UUID.randomUUID()
 
@@ -125,6 +201,18 @@ class CategoryServiceIntegrationTest {
         val categoriesPage = categoryService.getAll(otherUser, PageRequest.of(0, 10))
 
         assertThat(categoriesPage.totalElements).isEqualTo(0)
+    }
+
+    @Test
+    fun `getAll excludes soft deleted categories`() {
+        val activeCategory = createCategory(existingUserId, "Keep")
+        val deletedCategory = createCategory(existingUserId, "Remove")
+        categoryRepository.save(deletedCategory.copy(isDeleted = true))
+
+        val categoriesPage = categoryService.getAll(existingUserId, PageRequest.of(0, 10))
+
+        assertThat(categoriesPage.totalElements).isEqualTo(1)
+        assertThat(categoriesPage.content.single().categoryId).isEqualTo(activeCategory.id)
     }
 
     @Test

@@ -231,6 +231,22 @@ class AuthServiceIntegrationTest {
     }
 
     @Test
+    fun `refreshToken throw UnauthorizedException if refresh token does not belong to user in jwt`() {
+        val user = createUser(email = "token-user-mismatch@mail.com", isVerified = true)
+        refreshTokenRepository.save(
+            RefreshToken(token = "mismatch-token", expiryDate = LocalDateTime.now().plusDays(2), user = user)
+        )
+        every { jwtUtil.validateRefreshToken("mismatch-token") } returns true
+        every { jwtUtil.validateTokenForUser("mismatch-token", user.id) } returns false
+        val request = RefreshTokenRequest("mismatch-token")
+
+        val thrownException = assertThrows<UnauthorizedException> { authService.refreshToken(request) }
+
+        assertThat(thrownException).hasMessageThat().contains("Invalid refresh token")
+        assertThat(refreshTokenRepository.findByToken("mismatch-token")?.token).isEqualTo("mismatch-token")
+    }
+
+    @Test
     fun `refreshToken returns new auth response if refresh token is valid`() {
         val user = createUser(email = "refresh-success@mail.com", isVerified = true)
         refreshTokenRepository.save(
@@ -433,6 +449,22 @@ class AuthServiceIntegrationTest {
     }
 
     @Test
+    fun `clearExpiredRefreshTokens keeps active refresh tokens when no token is expired`() {
+        val user = createUser(email = "clear-refresh-none@mail.com", isVerified = true)
+        refreshTokenRepository.save(
+            RefreshToken(
+                token = "active-only",
+                expiryDate = LocalDateTime.now().plusDays(3),
+                user = user
+            )
+        )
+
+        authService.clearExpiredRefreshTokens()
+
+        assertThat(refreshTokenRepository.findByToken("active-only")).isNotNull()
+    }
+
+    @Test
     fun `clearExpiredOtps returns by deleting expired otp records if any exists`() {
         val user = createUser(email = "clear-otp@mail.com", isVerified = true)
         emailVerificationRepository.save(
@@ -454,6 +486,22 @@ class AuthServiceIntegrationTest {
 
         assertThat(emailVerificationRepository.findByOtpAndUser("11111", user)).isNull()
         assertThat(emailVerificationRepository.findByOtpAndUser("22222", user)).isNotNull()
+    }
+
+    @Test
+    fun `clearExpiredOtps keeps recent otp records when no otp is expired`() {
+        val user = createUser(email = "clear-otp-none@mail.com", isVerified = true)
+        emailVerificationRepository.save(
+            EmailVerification(
+                otp = "33333",
+                sentAt = LocalDateTime.now().minusMinutes(5),
+                user = user
+            )
+        )
+
+        authService.clearExpiredOtps()
+
+        assertThat(emailVerificationRepository.findByOtpAndUser("33333", user)).isNotNull()
     }
 
     @Test
