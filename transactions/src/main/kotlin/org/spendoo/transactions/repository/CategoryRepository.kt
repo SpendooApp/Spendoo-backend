@@ -43,6 +43,18 @@ interface CategoryRepository : JpaRepository<Category, UUID> {
             LEFT JOIN c.transactions t
             WHERE c.userId = :userId
                 AND c.isDeleted = false
+            GROUP BY
+                c.id,
+                c.categoryName,
+                c.categoryIcon,
+                c.priority,
+                c.leftOverOptions,
+                b.id,
+                b.amount,
+                b.carryOver,
+                b.period,
+                b.startDate,
+                b.endDate
         """
     )
     fun getExistCategoriesWithBudgetAndSpending(userId: UUID, pageable: Pageable): Page<CategoryParams>
@@ -80,6 +92,18 @@ interface CategoryRepository : JpaRepository<Category, UUID> {
                 c.id = :categoryId
                 AND c.userId = :userId
                 AND c.isDeleted = false
+            GROUP BY
+                c.id,
+                c.categoryName,
+                c.categoryIcon,
+                c.priority,
+                c.leftOverOptions,
+                b.id,
+                b.amount,
+                b.carryOver,
+                b.period,
+                b.startDate,
+                b.endDate
         """
     )
     fun getExistCategoryWithBudgetAndSpending(categoryId: UUID, userId: UUID): CategoryParams?
