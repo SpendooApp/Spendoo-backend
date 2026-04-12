@@ -29,5 +29,5 @@ class CategoryParams(
 
     val endDate: LocalDateTime?,
 
-    val spentAmount: BigDecimal
+    val spentAmount: BigDecimal?
 )

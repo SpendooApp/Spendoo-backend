@@ -35,9 +35,10 @@ fun Budget.toBudgetResponse(spentAmount: BigDecimal = BigDecimal.ZERO): BudgetRe
     )
 }
 
-fun CategoryParams.toBudgetResponse(spentAmount: BigDecimal = BigDecimal.ZERO): BudgetResponse {
+fun CategoryParams.toBudgetResponse(spentAmount: BigDecimal?): BudgetResponse {
 
     val amount = this.amount ?: BigDecimal.ZERO
+    val spentAmount = spentAmount ?: BigDecimal.ZERO
     val spendingPercentage =
         if (amount > BigDecimal.ZERO) ((spentAmount / amount) * BigDecimal(100)).toInt() else 0
     return BudgetResponse(

@@ -26,21 +26,17 @@ interface CategoryRepository : JpaRepository<Category, UUID> {
                 b.period,
                 b.startDate,
                 b.endDate,
-                Sum(
-                CASE WHEN t.amount < 0
-                    And (
-                            b is null
-                            Or t.transactionDate BETWEEN b.startDate AND b.endDate
-                        )
-                    THEN t.amount 
-                    ELSE 0 
-                END
-                )
+                SUM(t.amount)
             )
             FROM Category c
             LEFT JOIN c.budgets b
                 ON b.isActive = true
             LEFT JOIN c.transactions t
+                ON t.amount < 0
+                AND (
+                    b IS NULL
+                    OR t.transactionDate BETWEEN b.startDate AND b.endDate
+                )
             WHERE c.userId = :userId
                 AND c.isDeleted = false
             GROUP BY
@@ -73,21 +69,17 @@ interface CategoryRepository : JpaRepository<Category, UUID> {
                 b.period,
                 b.startDate,
                 b.endDate,
-                Sum(
-                CASE WHEN t.amount < 0
-                    And (
-                            b is null
-                            Or t.transactionDate BETWEEN b.startDate AND b.endDate
-                        )
-                    THEN t.amount 
-                    ELSE 0 
-                END
-                )
+                Sum(t.amount)
             )
             FROM Category c
             LEFT JOIN c.budgets b
                 ON b.isActive = true
             LEFT JOIN c.transactions t
+            ON t.amount < 0
+            AND (
+                b IS NULL
+                OR t.transactionDate BETWEEN b.startDate AND b.endDate
+            )
             WHERE
                 c.id = :categoryId
                 AND c.userId = :userId
