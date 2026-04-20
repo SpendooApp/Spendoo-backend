@@ -28,11 +28,14 @@ class TransactionService(
 
     @Transactional
     fun createExpenseTransactions(userId: UUID, request: CreateExpenseTransactionRequest) {
+        val requestedCategoryIds = request.entries.map { it.categoryId }.toSet()
+        val categoriesById = categoryRepository
+            .findAllByIdInAndUserIdAndIsDeletedFalse(requestedCategoryIds, userId)
+            .associateBy { it.id }
 
         val transactionsToSave = request.entries.map { entry ->
-            val category =
-                categoryRepository.findByIdAndUserIdAndIsDeletedFalse(entry.categoryId, userId)
-                    ?: throw IllegalArgumentException("Category not found with ID: ${entry.categoryId}")
+            val category = categoriesById[entry.categoryId]
+                ?: throw IllegalArgumentException("Category not found with ID: ${entry.categoryId}")
             entry.toEntity(userId, category)
         }
 
@@ -52,6 +55,10 @@ class TransactionService(
 
         if (transaction.amount < BigDecimal.ZERO && updateRequest.categoryId == null) {
             throw IllegalArgumentException("Expense transactions must have a category")
+        }
+
+        if (transaction.amount >= BigDecimal.ZERO && updateRequest.categoryId != null) {
+            throw IllegalArgumentException("Income transactions cannot have a category")
         }
 
         val category = updateRequest.categoryId?.let {

@@ -50,7 +50,12 @@ class CategoryService(
             categoryRepository.findByIdAndUserIdAndIsDeletedFalse(categoryId, userId)
                 ?: throw IllegalArgumentException("Category not found")
 
-        val updatedCategory = request.toEntity(categoryId = categoryId, userId = userId)
+        val updatedCategory = category.copy(
+            categoryName = request.categoryName,
+            categoryIcon = request.categoryIcon,
+            leftOverOptions = request.leftOverOptions,
+            priority = request.priority
+        )
 
         categoryRepository.save(updatedCategory)
         budgetService.updateBudget(request.budget, category)

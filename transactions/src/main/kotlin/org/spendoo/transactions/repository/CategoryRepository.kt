@@ -96,6 +96,8 @@ interface CategoryRepository : JpaRepository<Category, UUID> {
 
     fun findByIdAndUserIdAndIsDeletedFalse(id: UUID, userId: UUID): Category?
 
+    fun findAllByIdInAndUserIdAndIsDeletedFalse(ids: Collection<UUID>, userId: UUID): List<Category>
+
     @Query(
         """
             SELECT SUM(b.amount)

@@ -35,7 +35,7 @@ interface TransactionRepository : JpaRepository<Transaction, UUID> {
         JOIN t.category c 
         WHERE t.userId = :userId AND t.amount < 0
         GROUP BY c.id, c.categoryName, c.categoryIcon 
-        ORDER BY SUM(t.amount) DESC
+        ORDER BY ABS(SUM(t.amount)) DESC
     """
     )
     fun findTopSpendingCategories(

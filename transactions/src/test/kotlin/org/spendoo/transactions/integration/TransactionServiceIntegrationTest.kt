@@ -206,6 +206,24 @@ class TransactionServiceIntegrationTest {
     }
 
     @Test
+    fun `updateTransaction throw IllegalArgumentException if existing transaction is income and request category is provided`() {
+        val existingTransaction = createIncomeTransaction(existingUserId, BigDecimal.valueOf(400.0))
+        val transactionUpdateRequest = TransactionUpdateRequest(
+            title = "Income cannot become expense",
+            transactionDate = LocalDateTime.now(),
+            note = null,
+            amount = BigDecimal.valueOf(400.0),
+            categoryId = existingCategory.id
+        )
+
+        val thrownException = assertThrows<IllegalArgumentException> {
+            transactionService.updateTransaction(existingTransaction.id, existingUserId, transactionUpdateRequest)
+        }
+
+        assertThat(thrownException).hasMessageThat().contains("Income transactions cannot have a category")
+    }
+
+    @Test
     fun `getTransactionById returns transaction if transaction exists`() {
         val existingTransaction = createIncomeTransaction(existingUserId, BigDecimal.valueOf(1100.0))
 
