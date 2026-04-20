@@ -37,7 +37,7 @@ jobs:
       - name: Determine modules
         id: changes
         run: |
-          ALL_MODULES='app identity events notifications storage'
+          ALL_MODULES='app events identity notifications storage transactions'
 
           CHANGED_FILES="${{ steps.changed-files-git.outputs.changed_files }}"
           UNIQUE_MODULE_LIST=$(echo "$CHANGED_FILES" | awk -F/ '{print $1}' | sort -u)
