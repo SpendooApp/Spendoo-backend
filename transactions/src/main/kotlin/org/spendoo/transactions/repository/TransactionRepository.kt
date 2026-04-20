@@ -22,14 +22,11 @@ interface TransactionRepository : JpaRepository<Transaction, UUID> {
         pageable: Pageable
     ): Page<Transaction>
 
-    @Query("""SELECT SUM(t.amount) FROM Transaction t WHERE t.userId = :userId AND t.amount > 0""")
+    @Query("""SELECT SUM(t.amount) FROM Transaction t WHERE t.userId = :userId AND t.category IS NULL""")
     fun sumIncomeByUserId(@Param("userId") userId: UUID): BigDecimal?
 
-    @Query("""SELECT SUM(t.amount) FROM Transaction t WHERE t.userId = :userId AND t.amount < 0""")
+    @Query("""SELECT SUM(t.amount) FROM Transaction t WHERE t.userId = :userId AND t.amount < 0 AND t.category IS NOT NULL""")
     fun sumExpensesByUserId(@Param("userId") userId: UUID): BigDecimal?
-
-    @Query("""SELECT SUM(t.amount) FROM Transaction t WHERE t.userId = :userId""")
-    fun sumAmountByUserId(@Param("userId") userId: UUID): BigDecimal?
 
     @Query(
         """
@@ -63,39 +60,5 @@ interface TransactionRepository : JpaRepository<Transaction, UUID> {
 
     fun findByIdAndUserId(id: UUID, userId: UUID): Transaction?
 
-
-    interface CategoryExpenseProjection {
-        fun getCategoryId(): UUID
-        fun getTotalAmount(): BigDecimal?
-    }
-
-    @Query("""
-        SELECT c.id AS categoryId, SUM(t.amount) AS totalAmount
-        FROM Transaction t
-        JOIN t.category c
-        WHERE t.userId = :userId
-            AND t.amount < 0
-            AND c.id IN :categoryIds
-        GROUP BY c.id
-    """)
-    fun sumExpensesByCategoryIds(
-        @Param("userId") userId: UUID,
-        @Param("categoryIds") categoryIds: List<UUID>
-    ): List<CategoryExpenseProjection>
-
-    @Query("""
-        SELECT c.id AS categoryId, SUM(t.amount) AS totalAmount
-        FROM Transaction t
-        JOIN t.category c
-        LEFT JOIN c.budgets b ON b.isActive = true
-        WHERE t.userId = :userId
-            AND t.amount < 0
-            AND c.isDeleted = false
-            AND t.transactionDate BETWEEN b.startDate AND b.endDate
-        GROUP BY c.id
-    """)
-    fun sumCategoriesExpensesByUserId(
-        @Param("userId") userId: UUID,
-    ): List<CategoryExpenseProjection>
-
+    fun deleteByIdAndUserId(id: UUID, userId: UUID): Int
 }

@@ -6,6 +6,7 @@ import org.spendoo.transactions.api.dto.request.toEntity
 import org.spendoo.transactions.api.dto.response.CategoryResponse
 import org.spendoo.transactions.api.dto.response.toResponse
 import org.spendoo.transactions.repository.CategoryRepository
+import org.spendoo.transactions.service.model.CategoriesSummary
 import org.spendoo.transactions.service.model.CategoryParams
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
@@ -61,5 +62,9 @@ class CategoryService(
         val updatedCategory = category.copy(isDeleted = true)
         categoryRepository.save(updatedCategory)
         budgetService.deactivateBudgetForCategory(categoryId)
+    }
+
+    fun getSummary(userId: UUID): CategoriesSummary {
+        return categoryRepository.getCategoriesSummaryForUser(userId)
     }
 }

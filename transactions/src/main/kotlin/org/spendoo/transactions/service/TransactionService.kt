@@ -1,5 +1,8 @@
 package org.spendoo.transactions.service
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import org.spendoo.transactions.api.dto.request.CreateExpenseTransactionRequest
 import org.spendoo.transactions.api.dto.request.CreateIncomeTransactionRequest
 import org.spendoo.transactions.api.dto.request.TransactionUpdateRequest
@@ -84,25 +87,23 @@ class TransactionService(
 
     @Transactional
     fun deleteTransaction(userId: UUID, transactionId: UUID) {
-        transactionRepository.findByIdAndUserId(transactionId, userId)
-            ?: throw IllegalArgumentException("Transaction not found")
-
-        transactionRepository.deleteById(transactionId)
+        if (transactionRepository.deleteByIdAndUserId(transactionId, userId) == 0)
+            throw IllegalArgumentException("Transaction not found")
     }
 
-    fun getBalanceSummary(userId: UUID): BalanceSummary {
+    suspend fun getBalanceSummary(userId: UUID): BalanceSummary = coroutineScope {
+        // Run blocking JPA calls on IO dispatcher so they can execute in parallel.
+        val budgetsDeferred = async(Dispatchers.IO) { categoryRepository.sumActiveBudget(userId) ?: BigDecimal.ZERO }
+        val incomeDeferred = async(Dispatchers.IO) { transactionRepository.sumIncomeByUserId(userId) ?: BigDecimal.ZERO }
+        val expensesDeferred = async(Dispatchers.IO) { transactionRepository.sumExpensesByUserId(userId) ?: BigDecimal.ZERO }
 
-        val budgets = categoryRepository.sumActiveBudget(userId) ?: BigDecimal.ZERO
-
-        val income = budgets + (transactionRepository.sumIncomeByUserId(userId)
-            ?: BigDecimal.ZERO)
-
-        val expenses = transactionRepository.sumExpensesByUserId(userId)
-            ?: BigDecimal.ZERO
+        val budgets = budgetsDeferred.await()
+        val income = budgets + incomeDeferred.await()
+        val expenses = expensesDeferred.await()
 
         val totalBalance = income.plus(expenses)
 
-        return BalanceSummary(
+        return@coroutineScope BalanceSummary(
             totalBalance = totalBalance,
             income = income,
             expenses = -expenses

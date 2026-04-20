@@ -1,6 +1,7 @@
 package org.spendoo.transactions.repository
 
 import org.spendoo.transactions.entity.Category
+import org.spendoo.transactions.service.model.CategoriesSummary
 import org.spendoo.transactions.service.model.CategoryParams
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
@@ -129,4 +130,35 @@ interface CategoryRepository : JpaRepository<Category, UUID> {
         nativeQuery = true
     )
     fun insertDefaultCategoriesForUser(userId: UUID)
+
+    @Query("""
+    SELECT NEW org.spendoo.transactions.service.model.CategoriesSummary(
+    
+        (SELECT COALESCE(SUM(b.amount), 0.0)
+         FROM Budget b
+         WHERE b.isActive = true
+           AND b.category.userId = :userId
+           AND b.category.isDeleted = false),
+    
+        (SELECT SUM(t.amount)
+         From Category c 
+         Join c.transactions t
+         LEFT JOIN c.budgets b
+            ON b.isActive = true
+         WHERE c.userId = :userId
+           AND t.amount < 0
+           AND c.isDeleted = false
+           AND (
+                b IS NULL
+                OR t.transactionDate BETWEEN b.startDate AND b.endDate
+           )
+        ),
+    
+        (SELECT SUM(i.amount)
+         FROM Transaction i
+         WHERE i.userId = :userId
+           AND i.category IS NULL)
+    )
+    """)
+    fun getCategoriesSummaryForUser(userId: UUID): CategoriesSummary
 }

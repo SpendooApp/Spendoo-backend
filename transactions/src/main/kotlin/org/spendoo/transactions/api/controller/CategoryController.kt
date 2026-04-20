@@ -5,6 +5,7 @@ import org.spendoo.transactions.api.dto.request.CategoryCreateRequest
 import org.spendoo.transactions.api.dto.request.CategoryUpdateRequest
 import org.spendoo.transactions.api.dto.response.CategoryResponse
 import org.spendoo.transactions.service.CategoryService
+import org.spendoo.transactions.service.model.CategoriesSummary
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.http.HttpStatus
@@ -64,5 +65,13 @@ class CategoryController(
     ): ResponseEntity<Unit> {
         categoryService.delete(categoryId, userId)
         return ResponseEntity.ok().build()
+    }
+
+    @GetMapping("/summary")
+    fun getCategoriesSummary(
+        @AuthenticationPrincipal userId: UUID
+    ): ResponseEntity<CategoriesSummary> {
+        val summary = categoryService.getSummary(userId)
+        return ResponseEntity.ok(summary)
     }
 }

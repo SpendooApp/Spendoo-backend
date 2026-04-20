@@ -94,7 +94,7 @@ class TransactionController(
 
 
     @GetMapping("/summary")
-    fun getTransactionSummary(@AuthenticationPrincipal userId: UUID): ResponseEntity<BalanceSummary> {
+    suspend fun getTransactionSummary(@AuthenticationPrincipal userId: UUID): ResponseEntity<BalanceSummary> {
         val summary = transactionService.getBalanceSummary(userId)
         return ResponseEntity.ok(summary)
     }

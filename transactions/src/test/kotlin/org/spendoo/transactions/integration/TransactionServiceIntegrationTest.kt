@@ -1,6 +1,7 @@
 package org.spendoo.transactions.integration
 
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -263,8 +264,8 @@ class TransactionServiceIntegrationTest {
 
     @Test
     fun `getTransactionsByDateRange includes start and end boundaries`() {
-        val start = LocalDateTime.now().minusDays(5)
-        val end = LocalDateTime.now().minusDays(1)
+        val end = LocalDateTime.now().minusDays(3)
+        val start = end.minusDays(2)
         transactionRepository.save(
             Transaction(
                 userId = existingUserId,
@@ -357,7 +358,7 @@ class TransactionServiceIntegrationTest {
     fun `getBalanceSummary returns zeroed summary if user has no data`() {
         val otherUser = UUID.randomUUID()
 
-        val balanceSummary = transactionService.getBalanceSummary(otherUser)
+        val balanceSummary = runBlocking { transactionService.getBalanceSummary(otherUser) }
 
         assertThat(balanceSummary.totalBalance).isEqualTo(BigDecimal.ZERO)
         assertThat(balanceSummary.income).isEqualTo(BigDecimal.ZERO)
@@ -380,7 +381,7 @@ class TransactionServiceIntegrationTest {
         createIncomeTransaction(existingUserId, BigDecimal.valueOf(2000.0))
         createExpenseTransaction(existingUserId, existingCategory, BigDecimal.valueOf(-300.0))
 
-        val balanceSummary = transactionService.getBalanceSummary(existingUserId)
+        val balanceSummary = runBlocking { transactionService.getBalanceSummary(existingUserId) }
 
         assertThat(balanceSummary.income.compareTo(BigDecimal.valueOf(3000.0))).isEqualTo(0)
         assertThat(balanceSummary.expenses.compareTo(BigDecimal.valueOf(300.0))).isEqualTo(0)
@@ -391,7 +392,7 @@ class TransactionServiceIntegrationTest {
     fun `getBalanceSummary returns zero income and positive expenses if user has only expenses`() {
         createExpenseTransaction(existingUserId, existingCategory, BigDecimal.valueOf(-120.0))
 
-        val balanceSummary = transactionService.getBalanceSummary(existingUserId)
+        val balanceSummary = runBlocking { transactionService.getBalanceSummary(existingUserId) }
 
         assertThat(balanceSummary.income).isEqualTo(BigDecimal.ZERO)
         assertThat(balanceSummary.expenses.compareTo(BigDecimal.valueOf(120.0))).isEqualTo(0)
