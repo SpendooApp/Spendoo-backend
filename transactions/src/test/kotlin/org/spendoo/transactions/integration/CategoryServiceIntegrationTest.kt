@@ -8,11 +8,7 @@ import org.spendoo.transactions.TransactionsTestApplication
 import org.spendoo.transactions.api.dto.request.BudgetCreateRequest
 import org.spendoo.transactions.api.dto.request.CategoryCreateRequest
 import org.spendoo.transactions.api.dto.request.CategoryUpdateRequest
-import org.spendoo.transactions.entity.Budget
-import org.spendoo.transactions.entity.Category
-import org.spendoo.transactions.entity.CategoryIcon
-import org.spendoo.transactions.entity.LeftOverOptions
-import org.spendoo.transactions.entity.Transaction
+import org.spendoo.transactions.entity.*
 import org.spendoo.transactions.repository.BudgetRepository
 import org.spendoo.transactions.repository.CategoryRepository
 import org.spendoo.transactions.repository.TransactionRepository
@@ -300,6 +296,60 @@ class CategoryServiceIntegrationTest {
         }
 
         assertThat(thrownException).hasMessageThat().contains("Category not found")
+    }
+
+    @Test
+    fun `getSummary returns zero budget and null sums if user has no data`() {
+        val summary = categoryService.getSummary(existingUserId)
+
+        assertThat(summary.totalBudget?.compareTo(BigDecimal.ZERO)).isEqualTo(0)
+        assertThat(summary.totalSpent).isNull()
+        assertThat(summary.addedIncome).isNull()
+    }
+
+    @Test
+    fun `getSummary returns aggregated budget spent and added income`() {
+        val category = createCategory(existingUserId, "Summary Category")
+        val startDate = LocalDateTime.now().minusDays(2)
+        val endDate = LocalDateTime.now().plusDays(2)
+
+        budgetRepository.save(
+            Budget(
+                amount = BigDecimal.valueOf(500.0),
+                carryOver = BigDecimal.ZERO,
+                period = 30,
+                startDate = startDate,
+                endDate = endDate,
+                isActive = true,
+                category = category
+            )
+        )
+        transactionRepository.save(
+            Transaction(
+                userId = existingUserId,
+                title = "Expense in range",
+                amount = BigDecimal.valueOf(-120.0),
+                note = null,
+                transactionDate = LocalDateTime.now(),
+                category = category
+            )
+        )
+        transactionRepository.save(
+            Transaction(
+                userId = existingUserId,
+                title = "Added income",
+                amount = BigDecimal.valueOf(300.0),
+                note = null,
+                transactionDate = LocalDateTime.now(),
+                category = null
+            )
+        )
+
+        val summary = categoryService.getSummary(existingUserId)
+
+        assertThat(summary.totalBudget?.compareTo(BigDecimal.valueOf(500.0))).isEqualTo(0)
+        assertThat(summary.totalSpent?.compareTo(BigDecimal.valueOf(-120.0))).isEqualTo(0)
+        assertThat(summary.addedIncome?.compareTo(BigDecimal.valueOf(300.0))).isEqualTo(0)
     }
 
 

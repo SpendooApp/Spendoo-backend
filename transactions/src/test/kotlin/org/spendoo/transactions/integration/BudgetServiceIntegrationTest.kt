@@ -5,11 +5,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.spendoo.transactions.TransactionsTestApplication
 import org.spendoo.transactions.api.dto.request.BudgetCreateRequest
-import org.spendoo.transactions.entity.Budget
-import org.spendoo.transactions.entity.Category
-import org.spendoo.transactions.entity.CategoryIcon
-import org.spendoo.transactions.entity.LeftOverOptions
-import org.spendoo.transactions.entity.Transaction
+import org.spendoo.transactions.entity.*
 import org.spendoo.transactions.repository.BudgetRepository
 import org.spendoo.transactions.repository.CategoryRepository
 import org.spendoo.transactions.repository.TransactionRepository
@@ -284,6 +280,13 @@ class BudgetServiceIntegrationTest {
         val randomCategoryId = UUID.randomUUID()
 
         budgetService.deactivateBudgetForCategory(randomCategoryId)
+
+        assertThat(budgetRepository.count()).isEqualTo(0)
+    }
+
+    @Test
+    fun `moveToSavings returns without side effects for now`() {
+        budgetService.moveToSavings(BigDecimal.valueOf(100.0))
 
         assertThat(budgetRepository.count()).isEqualTo(0)
     }
