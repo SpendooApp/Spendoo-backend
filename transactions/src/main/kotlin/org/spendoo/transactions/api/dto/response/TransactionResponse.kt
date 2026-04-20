@@ -12,17 +12,16 @@ data class TransactionResponse(
     val amount: BigDecimal,
     val note: String?,
     val date: LocalDateTime,
-    val categoryResponse: CategoryResponse?,
+    val categoryResponse: CategoryResponseWithBudget?,
 )
 
 fun Transaction.toResponse(): TransactionResponse {
-
     return TransactionResponse(
         id = this.id,
         date = this.transactionDate,
         note = this.note,
         title = this.title,
         amount = this.amount,
-        categoryResponse = this.category?.toResponse()
+        categoryResponse = category?.toResponseWithBudget()
     )
 }

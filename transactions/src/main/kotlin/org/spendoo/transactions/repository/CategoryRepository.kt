@@ -6,7 +6,6 @@ import org.spendoo.transactions.service.model.CategoryParams
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
-import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import java.math.BigDecimal
 import java.util.*
@@ -30,14 +29,11 @@ interface CategoryRepository : JpaRepository<Category, UUID> {
                 SUM(t.amount)
             )
             FROM Category c
-            LEFT JOIN c.budgets b
+            JOIN c.budgets b
                 ON b.isActive = true
             LEFT JOIN c.transactions t
                 ON t.amount < 0
-                AND (
-                    b IS NULL
-                    OR t.transactionDate BETWEEN b.startDate AND b.endDate
-                )
+                AND t.transactionDate BETWEEN b.startDate AND b.endDate
             WHERE c.userId = :userId
                 AND c.isDeleted = false
             GROUP BY
@@ -73,14 +69,11 @@ interface CategoryRepository : JpaRepository<Category, UUID> {
                 Sum(t.amount)
             )
             FROM Category c
-            LEFT JOIN c.budgets b
+            JOIN c.budgets b
                 ON b.isActive = true
             LEFT JOIN c.transactions t
             ON t.amount < 0
-            AND (
-                b IS NULL
-                OR t.transactionDate BETWEEN b.startDate AND b.endDate
-            )
+            AND t.transactionDate BETWEEN b.startDate AND b.endDate
             WHERE
                 c.id = :categoryId
                 AND c.userId = :userId
@@ -115,22 +108,6 @@ interface CategoryRepository : JpaRepository<Category, UUID> {
     )
     fun sumActiveBudget(userId: UUID): BigDecimal?
 
-    @Modifying
-    @Query(
-        """
-            INSERT INTO spending.categories
-            (id, category_name, category_icon, priority, left_over_options, user_id, is_deleted)
-            VALUES (gen_random_uuid(), 'Food', 'FOOD', 2, 'RESET_TO_ORIGINAL_AMOUNT', :userId, false),
-                   (gen_random_uuid(), 'Transport', 'TRANSPORT', 2, 'RESET_TO_ORIGINAL_AMOUNT', :userId, false),
-                   (gen_random_uuid(), 'Shopping', 'SHOPPING', 2, 'RESET_TO_ORIGINAL_AMOUNT', :userId, false),
-                   (gen_random_uuid(), 'HealthCare', 'HEALTHCARE', 3, 'RESET_TO_ORIGINAL_AMOUNT', :userId, false),
-                   (gen_random_uuid(), 'Entertainment', 'ENTERTAINMENT', 2, 'RESET_TO_ORIGINAL_AMOUNT', :userId, false),
-                   (gen_random_uuid(), 'Other', 'DEFAULT', 1, 'RESET_TO_ORIGINAL_AMOUNT', :userId, false);
-        """,
-        nativeQuery = true
-    )
-    fun insertDefaultCategoriesForUser(userId: UUID)
-
     @Query("""
     SELECT NEW org.spendoo.transactions.service.model.CategoriesSummary(
     
@@ -143,15 +120,12 @@ interface CategoryRepository : JpaRepository<Category, UUID> {
         (SELECT SUM(t.amount)
          From Category c 
          Join c.transactions t
-         LEFT JOIN c.budgets b
+         JOIN c.budgets b
             ON b.isActive = true
          WHERE c.userId = :userId
            AND t.amount < 0
            AND c.isDeleted = false
-           AND (
-                b IS NULL
-                OR t.transactionDate BETWEEN b.startDate AND b.endDate
-           )
+           AND t.transactionDate BETWEEN b.startDate AND b.endDate
         ),
     
         (SELECT SUM(i.amount)

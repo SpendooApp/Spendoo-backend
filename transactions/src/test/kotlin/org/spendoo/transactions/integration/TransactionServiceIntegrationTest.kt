@@ -264,7 +264,7 @@ class TransactionServiceIntegrationTest {
 
     @Test
     fun `getTransactionsByDateRange includes start and end boundaries`() {
-        val end = LocalDateTime.now().minusDays(3)
+        val end = LocalDateTime.of(2026, 1, 20, 10, 0, 0)
         val start = end.minusDays(2)
         transactionRepository.save(
             Transaction(

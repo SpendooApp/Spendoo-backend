@@ -19,6 +19,17 @@ class BudgetService(
     private val transactionRepository: TransactionRepository,
 ) {
 
+    fun createZeroBudget(category: Category, startDate: LocalDateTime = LocalDateTime.now()): Budget {
+        return createBudget(
+            request = BudgetCreateRequest(
+                amount = 0.0,
+                period = DEFAULT_PERIOD_DAYS,
+                startDate = startDate
+            ),
+            category = category
+        )
+    }
+
     fun createBudget(
         request: BudgetCreateRequest,
         category: Category,
@@ -105,5 +116,9 @@ class BudgetService(
         budgetRepository.findByCategoryIdAndIsActiveIsTrue(categoryId)?.let { expiredBudget ->
             budgetRepository.save(expiredBudget.copy(isActive = false))
         }
+    }
+
+    companion object {
+        private const val DEFAULT_PERIOD_DAYS = 30
     }
 }

@@ -48,20 +48,23 @@ class CategoryServiceIntegrationTest {
     }
 
     @Test
-    fun `create returns by saving category if request has no budget`() {
+    fun `create returns by saving category with zero amount active budget`() {
         val categoryCreateRequest = CategoryCreateRequest(
             categoryName = "Food",
             categoryIcon = CategoryIcon.FOOD,
             leftOverOptions = LeftOverOptions.MOVE_TO_NEXT_PERIOD,
             priority = 3,
-            budget = null
+            budget = BudgetCreateRequest(0.0, 30, LocalDateTime.now())
         )
 
         categoryService.create(categoryCreateRequest, existingUserId)
 
         val savedCategory = categoryRepository.findAll().single()
+        val activeBudget = budgetRepository.findByCategoryIdAndIsActiveIsTrue(savedCategory.id)
         assertThat(savedCategory.categoryName).isEqualTo("Food")
         assertThat(savedCategory.userId).isEqualTo(existingUserId)
+        assertThat(activeBudget).isNotNull()
+        assertThat(activeBudget?.amount?.compareTo(BigDecimal.ZERO)).isEqualTo(0)
     }
 
     @Test
@@ -85,7 +88,7 @@ class CategoryServiceIntegrationTest {
 
     @Test
     fun `getById returns category response if category exists`() {
-        val savedCategory = createCategory(existingUserId, "Travel")
+        val savedCategory = createCategory(existingUserId, "Travel", budgetAmount = BigDecimal.valueOf(150.0))
 
         val categoryResponse = categoryService.getById(savedCategory.id, existingUserId)
 
@@ -95,7 +98,7 @@ class CategoryServiceIntegrationTest {
 
     @Test
     fun `getById returns zero spent amount when category budget has no spending`() {
-        val savedCategory = createCategory(existingUserId, "Gym")
+        val savedCategory = createCategory(existingUserId, "Gym", withBudget = false)
         budgetRepository.save(
             Budget(
                 amount = BigDecimal.valueOf(500.0),
@@ -110,14 +113,13 @@ class CategoryServiceIntegrationTest {
 
         val categoryResponse = categoryService.getById(savedCategory.id, existingUserId)
 
-        assertThat(categoryResponse.budget).isNotNull()
-        assertThat(categoryResponse.budget?.spentAmount).isEqualTo(BigDecimal.ZERO)
-        assertThat(categoryResponse.budget?.spendingPercentage).isEqualTo(0)
+        assertThat(categoryResponse.budget.spentAmount).isEqualTo(BigDecimal.ZERO)
+        assertThat(categoryResponse.budget.spendingPercentage).isEqualTo(0)
     }
 
     @Test
     fun `getById returns only in-range expense spending for active budget`() {
-        val savedCategory = createCategory(existingUserId, "Bills")
+        val savedCategory = createCategory(existingUserId, "Bills", withBudget = false)
         val startDate = LocalDateTime.now().minusDays(5)
         val endDate = LocalDateTime.now().plusDays(5)
         budgetRepository.save(
@@ -164,8 +166,7 @@ class CategoryServiceIntegrationTest {
 
         val categoryResponse = categoryService.getById(savedCategory.id, existingUserId)
 
-        assertThat(categoryResponse.budget).isNotNull()
-        assertThat(categoryResponse.budget?.spentAmount?.compareTo(BigDecimal.valueOf(-120.0))).isEqualTo(0)
+        assertThat(categoryResponse.budget.spentAmount.compareTo(BigDecimal.valueOf(-120.0))).isEqualTo(0)
     }
 
     @Test
@@ -212,26 +213,29 @@ class CategoryServiceIntegrationTest {
     }
 
     @Test
-    fun `update returns by updating category if category exists and request has no budget`() {
+    fun `update returns by updating category and active budget attributes`() {
         val savedCategory = createCategory(existingUserId, "Old Name")
         val categoryUpdateRequest = CategoryUpdateRequest(
             categoryName = "New Name",
             categoryIcon = CategoryIcon.CAR,
             leftOverOptions = LeftOverOptions.MOVE_TO_SAVINGS,
             priority = 1,
-            budget = null
+            budget = BudgetCreateRequest(0.0, 14, LocalDateTime.now())
         )
 
         categoryService.update(savedCategory.id, categoryUpdateRequest, existingUserId)
 
         val updatedCategory = categoryRepository.findByIdAndUserIdAndIsDeletedFalse(savedCategory.id, existingUserId)
+        val updatedBudget = budgetRepository.findByCategoryIdAndIsActiveIsTrue(savedCategory.id)
         assertThat(updatedCategory?.categoryName).isEqualTo("New Name")
         assertThat(updatedCategory?.categoryIcon).isEqualTo(CategoryIcon.CAR)
+        assertThat(updatedBudget?.amount?.compareTo(BigDecimal.ZERO)).isEqualTo(0)
+        assertThat(updatedBudget?.period).isEqualTo(14)
     }
 
     @Test
     fun `update returns by updating category and budget if category exists and request has budget`() {
-        val savedCategory = createCategory(existingUserId, "Rent")
+        val savedCategory = createCategory(existingUserId, "Rent", withBudget = false)
         budgetRepository.save(
             Budget(
                 amount = BigDecimal.valueOf(400.0),
@@ -267,7 +271,7 @@ class CategoryServiceIntegrationTest {
             categoryIcon = CategoryIcon.DEFAULT,
             leftOverOptions = LeftOverOptions.RESET_TO_ORIGINAL_AMOUNT,
             priority = 1,
-            budget = null
+            budget = BudgetCreateRequest(100.0, 30, LocalDateTime.now())
         )
 
         val thrownException = assertThrows<IllegalArgumentException> {
@@ -309,7 +313,7 @@ class CategoryServiceIntegrationTest {
 
     @Test
     fun `getSummary returns aggregated budget spent and added income`() {
-        val category = createCategory(existingUserId, "Summary Category")
+        val category = createCategory(existingUserId, "Summary Category", withBudget = false)
         val startDate = LocalDateTime.now().minusDays(2)
         val endDate = LocalDateTime.now().plusDays(2)
 
@@ -353,8 +357,13 @@ class CategoryServiceIntegrationTest {
     }
 
 
-    private fun createCategory(userId: UUID, name: String): Category {
-        return categoryRepository.save(
+    private fun createCategory(
+        userId: UUID,
+        name: String,
+        withBudget: Boolean = true,
+        budgetAmount: BigDecimal = BigDecimal.ZERO
+    ): Category {
+        val category = categoryRepository.save(
             Category(
                 userId = userId,
                 categoryName = name,
@@ -364,5 +373,21 @@ class CategoryServiceIntegrationTest {
                 isDeleted = false
             )
         )
+
+        if (withBudget) {
+            budgetRepository.save(
+                Budget(
+                    amount = budgetAmount,
+                    carryOver = BigDecimal.ZERO,
+                    period = 30,
+                    startDate = LocalDateTime.now().minusDays(1),
+                    endDate = LocalDateTime.now().plusDays(29),
+                    isActive = true,
+                    category = category
+                )
+            )
+        }
+
+        return category
     }
 }

@@ -1,5 +1,6 @@
 package org.spendoo.transactions.api.dto.request
 
+import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
 import org.spendoo.transactions.entity.Category
 import org.spendoo.transactions.entity.CategoryIcon
@@ -16,7 +17,8 @@ data class CategoryCreateRequest(
 
     val priority: Int,
 
-    val budget: BudgetCreateRequest?
+    @field:Valid
+    val budget: BudgetCreateRequest
 )
 
 fun CategoryCreateRequest.toEntity(userId: UUID): Category {
