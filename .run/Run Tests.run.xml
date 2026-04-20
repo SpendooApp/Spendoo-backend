@@ -10,9 +10,12 @@
       </option>
       <option name="taskNames">
         <list>
-          <option value=":identity:test" />
-          <option value=":transactions:test" />
           <option value=":app:test" />
+          <option value=":events:test" />
+          <option value=":identity:test" />
+          <option value=":notifications:test" />
+          <option value=":storage:test" />
+          <option value=":transactions:test" />
         </list>
       </option>
       <option name="vmOptions" />
