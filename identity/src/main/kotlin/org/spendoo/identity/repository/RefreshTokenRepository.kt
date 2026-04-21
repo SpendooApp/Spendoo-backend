@@ -6,7 +6,6 @@ import org.springframework.stereotype.Repository
 import java.time.LocalDateTime
 import java.util.*
 
-@Repository
 interface RefreshTokenRepository : JpaRepository<RefreshToken, Long> {
     fun findByToken(token: String): RefreshToken?
     fun findByUserIdAndToken(userId: UUID, token: String): RefreshToken?
