@@ -417,26 +417,7 @@ class TransactionServiceIntegrationTest {
         assertThat(balanceSummary.totalBalance.compareTo(BigDecimal.valueOf(-120.0))).isEqualTo(0)
     }
 
-    @Test
-    fun `getTopSpendingCategories returns categories with spending if expense data exists`() {
-        val secondCategory = createCategory(existingUserId, "Transport")
-        createExpenseTransaction(existingUserId, existingCategory, BigDecimal.valueOf(-500.0))
-        createExpenseTransaction(existingUserId, secondCategory, BigDecimal.valueOf(-200.0))
 
-        val topSpendingPage = transactionService.getTopSpendingCategories(existingUserId, PageRequest.of(0, 10))
-
-        assertThat(topSpendingPage.totalElements).isEqualTo(2)
-        assertThat(topSpendingPage.content.map { it.categoryName }).containsAtLeast("Food", "Transport")
-    }
-
-    @Test
-    fun `getTopSpendingCategories returns empty page if user has no expense data`() {
-        createIncomeTransaction(existingUserId, BigDecimal.valueOf(3000.0))
-
-        val topSpendingPage = transactionService.getTopSpendingCategories(existingUserId, PageRequest.of(0, 10))
-
-        assertThat(topSpendingPage.totalElements).isEqualTo(0)
-    }
 
 
     private fun createCategory(userId: UUID, categoryName: String): Category {

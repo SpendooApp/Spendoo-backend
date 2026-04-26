@@ -32,11 +32,13 @@ class TransactionsTestApplication {
     @Bean
     fun categoryService(
         categoryRepository: CategoryRepository,
-        budgetService: BudgetService
+        budgetService: BudgetService,
+        transactionRepository: TransactionRepository
     ): CategoryService {
         return CategoryService(
             categoryRepository = categoryRepository,
-            budgetService = budgetService
+            budgetService = budgetService,
+            transactionRepository = transactionRepository
         )
     }
 
