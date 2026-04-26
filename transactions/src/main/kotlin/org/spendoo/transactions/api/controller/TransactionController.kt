@@ -5,13 +5,11 @@ import org.spendoo.transactions.api.dto.request.CreateExpenseTransactionRequest
 import org.spendoo.transactions.api.dto.request.CreateIncomeTransactionRequest
 import org.spendoo.transactions.api.dto.request.TransactionUpdateRequest
 import org.spendoo.transactions.api.dto.response.BalanceSummary
-import org.spendoo.transactions.api.dto.response.CategorySpendingDto
 import org.spendoo.transactions.api.dto.response.TransactionResponse
 import org.spendoo.transactions.api.dto.response.toResponse
 import org.spendoo.transactions.service.TransactionService
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
-import org.springframework.data.web.PageableDefault
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -99,13 +97,5 @@ class TransactionController(
         return ResponseEntity.ok(summary)
     }
 
-    @GetMapping("/top-spending")
-    fun getTopSpending(
-        @AuthenticationPrincipal userId: UUID,
-        @PageableDefault(size = 5)
-        pageable: Pageable,
-    ): ResponseEntity<Page<CategorySpendingDto>> {
-        val topSpending = transactionService.getTopSpendingCategories(userId, pageable)
-        return ResponseEntity.ok(topSpending)
-    }
+
 }

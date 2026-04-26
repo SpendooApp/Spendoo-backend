@@ -4,11 +4,13 @@ import org.spendoo.transactions.api.dto.request.CategoryCreateRequest
 import org.spendoo.transactions.api.dto.request.CategoryUpdateRequest
 import org.spendoo.transactions.api.dto.request.toEntity
 import org.spendoo.transactions.api.dto.response.CategoryResponse
+import org.spendoo.transactions.api.dto.response.CategorySpendingDto
 import org.spendoo.transactions.api.dto.response.toResponse
 import org.spendoo.transactions.entity.Category
 import org.spendoo.transactions.entity.CategoryIcon
 import org.spendoo.transactions.entity.LeftOverOptions
 import org.spendoo.transactions.repository.CategoryRepository
+import org.spendoo.transactions.repository.TransactionRepository
 import org.spendoo.transactions.service.model.CategoriesSummary
 import org.spendoo.transactions.service.model.CategoryParams
 import org.springframework.data.domain.Page
@@ -21,6 +23,7 @@ import java.util.*
 @Service
 class CategoryService(
     private val categoryRepository: CategoryRepository,
+    private val transactionRepository: TransactionRepository,
     private val budgetService: BudgetService
 ) {
 
@@ -125,4 +128,9 @@ class CategoryService(
     fun getSummary(userId: UUID): CategoriesSummary {
         return categoryRepository.getCategoriesSummaryForUser(userId)
     }
+
+    fun getTopSpendingCategories(userId: UUID, pageable: Pageable): Page<CategorySpendingDto> {
+        return transactionRepository.findTopSpendingCategories(userId, pageable)
+    }
+
 }
