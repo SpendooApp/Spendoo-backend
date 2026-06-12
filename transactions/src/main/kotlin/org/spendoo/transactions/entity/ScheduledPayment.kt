@@ -30,13 +30,17 @@ data class ScheduledPayment(
     @Column(nullable = false)
     val nextDueDate: LocalDateTime,
 
+    @Column(nullable = false)
+    val nextReminderDate: LocalDateTime,
+
+    @Column(nullable = false)
+    val frequency: Int,
+
+    @Column(nullable = false)
+    val reminderPeriod: Int,
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    val frequency: PaymentFrequency,
-
-    val reminderPeriod: Int?,
-
-    @Enumerated(EnumType.STRING)
-    val reminderUnit: ReminderUnit?,
+    val reminderUnit: ReminderUnit,
 
     )
