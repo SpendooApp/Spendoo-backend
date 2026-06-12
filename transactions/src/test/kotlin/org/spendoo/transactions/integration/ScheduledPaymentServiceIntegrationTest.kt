@@ -8,7 +8,6 @@ import org.spendoo.transactions.api.dto.request.PaymentRequest
 import org.spendoo.transactions.entity.Category
 import org.spendoo.transactions.entity.CategoryIcon
 import org.spendoo.transactions.entity.LeftOverOptions
-import org.spendoo.transactions.entity.PaymentFrequency
 import org.spendoo.transactions.entity.ReminderUnit
 import org.spendoo.transactions.entity.ScheduledPayment
 import org.spendoo.transactions.repository.CategoryRepository
@@ -60,7 +59,7 @@ class ScheduledPaymentServiceIntegrationTest {
             title = "Electricity Bill",
             amount = BigDecimal.valueOf(250.0),
             categoryId = existingCategory.id,
-            frequency = PaymentFrequency.MONTHLY,
+            frequency = 30,
             startDate = LocalDateTime.now(),
             reminderPeriod = 1,
             reminderUnit = ReminderUnit.DAY
@@ -81,7 +80,7 @@ class ScheduledPaymentServiceIntegrationTest {
             title = "Old Sub",
             amount = BigDecimal.valueOf(100.0),
             startDate = oldStartDate,
-            frequency = PaymentFrequency.WEEKLY
+            frequency = 7
         )
 
         val newStartDate = LocalDateTime.now().truncatedTo(ChronoUnit.MILLIS)
@@ -89,10 +88,10 @@ class ScheduledPaymentServiceIntegrationTest {
             title = "New Sub",
             amount = BigDecimal.valueOf(150.0),
             categoryId = existingCategory.id,
-            frequency = PaymentFrequency.MONTHLY,
+            frequency = 30,
             startDate = newStartDate,
-            reminderPeriod = null,
-            reminderUnit = null
+            reminderPeriod = 2,
+            reminderUnit = ReminderUnit.DAY
         )
 
         scheduledPaymentService.updatePayment(existingUserId, existingPayment.id, request)
@@ -111,7 +110,7 @@ class ScheduledPaymentServiceIntegrationTest {
             amount = BigDecimal.valueOf(500.0),
             startDate = LocalDateTime.now().truncatedTo(ChronoUnit.MILLIS).minusMonths(1),
             nextDueDate = oldNextDueDate,
-            frequency = PaymentFrequency.MONTHLY
+            frequency = 30
         )
 
         scheduledPaymentService.payScheduledItem(existingUserId, existingPayment.id)
@@ -136,7 +135,7 @@ class ScheduledPaymentServiceIntegrationTest {
             amount = BigDecimal.valueOf(150.0),
             startDate = LocalDateTime.now().truncatedTo(ChronoUnit.MILLIS).minusMonths(1),
             nextDueDate = oldNextDueDate,
-            frequency = PaymentFrequency.MONTHLY
+            frequency = 30
         )
 
         scheduledPaymentService.skipPayment(existingUserId, existingPayment.id)
@@ -165,11 +164,10 @@ class ScheduledPaymentServiceIntegrationTest {
         createScheduledPayment(title = "Bill 1", amount = BigDecimal.valueOf(200.0))
         createScheduledPayment(title = "Bill 2", amount = BigDecimal.valueOf(300.0))
 
-        val dashboardResponse = scheduledPaymentService.getAllPayments(existingUserId, PageRequest.of(0, 10))
+        val dashboardResponse = scheduledPaymentService.getDashboardSummary(existingUserId)
 
         assertThat(dashboardResponse.upcomingCount).isEqualTo(2)
         assertThat(dashboardResponse.totalScheduledAmount.compareTo(BigDecimal.valueOf(500.0))).isEqualTo(0)
-        assertThat(dashboardResponse.payments.content.map { it.title }).containsExactly("Bill 1", "Bill 2")
     }
 
     @Test
@@ -181,7 +179,7 @@ class ScheduledPaymentServiceIntegrationTest {
             scheduledPaymentService.updatePayment(
                 hackerUserId,
                 existingPayment.id,
-                PaymentRequest("Hacked", BigDecimal.ZERO, existingCategory.id, LocalDateTime.now(), PaymentFrequency.WEEKLY, null, null)
+                PaymentRequest("Hacked", BigDecimal.ZERO, existingCategory.id, LocalDateTime.now(), 7, 1, ReminderUnit.DAY)
             )
         }
 
@@ -207,7 +205,7 @@ class ScheduledPaymentServiceIntegrationTest {
         amount: BigDecimal = BigDecimal.valueOf(100.0),
         startDate: LocalDateTime = LocalDateTime.now(),
         nextDueDate: LocalDateTime = LocalDateTime.now().plusMonths(1),
-        frequency: PaymentFrequency = PaymentFrequency.MONTHLY
+        frequency: Int = 30
     ): ScheduledPayment {
         return paymentRepository.save(
             ScheduledPayment(
@@ -218,8 +216,8 @@ class ScheduledPaymentServiceIntegrationTest {
                 startDate = startDate,
                 nextDueDate = nextDueDate,
                 frequency = frequency,
-                reminderPeriod = null,
-                reminderUnit = null
+                reminderPeriod = 1,
+                reminderUnit = ReminderUnit.DAY
             )
         )
     }

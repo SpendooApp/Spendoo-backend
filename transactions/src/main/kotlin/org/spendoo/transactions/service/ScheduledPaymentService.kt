@@ -3,14 +3,14 @@ package org.spendoo.transactions.service
 import org.spendoo.transactions.api.dto.request.CreateExpenseTransactionRequest
 import org.spendoo.transactions.api.dto.request.ExpenseTransactionEntryDto
 import org.spendoo.transactions.api.dto.request.PaymentRequest
+import org.spendoo.transactions.api.dto.request.alignNextDueDate
+import org.spendoo.transactions.api.dto.request.toEntity
 import org.spendoo.transactions.api.dto.response.ScheduledPaymentResponse
 import org.spendoo.transactions.api.dto.response.ScheduledPaymentsDashboardResponse
+import org.spendoo.transactions.api.dto.response.toResponse
 import org.spendoo.transactions.entity.ScheduledPayment
-import org.spendoo.transactions.mapper.alignNextDueDate
-import org.spendoo.transactions.mapper.getNextDate
-import org.spendoo.transactions.mapper.toEntity
-import org.spendoo.transactions.mapper.toResponse
 import org.spendoo.transactions.repository.ScheduledPaymentRepository
+import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -35,29 +35,16 @@ class ScheduledPaymentService (
     fun updatePayment(userId: UUID, paymentId: UUID, request: PaymentRequest){
         val payment = getPaymentEntity(paymentId, userId)
 
-        val updatedPayment= if(payment.startDate != request.startDate){
-
-            payment.copy(
-                title = request.title,
-                amount = request.amount,
-                categoryId = request.categoryId,
-                frequency = request.frequency,
-                startDate = request.startDate,
-                nextDueDate = alignNextDueDate(request.startDate, request.frequency),
-                reminderPeriod = request.reminderPeriod,
-                reminderUnit = request.reminderUnit
-            )
-        }
-        else {
-            payment.copy(
-                title = request.title,
-                amount = request.amount,
-                categoryId = request.categoryId,
-                frequency = request.frequency,
-                reminderPeriod = request.reminderPeriod,
-                reminderUnit = request.reminderUnit
-            )
-        }
+        val updatedPayment = payment.copy(
+            title = request.title,
+            amount = request.amount,
+            categoryId = request.categoryId,
+            startDate = request.startDate,
+            frequency = request.frequency,
+            nextDueDate = request.frequency.alignNextDueDate(request.startDate), // ندهناها كـ Extension
+            reminderPeriod = request.reminderPeriod,
+            reminderUnit = request.reminderUnit
+        )
 
         paymentRepository.save(updatedPayment)
 
@@ -90,7 +77,7 @@ class ScheduledPaymentService (
 
         val nextCyclePayment = currentPayment.copy(
             startDate = currentPayment.nextDueDate,
-            nextDueDate = getNextDate(currentPayment.nextDueDate, currentPayment.frequency)
+            nextDueDate = currentPayment.nextDueDate.plusDays(currentPayment.frequency.toLong())
         )
 
         paymentRepository.save(nextCyclePayment)
@@ -102,7 +89,7 @@ class ScheduledPaymentService (
 
         val skippedPayment = currentPayment.copy(
             startDate = currentPayment.nextDueDate,
-            nextDueDate = getNextDate(currentPayment.nextDueDate, currentPayment.frequency)
+            nextDueDate = currentPayment.nextDueDate.plusDays(currentPayment.frequency.toLong())
         )
         paymentRepository.save(skippedPayment)
     }
@@ -114,19 +101,23 @@ class ScheduledPaymentService (
     }
 
     @Transactional(readOnly = true)
-    fun getAllPayments(userId: UUID, pageable: Pageable): ScheduledPaymentsDashboardResponse {
+    fun getAllPayments(userId: UUID, pageable: Pageable): Page<ScheduledPaymentResponse> {
 
-        val pageResult = paymentRepository.findAllByUserId(userId, pageable)
+        return paymentRepository.findAllByUserId(userId, pageable)
+            .map { it.toResponse() }
+    }
+
+    @Transactional(readOnly = true)
+    fun getDashboardSummary(userId: UUID): ScheduledPaymentsDashboardResponse {
         val totalAmount = paymentRepository.sumAmountByUserId(userId) ?: BigDecimal.ZERO
-        val totalCount = pageResult.totalElements
+        val upcomingCount = paymentRepository.countUpcomingByUserId(userId, LocalDateTime.now())
 
         return ScheduledPaymentsDashboardResponse(
             totalScheduledAmount = totalAmount,
-            upcomingCount = totalCount,
-            payments = pageResult.map{ it.toResponse() }
+            upcomingCount = upcomingCount
         )
-    }
 
+    }
 
     private fun getPaymentEntity(paymentId: UUID, userId: UUID): ScheduledPayment{
         val payment = paymentRepository.findById(paymentId)

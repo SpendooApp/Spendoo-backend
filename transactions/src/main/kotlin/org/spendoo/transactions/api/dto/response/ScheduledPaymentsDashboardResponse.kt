@@ -5,6 +5,5 @@ import java.math.BigDecimal
 
 data class ScheduledPaymentsDashboardResponse(
     val totalScheduledAmount: BigDecimal,
-    val upcomingCount: Long,
-    val payments: Page<ScheduledPaymentResponse>
+    val upcomingCount: Long
 )

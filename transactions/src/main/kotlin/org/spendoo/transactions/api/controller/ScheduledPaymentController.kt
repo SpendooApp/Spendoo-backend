@@ -5,6 +5,7 @@ import org.spendoo.transactions.api.dto.request.PaymentRequest
 import org.spendoo.transactions.api.dto.response.ScheduledPaymentResponse
 import org.spendoo.transactions.api.dto.response.ScheduledPaymentsDashboardResponse
 import org.spendoo.transactions.service.ScheduledPaymentService
+import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -47,9 +48,15 @@ class ScheduledPaymentController(
     fun getAllPayments(
         @AuthenticationPrincipal userId: UUID,
         pageable: Pageable
+    ): ResponseEntity<Page<ScheduledPaymentResponse>> {
+        return ResponseEntity.ok(scheduledPaymentService.getAllPayments(userId, pageable))
+    }
+
+    @GetMapping("/dashboard")
+    fun getDashboardSummary(
+        @AuthenticationPrincipal userId: UUID
     ): ResponseEntity<ScheduledPaymentsDashboardResponse> {
-        val response = scheduledPaymentService.getAllPayments(userId, pageable)
-        return ResponseEntity.ok(response)
+        return ResponseEntity.ok(scheduledPaymentService.getDashboardSummary(userId))
     }
 
     @PatchMapping("/{paymentId}")
