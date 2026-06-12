@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.spendoo.transactions.TransactionsTestApplication
 import org.spendoo.transactions.api.dto.request.PaymentRequest
+import org.spendoo.transactions.api.dto.request.alignNextDueDate
 import org.spendoo.transactions.entity.Category
 import org.spendoo.transactions.entity.CategoryIcon
 import org.spendoo.transactions.entity.LeftOverOptions
@@ -80,7 +81,8 @@ class ScheduledPaymentServiceIntegrationTest {
             title = "Old Sub",
             amount = BigDecimal.valueOf(100.0),
             startDate = oldStartDate,
-            frequency = 7
+            frequency = 7,
+            isNotified = true
         )
 
         val newStartDate = LocalDateTime.now().truncatedTo(ChronoUnit.MILLIS)
@@ -99,7 +101,14 @@ class ScheduledPaymentServiceIntegrationTest {
         val updatedPayment = paymentRepository.findById(existingPayment.id).orElseThrow()
         assertThat(updatedPayment.title).isEqualTo("New Sub")
         assertThat(updatedPayment.amount.compareTo(BigDecimal.valueOf(150.0))).isEqualTo(0)
-        assertThat(updatedPayment.startDate).isEqualTo(newStartDate)
+
+        val expectedNextDueDate = request.frequency.alignNextDueDate(request.startDate)
+        val expectedReminderDate = expectedNextDueDate.minusDays(2)
+
+        assertThat(updatedPayment.nextDueDate).isEqualTo(expectedNextDueDate)
+        assertThat(updatedPayment.nextReminderDate).isEqualTo(expectedReminderDate)
+
+        assertThat(updatedPayment.isNotified).isFalse()
     }
 
     @Test
@@ -110,14 +119,22 @@ class ScheduledPaymentServiceIntegrationTest {
             amount = BigDecimal.valueOf(500.0),
             startDate = LocalDateTime.now().truncatedTo(ChronoUnit.MILLIS).minusMonths(1),
             nextDueDate = oldNextDueDate,
-            frequency = 30
+            frequency = 30,
+            isNotified = true
         )
 
         scheduledPaymentService.payScheduledItem(existingUserId, existingPayment.id)
 
-
         val updatedPayment = paymentRepository.findById(existingPayment.id).orElseThrow()
+
         assertThat(updatedPayment.startDate).isEqualTo(oldNextDueDate)
+
+        val expectedNewDueDate = oldNextDueDate.plusDays(30)
+        val expectedNewReminderDate = expectedNewDueDate.minusDays(1)
+
+        assertThat(updatedPayment.nextDueDate).isEqualTo(expectedNewDueDate)
+        assertThat(updatedPayment.nextReminderDate).isEqualTo(expectedNewReminderDate)
+        assertThat(updatedPayment.isNotified).isFalse()
 
         val savedTransactions = transactionRepository.findAllByUserId(existingUserId, PageRequest.of(0, 10))
         assertThat(savedTransactions.totalElements).isEqualTo(1)
@@ -135,15 +152,21 @@ class ScheduledPaymentServiceIntegrationTest {
             amount = BigDecimal.valueOf(150.0),
             startDate = LocalDateTime.now().truncatedTo(ChronoUnit.MILLIS).minusMonths(1),
             nextDueDate = oldNextDueDate,
-            frequency = 30
+            frequency = 30,
+            isNotified = true
         )
 
         scheduledPaymentService.skipPayment(existingUserId, existingPayment.id)
 
-
         val updatedPayment = paymentRepository.findById(existingPayment.id).orElseThrow()
         assertThat(updatedPayment.startDate).isEqualTo(oldNextDueDate)
 
+        val expectedNewDueDate = oldNextDueDate.plusDays(30)
+        val expectedNewReminderDate = expectedNewDueDate.minusDays(1)
+
+        assertThat(updatedPayment.nextDueDate).isEqualTo(expectedNewDueDate)
+        assertThat(updatedPayment.nextReminderDate).isEqualTo(expectedNewReminderDate)
+        assertThat(updatedPayment.isNotified).isFalse()
 
         val savedTransactions = transactionRepository.findAllByUserId(existingUserId, PageRequest.of(0, 10))
         assertThat(savedTransactions.totalElements).isEqualTo(0)
@@ -203,9 +226,11 @@ class ScheduledPaymentServiceIntegrationTest {
     private fun createScheduledPayment(
         title: String,
         amount: BigDecimal = BigDecimal.valueOf(100.0),
-        startDate: LocalDateTime = LocalDateTime.now(),
-        nextDueDate: LocalDateTime = LocalDateTime.now().plusMonths(1),
-        frequency: Int = 30
+        startDate: LocalDateTime = LocalDateTime.now().truncatedTo(ChronoUnit.MILLIS),
+        nextDueDate: LocalDateTime = LocalDateTime.now().truncatedTo(ChronoUnit.MILLIS).plusDays(30),
+        nextReminderDate: LocalDateTime = LocalDateTime.now().truncatedTo(ChronoUnit.MILLIS).plusDays(29),
+        frequency: Int = 30,
+        isNotified: Boolean = false
     ): ScheduledPayment {
         return paymentRepository.save(
             ScheduledPayment(
@@ -215,9 +240,11 @@ class ScheduledPaymentServiceIntegrationTest {
                 amount = amount,
                 startDate = startDate,
                 nextDueDate = nextDueDate,
+                nextReminderDate = nextReminderDate,
                 frequency = frequency,
                 reminderPeriod = 1,
-                reminderUnit = ReminderUnit.DAY
+                reminderUnit = ReminderUnit.DAY,
+                isNotified = isNotified
             )
         )
     }
