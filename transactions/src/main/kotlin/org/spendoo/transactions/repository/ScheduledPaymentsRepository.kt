@@ -8,7 +8,6 @@ import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
 import java.math.BigDecimal
-import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.UUID
 
@@ -21,4 +20,6 @@ interface ScheduledPaymentRepository : JpaRepository<ScheduledPayment, UUID> {
 
     @Query("SELECT COUNT(sp) FROM ScheduledPayment sp WHERE sp.userId = :userId AND sp.nextDueDate > :now")
     fun countUpcomingByUserId(@Param("userId") userId: UUID, @Param("now") now: LocalDateTime): Long
+
+    fun findByNextReminderDateBeforeAndIsNotifiedFalse(now: LocalDateTime): List<ScheduledPayment>
 }

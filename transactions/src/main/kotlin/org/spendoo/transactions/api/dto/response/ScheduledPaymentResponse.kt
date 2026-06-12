@@ -12,7 +12,7 @@ data class ScheduledPaymentResponse(
     val amount: BigDecimal,
     val categoryId: UUID,
     val nextDueDate: LocalDateTime,
-//    val nextReminderDate: LocalDateTime,
+    val nextReminderDate: LocalDateTime,
     val frequency: Int,
     val reminderPeriod: Int,
     val reminderUnit: ReminderUnit
@@ -25,7 +25,7 @@ fun ScheduledPayment.toResponse(): ScheduledPaymentResponse {
         amount = this.amount,
         categoryId = this.categoryId,
         nextDueDate = this.nextDueDate,
-//        nextReminderDate = this.nextReminderDate,
+        nextReminderDate = this.nextReminderDate,
         frequency = this.frequency,
         reminderPeriod = this.reminderPeriod,
         reminderUnit = this.reminderUnit

@@ -4,6 +4,7 @@ import org.spendoo.transactions.api.dto.request.CreateExpenseTransactionRequest
 import org.spendoo.transactions.api.dto.request.ExpenseTransactionEntryDto
 import org.spendoo.transactions.api.dto.request.PaymentRequest
 import org.spendoo.transactions.api.dto.request.alignNextDueDate
+import org.spendoo.transactions.api.dto.request.minusReminder
 import org.spendoo.transactions.api.dto.request.toEntity
 import org.spendoo.transactions.api.dto.response.ScheduledPaymentResponse
 import org.spendoo.transactions.api.dto.response.ScheduledPaymentsDashboardResponse
@@ -35,13 +36,18 @@ class ScheduledPaymentService (
     fun updatePayment(userId: UUID, paymentId: UUID, request: PaymentRequest){
         val payment = getPaymentEntity(paymentId, userId)
 
+        val newNextDueDate = request.frequency.alignNextDueDate(request.startDate)
+        val newReminderDate = newNextDueDate.minusReminder(request.reminderPeriod, request.reminderUnit)
+
         val updatedPayment = payment.copy(
             title = request.title,
             amount = request.amount,
             categoryId = request.categoryId,
             startDate = request.startDate,
             frequency = request.frequency,
-            nextDueDate = request.frequency.alignNextDueDate(request.startDate), // ندهناها كـ Extension
+            nextDueDate = newNextDueDate,
+            nextReminderDate = newReminderDate,
+            isNotified = false,
             reminderPeriod = request.reminderPeriod,
             reminderUnit = request.reminderUnit
         )
@@ -75,9 +81,14 @@ class ScheduledPaymentService (
         )
         transactionService.createExpenseTransactions(userId, expenseRequest)
 
+        val newNextDueDate = currentPayment.nextDueDate.plusDays(currentPayment.frequency.toLong())
+        val newReminderDate = newNextDueDate.minusReminder(currentPayment.reminderPeriod, currentPayment.reminderUnit)
+
         val nextCyclePayment = currentPayment.copy(
             startDate = currentPayment.nextDueDate,
-            nextDueDate = currentPayment.nextDueDate.plusDays(currentPayment.frequency.toLong())
+            nextDueDate = newNextDueDate,
+            nextReminderDate = newReminderDate,
+            isNotified = false
         )
 
         paymentRepository.save(nextCyclePayment)
@@ -87,9 +98,14 @@ class ScheduledPaymentService (
     fun skipPayment(userId: UUID, paymentId: UUID){
         val currentPayment = getPaymentEntity(paymentId, userId)
 
+        val newNextDueDate = currentPayment.nextDueDate.plusDays(currentPayment.frequency.toLong())
+        val newReminderDate = newNextDueDate.minusReminder(currentPayment.reminderPeriod, currentPayment.reminderUnit)
+
         val skippedPayment = currentPayment.copy(
             startDate = currentPayment.nextDueDate,
-            nextDueDate = currentPayment.nextDueDate.plusDays(currentPayment.frequency.toLong())
+            nextDueDate = newNextDueDate,
+            nextReminderDate = newReminderDate,
+            isNotified = false
         )
         paymentRepository.save(skippedPayment)
     }

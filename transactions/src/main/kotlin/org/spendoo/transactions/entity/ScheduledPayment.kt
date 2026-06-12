@@ -30,8 +30,11 @@ data class ScheduledPayment(
     @Column(nullable = false)
     val nextDueDate: LocalDateTime,
 
-//    @Column(nullable = false)
-//    val nextReminderDate: LocalDateTime,
+    @Column(nullable = false)
+    val nextReminderDate: LocalDateTime,
+
+    @Column(nullable = false)
+    val isNotified: Boolean = false,
 
     @Column(nullable = false)
     val frequency: Int,

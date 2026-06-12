@@ -55,7 +55,7 @@ fun LocalDateTime.minusReminder(period: Int, unit: ReminderUnit): LocalDateTime 
 fun PaymentRequest.toEntity(userId: UUID): ScheduledPayment {
 
     val firstPaymentDate = this.frequency.alignNextDueDate(this.startDate)
-//    val reminderDate = firstPaymentDate.minusReminder(this.reminderPeriod, this.reminderUnit)
+    val reminderDate = firstPaymentDate.minusReminder(this.reminderPeriod, this.reminderUnit)
 
     return ScheduledPayment(
         userId = userId,
@@ -64,7 +64,7 @@ fun PaymentRequest.toEntity(userId: UUID): ScheduledPayment {
         categoryId = this.categoryId,
         startDate = this.startDate,
         nextDueDate = firstPaymentDate,
-//        nextReminderDate = reminderDate,
+        nextReminderDate = reminderDate,
         frequency = this.frequency,
         reminderPeriod = this.reminderPeriod,
         reminderUnit = this.reminderUnit
