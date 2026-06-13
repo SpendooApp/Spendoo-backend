@@ -21,5 +21,7 @@ interface ScheduledPaymentRepository : JpaRepository<ScheduledPayment, UUID> {
     @Query("SELECT COUNT(sp) FROM ScheduledPayment sp WHERE sp.userId = :userId AND sp.nextDueDate > :now")
     fun countUpcomingByUserId(@Param("userId") userId: UUID, @Param("now") now: LocalDateTime): Long
 
-    fun findByNextReminderDateBeforeAndIsNotifiedFalse(now: LocalDateTime): List<ScheduledPayment>
+    fun findByNextReminderDateBeforeAndIsNotifiedFalse(now: LocalDateTime, pageable: Pageable): Page<ScheduledPayment>
+
+    fun findByNextDueDateBefore(now: LocalDateTime, pageable: Pageable): Page<ScheduledPayment>
 }
