@@ -58,6 +58,41 @@ interface TransactionRepository : JpaRepository<Transaction, UUID> {
         @Param("categoryId") categoryId: UUID
     ): BigDecimal?
 
+    @Query(
+        """
+            SELECT COALESCE(SUM(t.amount), 0)
+            FROM Transaction t
+            WHERE t.userId = :userId
+              AND t.amount < 0
+              AND t.transactionDate >= :startDate
+              AND t.transactionDate < :endDate
+        """
+    )
+    fun sumExpensesByUserIdAndDateRange(
+        @Param("userId") userId: UUID,
+        @Param("startDate") startDate: LocalDateTime,
+        @Param("endDate") endDate: LocalDateTime
+    ): BigDecimal
+
+    @Query(
+        """
+            SELECT new org.spendoo.transactions.api.dto.response.CategorySpendingDto(c.categoryName, c.categoryIcon, SUM(t.amount))
+            FROM Transaction t
+            JOIN t.category c
+            WHERE t.userId = :userId
+              AND t.amount < 0
+              AND t.transactionDate >= :startDate
+              AND t.transactionDate < :endDate
+            GROUP BY c.id, c.categoryName, c.categoryIcon
+            ORDER BY ABS(SUM(t.amount)) DESC
+        """
+    )
+    fun findTopSpendingCategoriesInDateRange(
+        @Param("userId") userId: UUID,
+        @Param("startDate") startDate: LocalDateTime,
+        @Param("endDate") endDate: LocalDateTime
+    ): List<CategorySpendingDto>
+
     fun findByIdAndUserId(id: UUID, userId: UUID): Transaction?
 
     fun deleteByIdAndUserId(id: UUID, userId: UUID): Int

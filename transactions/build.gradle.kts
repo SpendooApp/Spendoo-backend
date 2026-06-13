@@ -17,15 +17,16 @@ dependencies {
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-security")
-    testImplementation("org.springframework.boot:spring-boot-starter-test")
     implementation("org.springframework.boot:spring-boot-starter-validation")
+    runtimeOnly("org.postgresql:postgresql")
+    implementation(projects.events)
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
+
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
     testImplementation("com.google.truth:truth:1.4.4")
     testRuntimeOnly("com.h2database:h2")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-    runtimeOnly("org.postgresql:postgresql")
-    implementation(projects.events)
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
 }
 
 
