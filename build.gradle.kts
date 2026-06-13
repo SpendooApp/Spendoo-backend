@@ -56,6 +56,18 @@ kotlin {
 	}
 }
 
-tasks.withType<Test> {
-	useJUnitPlatform()
+tasks.withType<org.springframework.boot.gradle.tasks.bundling.BootJar> {
+	enabled = false
+}
+
+subprojects {
+	tasks.withType<org.springframework.boot.gradle.tasks.bundling.BootJar> {
+		enabled = project.name == "app"
+		if (project.name != "app") {
+			mainClass.set("none")
+		}
+	}
+	tasks.withType<Jar> {
+		enabled = true
+	}
 }
