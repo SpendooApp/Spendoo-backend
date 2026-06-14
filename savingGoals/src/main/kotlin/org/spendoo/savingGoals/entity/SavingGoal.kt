@@ -33,7 +33,7 @@ data class SavingGoal(
     val targetAmount: BigDecimal,
 
     @Column(nullable = false)
-    val isCompleted:  Boolean = false ,
+    val isCompleted: Boolean = false,
 
     @OneToMany(mappedBy = "goal", cascade = [CascadeType.ALL], fetch = FetchType.LAZY, orphanRemoval = true)
     val savingGoalHistory: MutableList<SavingGoalHistory> = mutableListOf(),

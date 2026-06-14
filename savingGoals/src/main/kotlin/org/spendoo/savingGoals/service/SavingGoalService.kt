@@ -67,7 +67,7 @@ class SavingGoalService(
     @Transactional(readOnly = true)
     fun getAllGoals(userId: UUID, pageable: Pageable): Page<GoalResponse> {
         val goalsPage = savingGoalRepository.findAllByUserId(userId, pageable)
-        return goalsPage.map (GoalParams::toResponse)
+        return goalsPage.map(GoalParams::toResponse)
     }
 
     @Transactional

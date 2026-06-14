@@ -11,7 +11,7 @@ import java.util.*
 data class SavingGoalHistory(
 
     @Id
-    @Column(columnDefinition = "uuid",updatable = false, nullable = false)
+    @Column(columnDefinition = "uuid", updatable = false, nullable = false)
     val id: UUID = UUID.randomUUID(),
 
     @Column(nullable = false)

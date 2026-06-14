@@ -1,6 +1,5 @@
 package org.spendoo.savingGoals.repository
 
-import org.spendoo.savingGoals.api.dto.response.GoalResponse
 import org.spendoo.savingGoals.entity.SavingGoal
 import org.spendoo.savingGoals.service.model.GoalParams
 import org.springframework.data.domain.Page
@@ -16,7 +15,8 @@ interface SavingGoalRepository : JpaRepository<SavingGoal, UUID> {
 
     fun deleteByIdAndUserId(id: UUID, userId: UUID): Int
 
-    @Query("""
+    @Query(
+        """
     SELECT NEW org.spendoo.savingGoals.service.model.GoalParams(
         g.id,
         g.goalName,
@@ -39,7 +39,8 @@ interface SavingGoalRepository : JpaRepository<SavingGoal, UUID> {
         g.deadline,
         g.targetAmount,
         g.isCompleted
-""")
+"""
+    )
     fun findAllByUserId(
         userId: UUID,
         pageable: Pageable
@@ -55,7 +56,8 @@ interface SavingGoalRepository : JpaRepository<SavingGoal, UUID> {
     WHERE g.userId = :userId 
     GROUP BY g.userId
             
-        """)
+        """
+    )
     fun sumSavedAmountByUserId(userId: UUID): BigDecimal?
 
     @Query("""SELECT SUM(g.targetAmount) FROM SavingGoal g WHERE g.userId = :userId """)

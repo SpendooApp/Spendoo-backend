@@ -7,7 +7,10 @@ import org.spendoo.savingGoals.api.dto.request.GoalUpdateRequest
 import org.spendoo.savingGoals.api.dto.response.GoalResponse
 import org.spendoo.savingGoals.api.dto.response.GoalsSummary
 import org.spendoo.savingGoals.service.SavingGoalService
-import org.springframework.data.domain.*
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Pageable
+import org.springframework.data.domain.Sort
 import org.springframework.data.web.PageableDefault
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -30,12 +33,13 @@ class SavingGoalController(
         savingGoalService.createSavingGoal(request, userId)
         return ResponseEntity.status(HttpStatus.CREATED).build()
     }
+
     @PostMapping("/{goalId}/assign")
     fun assignAmountToGoal(
         @PathVariable goalId: UUID,
         @AuthenticationPrincipal userId: UUID,
         @Valid @RequestBody request: AssignAmountRequest
-    ):ResponseEntity<Unit>{
+    ): ResponseEntity<Unit> {
         savingGoalService.assignAmountToGoal(goalId, userId, request)
         return ResponseEntity.status(HttpStatus.CREATED).build()
     }
@@ -48,7 +52,6 @@ class SavingGoalController(
         savingGoalService.addToSavings(userId, amount = request.amount)
         return ResponseEntity.status(HttpStatus.CREATED).build()
     }
-
 
     @PatchMapping("/{goalId}")
     fun updateGoal(
@@ -84,7 +87,7 @@ class SavingGoalController(
         @PageableDefault(size = 10)
         pageable: Pageable
     ): ResponseEntity<Page<GoalResponse>> {
-        val sort = Sort.by(Sort.Order.asc("isCompleted"),Sort.Order.desc("priority"))
+        val sort = Sort.by(Sort.Order.asc("isCompleted"), Sort.Order.desc("priority"))
         val pageRequest = PageRequest.of(pageable.pageNumber, pageable.pageSize, sort)
         val page = savingGoalService.getAllGoals(userId, pageRequest)
         return ResponseEntity.ok(page)

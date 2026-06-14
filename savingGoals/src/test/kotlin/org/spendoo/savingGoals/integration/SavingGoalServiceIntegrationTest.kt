@@ -131,8 +131,8 @@ class SavingGoalServiceIntegrationTest {
 
     @Test
     fun `getAllGoals returns page with user goals if goals exist`() {
-        createAndSaveGoal(targetAmount = BigDecimal("1000.00"),"Gift")
-        createAndSaveGoal(targetAmount = BigDecimal("10000"),"PlayStation")
+        createAndSaveGoal(targetAmount = BigDecimal("1000.00"), "Gift")
+        createAndSaveGoal(targetAmount = BigDecimal("10000"), "PlayStation")
 
         val goalsPage = savingGoalService.getAllGoals(userId, PageRequest.of(0, 10))
 
@@ -192,7 +192,10 @@ class SavingGoalServiceIntegrationTest {
         assertThat(summary.unassignedAmount.compareTo(BigDecimal("150.00"))).isEqualTo(0)
     }
 
-    private fun createAndSaveGoal(targetAmount: BigDecimal = BigDecimal("1000.00"),goalName : String ="Apple iPhone 17 pro Max"): SavingGoal {
+    private fun createAndSaveGoal(
+        targetAmount: BigDecimal = BigDecimal("1000.00"),
+        goalName: String = "Apple iPhone 17 pro Max"
+    ): SavingGoal {
         return savingGoalRepository.save(
             SavingGoal(
                 id = UUID.randomUUID(),
