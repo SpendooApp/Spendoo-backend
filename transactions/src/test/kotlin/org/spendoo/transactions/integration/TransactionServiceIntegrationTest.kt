@@ -15,6 +15,7 @@ import org.spendoo.transactions.service.TransactionService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Sort
 import org.springframework.test.context.ActiveProfiles
 import java.math.BigDecimal
 import java.time.LocalDateTime
@@ -346,9 +347,74 @@ class TransactionServiceIntegrationTest {
         createIncomeTransaction(existingUserId, BigDecimal.valueOf(2000.0))
         createIncomeTransaction(existingUserId, BigDecimal.valueOf(3000.0))
 
-        val transactionsPage = transactionService.getAll(existingUserId, PageRequest.of(0, 10))
+        val transactionsPage = transactionService.getAll(existingUserId, null, PageRequest.of(0, 10))
 
         assertThat(transactionsPage.totalElements).isEqualTo(2)
+    }
+
+    @Test
+    fun `getAll excludes budgets with zero amount`() {
+        budgetRepository.save(
+            Budget(
+                amount = BigDecimal.valueOf(1000.0),
+                carryOver = BigDecimal.ZERO,
+                period = 30,
+                startDate = LocalDateTime.now().minusDays(1),
+                endDate = LocalDateTime.now().plusDays(29),
+                isActive = true,
+                category = existingCategory
+            )
+        )
+        budgetRepository.save(
+            Budget(
+                amount = BigDecimal.ZERO,
+                carryOver = BigDecimal.ZERO,
+                period = 30,
+                startDate = LocalDateTime.now().minusDays(1),
+                endDate = LocalDateTime.now().plusDays(29),
+                isActive = true,
+                category = existingCategory
+            )
+        )
+        createIncomeTransaction(existingUserId, BigDecimal.valueOf(2000.0))
+
+        val transactionsPage = transactionService.getAll(existingUserId, null, PageRequest.of(0, 10))
+
+        assertThat(transactionsPage.totalElements).isEqualTo(2)
+        val amounts = transactionsPage.content.map { it.amount.stripTrailingZeros() }
+        val expectedAmounts = listOf(BigDecimal.valueOf(2000).stripTrailingZeros(), BigDecimal.valueOf(1000).stripTrailingZeros())
+        assertThat(amounts).containsExactlyElementsIn(expectedAmounts)
+    }
+
+    @Test
+    fun `getAll supports sorting by transactionDate field`() {
+        transactionRepository.save(
+            Transaction(
+                userId = existingUserId,
+                title = "First",
+                amount = BigDecimal.valueOf(10.0),
+                note = null,
+                transactionDate = LocalDateTime.now().minusDays(5),
+                category = null
+            )
+        )
+        transactionRepository.save(
+            Transaction(
+                userId = existingUserId,
+                title = "Second",
+                amount = BigDecimal.valueOf(20.0),
+                note = null,
+                transactionDate = LocalDateTime.now().minusDays(2),
+                category = null
+            )
+        )
+
+        val sort = Sort.by(Sort.Order(Sort.Direction.DESC, "transactionDate"))
+        val transactionsPage = transactionService.getAll(existingUserId, null, PageRequest.of(0, 10, sort))
+
+        assertThat(transactionsPage.totalElements).isEqualTo(2)
+        assertThat(transactionsPage.content[0].title).isEqualTo("Second")
+        assertThat(transactionsPage.content[1].title).isEqualTo("First")
     }
 
     @Test

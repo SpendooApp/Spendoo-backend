@@ -11,7 +11,9 @@ import java.math.BigDecimal
 import java.time.LocalDateTime
 import java.util.*
 
-interface TransactionRepository : JpaRepository<Transaction, UUID> {
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor
+
+interface TransactionRepository : JpaRepository<Transaction, UUID>, JpaSpecificationExecutor<Transaction> {
 
     fun findAllByUserId(userId: UUID, pageable: Pageable): Page<Transaction>
 
@@ -76,6 +78,22 @@ interface TransactionRepository : JpaRepository<Transaction, UUID> {
 
     @Query(
         """
+            SELECT COALESCE(SUM(t.amount), 0)
+            FROM Transaction t
+            WHERE t.userId = :userId
+              AND t.amount >= 0
+              AND t.transactionDate >= :startDate
+              AND t.transactionDate < :endDate
+        """
+    )
+    fun sumIncomeByUserIdAndDateRange(
+        @Param("userId") userId: UUID,
+        @Param("startDate") startDate: LocalDateTime,
+        @Param("endDate") endDate: LocalDateTime
+    ): BigDecimal
+
+    @Query(
+        """
             SELECT new org.spendoo.transactions.api.dto.response.CategorySpendingDto(c.categoryName, c.categoryIcon, SUM(t.amount))
             FROM Transaction t
             JOIN t.category c
@@ -88,6 +106,43 @@ interface TransactionRepository : JpaRepository<Transaction, UUID> {
         """
     )
     fun findTopSpendingCategoriesInDateRange(
+        @Param("userId") userId: UUID,
+        @Param("startDate") startDate: LocalDateTime,
+        @Param("endDate") endDate: LocalDateTime
+    ): List<CategorySpendingDto>
+
+    @Query(
+        """
+            SELECT new org.spendoo.transactions.api.dto.response.CategorySpendingDto(c.categoryName, c.categoryIcon, SUM(t.amount))
+            FROM Transaction t
+            JOIN t.category c
+            WHERE t.userId = :userId
+              AND t.amount >= 0
+              AND t.transactionDate >= :startDate
+              AND t.transactionDate < :endDate
+            GROUP BY c.id, c.categoryName, c.categoryIcon
+            ORDER BY ABS(SUM(t.amount)) DESC
+        """
+    )
+    fun findTopIncomeCategoriesInDateRange(
+        @Param("userId") userId: UUID,
+        @Param("startDate") startDate: LocalDateTime,
+        @Param("endDate") endDate: LocalDateTime
+    ): List<CategorySpendingDto>
+
+    @Query(
+        """
+            SELECT new org.spendoo.transactions.api.dto.response.CategorySpendingDto(c.categoryName, c.categoryIcon, SUM(t.amount))
+            FROM Transaction t
+            JOIN t.category c
+            WHERE t.userId = :userId
+              AND t.transactionDate >= :startDate
+              AND t.transactionDate < :endDate
+            GROUP BY c.id, c.categoryName, c.categoryIcon
+            ORDER BY ABS(SUM(t.amount)) DESC
+        """
+    )
+    fun findTopAllCategoriesInDateRange(
         @Param("userId") userId: UUID,
         @Param("startDate") startDate: LocalDateTime,
         @Param("endDate") endDate: LocalDateTime

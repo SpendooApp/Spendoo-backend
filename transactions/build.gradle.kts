@@ -18,6 +18,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-validation")
+    compileOnly("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.2")
     runtimeOnly("org.postgresql:postgresql")
     implementation(projects.events)
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")

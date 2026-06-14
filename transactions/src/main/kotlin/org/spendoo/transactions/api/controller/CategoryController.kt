@@ -6,6 +6,7 @@ import org.spendoo.transactions.api.dto.request.CategoryUpdateRequest
 import org.spendoo.transactions.api.dto.response.CategoryResponse
 import org.spendoo.transactions.service.CategoryService
 import org.spendoo.transactions.service.model.CategoriesSummary
+import org.springdoc.core.annotations.ParameterObject
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.http.HttpStatus
@@ -41,7 +42,7 @@ class CategoryController(
     @GetMapping
     fun getAllCategories(
         @AuthenticationPrincipal userId: UUID,
-        pageable: Pageable
+        @ParameterObject pageable: Pageable
     ): ResponseEntity<Page<CategoryResponse>> {
         val page = categoryService.getAll(userId, pageable)
         return ResponseEntity.ok(page)

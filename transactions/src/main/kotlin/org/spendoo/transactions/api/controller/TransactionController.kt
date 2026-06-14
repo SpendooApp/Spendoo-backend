@@ -9,6 +9,7 @@ import org.spendoo.transactions.api.dto.response.CategorySpendingDto
 import org.spendoo.transactions.api.dto.response.TransactionResponse
 import org.spendoo.transactions.api.dto.response.toResponse
 import org.spendoo.transactions.service.TransactionService
+import org.springdoc.core.annotations.ParameterObject
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.web.PageableDefault
@@ -66,9 +67,10 @@ class TransactionController(
     @GetMapping
     fun getAllTransactions(
         @AuthenticationPrincipal userId: UUID,
-        pageable: Pageable
+        @RequestParam(required = false) search: String?,
+        @ParameterObject pageable: Pageable
     ): ResponseEntity<Page<TransactionResponse>> {
-        val page = transactionService.getAll(userId, pageable)
+        val page = transactionService.getAll(userId, search, pageable)
         return ResponseEntity.ok(page.map { it.toResponse() })
     }
 
@@ -77,7 +79,7 @@ class TransactionController(
         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) startDate: LocalDateTime,
         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) endDate: LocalDateTime,
         @AuthenticationPrincipal userId: UUID,
-        pageable: Pageable
+        @ParameterObject pageable: Pageable
     ): ResponseEntity<Page<TransactionResponse>> {
         val page = transactionService.getTransactionsByDateRange(userId, startDate, endDate, pageable)
         return ResponseEntity.ok(page.map { it.toResponse() })
@@ -94,7 +96,7 @@ class TransactionController(
 
 
     @GetMapping("/summary")
-    suspend fun getTransactionSummary(@AuthenticationPrincipal userId: UUID): ResponseEntity<BalanceSummary> {
+    fun getTransactionSummary(@AuthenticationPrincipal userId: UUID): ResponseEntity<BalanceSummary> {
         val summary = transactionService.getBalanceSummary(userId)
         return ResponseEntity.ok(summary)
     }
@@ -102,6 +104,7 @@ class TransactionController(
     @GetMapping("/top-spending")
     fun getTopSpending(
         @AuthenticationPrincipal userId: UUID,
+        @ParameterObject
         @PageableDefault(size = 5)
         pageable: Pageable,
     ): ResponseEntity<Page<CategorySpendingDto>> {
