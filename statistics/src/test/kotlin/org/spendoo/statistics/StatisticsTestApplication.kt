@@ -3,6 +3,7 @@ package org.spendoo.statistics
 import org.spendoo.statistics.service.StatisticsService
 import org.spendoo.transactions.repository.BudgetRepository
 import org.spendoo.transactions.repository.TransactionRepository
+import org.spendoo.transactions.repository.TransactionViewRepository
 import org.springframework.boot.SpringBootConfiguration
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration
 import org.springframework.boot.persistence.autoconfigure.EntityScan
@@ -30,12 +31,14 @@ class StatisticsTestApplication {
     fun statisticsService(
         transactionRepository: TransactionRepository,
         budgetRepository: BudgetRepository,
+        transactionViewRepository: TransactionViewRepository,
         i18nService: I18nService,
         imageStorageService: ImageStorageService
     ): StatisticsService {
         return StatisticsService(
             transactionRepository = transactionRepository,
             budgetRepository = budgetRepository,
+            transactionViewRepository = transactionViewRepository,
             i18nService = i18nService,
             imageStorageService = imageStorageService
         )

@@ -42,7 +42,8 @@
 - Transactions default category bootstrap uses native SQL against `spending.categories` + `gen_random_uuid()`; keep Postgres compatibility in mind.
 - Every class or interface MUST reside in its own separate file (do not group multiple classes/DTOs in one file).
 - Use type-safe Enums instead of raw Strings for status levels, directions, or trends.
-- Database queries must be memory-safe: use JPQL aggregations (e.g. `SUM`, `COUNT`) or lightweight DTO projections rather than fetching entire entity lists/graphs (avoid `findAll` on large datasets).
+- Database queries must be memory-safe: use JPQL aggregations (e.g. `SUM`, `COUNT`) or lightweight DTO projections rather than fetching entire entity lists/graphs.
+- **CRITICAL**: Do NOT make queries with `getAll` (or `findAll`) without using `Pageable` pagination, because fetching all records into memory will cause OutOfMemory errors on the limited server memory.
 - Keep business logic decoupled: isolate static configurations, color palettes, and calendar/date math into distinct files/utilities.
 - Centralize localization: use a centralized translation registry rather than inline language check branching.
 - Do not write comments in code: write clean, readable, self-explanatory code instead.

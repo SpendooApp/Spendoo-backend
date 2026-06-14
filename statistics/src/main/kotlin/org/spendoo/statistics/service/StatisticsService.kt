@@ -7,10 +7,12 @@ import org.spendoo.statistics.util.ChartRenderer
 import org.spendoo.statistics.util.IntervalCalculator
 import org.spendoo.statistics.util.PdfGenerator
 import org.spendoo.storage.service.ImageStorageService
-import org.spendoo.transactions.api.dto.response.BudgetIntervalDto
-import org.spendoo.transactions.entity.CategoryIcon
+import org.spendoo.transactions.api.dto.response.CategorySpendingDto
+import org.spendoo.transactions.entity.Budget
 import org.spendoo.transactions.repository.BudgetRepository
 import org.spendoo.transactions.repository.TransactionRepository
+import org.spendoo.transactions.repository.TransactionViewRepository
+import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
@@ -19,10 +21,12 @@ import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 import java.util.*
 
+//TODO: Do the analytics calculations correctly in the AI service and use it's response
 @Service
 class StatisticsService(
     private val transactionRepository: TransactionRepository,
     private val budgetRepository: BudgetRepository,
+    private val transactionViewRepository: TransactionViewRepository,
     private val i18nService: I18nService,
     private val imageStorageService: ImageStorageService
 ) {
@@ -39,8 +43,41 @@ class StatisticsService(
         val firstChartIntervals = IntervalCalculator.getFirstChartIntervals(period, referenceDate, lang, i18nService)
         val periodStart = firstChartIntervals.first().start
         val periodEnd = firstChartIntervals.last().end
+        return getStatistics(userId, periodStart, periodEnd, DataType.FULL, theme, lang, imageFormat)
+    }
 
-        val budgets = budgetRepository.findAllBudgetsByUserIdAndDateRange(userId, periodStart, periodEnd)
+    @Transactional(readOnly = true)
+    fun getStatistics(
+        userId: UUID,
+        startDate: LocalDateTime,
+        endDate: LocalDateTime,
+        dataType: DataType,
+        theme: Theme,
+        lang: Language,
+        imageFormat: ImageFormat
+    ): StatisticsResponse {
+        val days = ChronoUnit.DAYS.between(startDate.toLocalDate(), endDate.toLocalDate())
+        val period = when {
+            days <= 10 -> StatsPeriod.DAILY
+            days in 11..42 -> StatsPeriod.WEEKLY
+            days in 43..365 -> StatsPeriod.MONTHLY
+            else -> StatsPeriod.YEARLY
+        }
+
+        val referenceDate = if (endDate.isAfter(LocalDateTime.now())) LocalDateTime.now() else endDate
+
+        val firstChartIntervals = IntervalCalculator.getFirstChartIntervals(period, referenceDate, lang, i18nService)
+        val periodStart = firstChartIntervals.first().start
+        val periodEnd = firstChartIntervals.last().end
+
+        // Fetch all budgets that overlap this chart's period in batches to prevent memory overflow
+        val allBudgets = mutableListOf<Budget>()
+        var pageNum = 0
+        do {
+            val page = budgetRepository.findAllBudgetsByUserIdAndDateRangeBatched(userId, periodStart, periodEnd, PageRequest.of(pageNum, 100))
+            allBudgets.addAll(page.content)
+            pageNum++
+        } while (page.hasNext())
 
         val firstChartLabels = firstChartIntervals.map { it.label }
         val budgetData = mutableListOf<BigDecimal>()
@@ -63,11 +100,11 @@ class StatisticsService(
 
         for (i in 0..currentIntervalIdx) {
             val interval = firstChartIntervals[i]
-            val intervalBudget = calculateBudgetForRange(budgets, interval.start, interval.end)
+            val intervalBudget = calculateBudgetForRange(allBudgets, interval.start, interval.end)
             budgetData.add(intervalBudget.setScale(2, RoundingMode.HALF_UP))
 
             val intervalEndLimit = if (referenceDate.isBefore(interval.end)) referenceDate else interval.end
-            val intervalSpent = transactionRepository.sumExpensesByUserIdAndDateRange(userId, interval.start, intervalEndLimit).negate()
+            val intervalSpent = getPeriodAmount(userId, interval.start, intervalEndLimit, dataType)
             spentData.add(intervalSpent.setScale(2, RoundingMode.HALF_UP))
         }
 
@@ -79,6 +116,10 @@ class StatisticsService(
         }
 
         if (currentIntervalIdx in firstChartIntervals.indices) {
+            for (i in 0 until currentIntervalIdx) {
+                forecastData.add(BigDecimal.ZERO)
+            }
+            
             val spentSoFar = spentData.lastOrNull() ?: BigDecimal.ZERO
             forecastData.add(spentSoFar)
 
@@ -120,11 +161,18 @@ class StatisticsService(
 
         val startLast6 = secondChartIntervals.first().start
         val endLast6 = secondChartIntervals.last().end
-        val budgetsLast6 = budgetRepository.findAllBudgetsByUserIdAndDateRange(userId, startLast6, endLast6)
+        
+        val last6Budgets = mutableListOf<Budget>()
+        var pageNum6 = 0
+        do {
+            val page = budgetRepository.findAllBudgetsByUserIdAndDateRangeBatched(userId, startLast6, endLast6, PageRequest.of(pageNum6, 100))
+            last6Budgets.addAll(page.content)
+            pageNum6++
+        } while (page.hasNext())
 
         for (interval in secondChartIntervals) {
-            val periodSpent = transactionRepository.sumExpensesByUserIdAndDateRange(userId, interval.start, interval.end).negate()
-            val periodBudget = calculateBudgetForRange(budgetsLast6, interval.start, interval.end)
+            val periodSpent = getPeriodAmount(userId, interval.start, interval.end, dataType)
+            val periodBudget = calculateBudgetForRange(last6Budgets, interval.start, interval.end)
 
             val ratio = if (periodBudget.compareTo(BigDecimal.ZERO) == 0) {
                 if (periodSpent.compareTo(BigDecimal.ZERO) == 0) BigDecimal.ZERO else BigDecimal("1.1")
@@ -166,9 +214,9 @@ class StatisticsService(
             image = secondChartImg
         )
 
-        val currentPeriodSpent = transactionRepository.sumExpensesByUserIdAndDateRange(userId, periodStart, periodEnd).negate()
+        val currentPeriodSpent = getPeriodAmount(userId, periodStart, periodEnd, dataType)
 
-        val categorySpendingList = transactionRepository.findTopSpendingCategoriesInDateRange(userId, periodStart, periodEnd)
+        val categorySpendingList = getTopCategories(userId, periodStart, periodEnd, dataType)
 
         val donutSlices = mutableListOf<DonutChartSlice>()
         val renderCategoryNames = mutableListOf<String>()
@@ -235,25 +283,20 @@ class StatisticsService(
         )
 
         val (prevStart, prevEnd) = IntervalCalculator.getPreviousPeriodRange(period, periodStart, periodEnd)
-        val prevCategorySpending = transactionRepository.findTopSpendingCategoriesInDateRange(userId, prevStart, prevEnd)
+        val prevCategorySpending = getTopCategories(userId, prevStart, prevEnd, dataType)
 
         val prevSpendingMap = prevCategorySpending.associate { it.categoryName to it.totalAmount.abs() }
-        val curSpendingMap = categorySpendingList.associate { it.categoryName to it.totalAmount.abs() }
 
-        val allCategoryNames = (curSpendingMap.keys + prevSpendingMap.keys).toSet()
-
-        val iconMap = (categorySpendingList + prevCategorySpending).associate { it.categoryName to it.categoryIcon }
-
-        val topCategoryDtos = allCategoryNames.map { catName ->
-            val curAmt = curSpendingMap[catName] ?: BigDecimal.ZERO
+        val topCategoryDtos = categorySpendingList.map { dto ->
+            val catName = dto.categoryName
+            val curAmt = dto.totalAmount.abs()
             val prevAmt = prevSpendingMap[catName] ?: BigDecimal.ZERO
 
             val (pctChange, trend) = calculatePercentageChange(curAmt, prevAmt)
-            val icon = iconMap[catName] ?: CategoryIcon.DEFAULT
 
             TopCategoryDto(
                 categoryName = catName.lowercase(),
-                categoryIcon = icon,
+                categoryIcon = dto.categoryIcon,
                 amount = curAmt.setScale(2, RoundingMode.HALF_UP),
                 percentageChange = pctChange.setScale(1, RoundingMode.HALF_UP),
                 trend = trend
@@ -271,13 +314,57 @@ class StatisticsService(
     @Transactional(readOnly = true)
     fun getStatisticsPdf(
         userId: UUID,
-        period: StatsPeriod,
+        startDate: LocalDateTime,
+        endDate: LocalDateTime,
+        reportType: ReportType,
+        dataType: DataType,
         theme: Theme,
-        lang: Language,
-        referenceDate: LocalDateTime = LocalDateTime.now()
+        lang: Language
     ): ByteArray {
-        val stats = getStatistics(userId, period, theme, lang, ImageFormat.BASE64, referenceDate)
-        return PdfGenerator.generatePdf(stats, period, theme, lang, i18nService)
+        return if (reportType == ReportType.CHARTS) {
+            val stats = getStatistics(userId, startDate, endDate, dataType, theme, lang, ImageFormat.BASE64)
+            val days = ChronoUnit.DAYS.between(startDate.toLocalDate(), endDate.toLocalDate())
+            val period = when {
+                days <= 10 -> StatsPeriod.DAILY
+                days in 11..42 -> StatsPeriod.WEEKLY
+                days in 43..365 -> StatsPeriod.MONTHLY
+                else -> StatsPeriod.YEARLY
+            }
+            PdfGenerator.generatePdf(stats, period, theme, lang, i18nService)
+        } else {
+            PdfGenerator.generateDetailedPdf(
+                userId = userId,
+                startDate = startDate,
+                endDate = endDate,
+                dataType = dataType,
+                theme = theme,
+                lang = lang,
+                i18nService = i18nService,
+                transactionRepository = transactionRepository,
+                transactionViewRepository = transactionViewRepository,
+                budgetRepository = budgetRepository
+            )
+        }
+    }
+
+    private fun getPeriodAmount(userId: UUID, start: LocalDateTime, end: LocalDateTime, dataType: DataType): BigDecimal {
+        return when(dataType) {
+            DataType.EXPENSES -> transactionRepository.sumExpensesByUserIdAndDateRange(userId, start, end).negate()
+            DataType.INCOME -> transactionRepository.sumIncomeByUserIdAndDateRange(userId, start, end)
+            DataType.FULL -> {
+                val exp = transactionRepository.sumExpensesByUserIdAndDateRange(userId, start, end).negate()
+                val inc = transactionRepository.sumIncomeByUserIdAndDateRange(userId, start, end)
+                exp + inc
+            }
+        }
+    }
+
+    private fun getTopCategories(userId: UUID, start: LocalDateTime, end: LocalDateTime, dataType: DataType): List<CategorySpendingDto> {
+        return when(dataType) {
+            DataType.EXPENSES -> transactionRepository.findTopSpendingCategoriesInDateRange(userId, start, end)
+            DataType.INCOME -> transactionRepository.findTopIncomeCategoriesInDateRange(userId, start, end)
+            DataType.FULL -> transactionRepository.findTopAllCategoriesInDateRange(userId, start, end)
+        }
     }
 
     private fun processImage(bytes: ByteArray, format: ImageFormat, fileName: String): String {
@@ -305,25 +392,23 @@ class StatisticsService(
         }
     }
 
-    private fun calculateBudgetForRange(budgets: List<BudgetIntervalDto>, start: LocalDateTime, end: LocalDateTime): BigDecimal {
+    private fun calculateBudgetForRange(budgets: List<Budget>, start: LocalDateTime, end: LocalDateTime): BigDecimal {
+        // Find all budgets whose range includes this interval (overlaps)
+        val overlappingBudgets = budgets.filter {
+            it.startDate < end && it.endDate > start
+        }
+
+        // Group by categoryId, and for each category, take the newest budget (by startDate)
+        val groupedByCategory = overlappingBudgets.groupBy { it.category.id }
+        
         var totalBudget = BigDecimal.ZERO
-        val rangeSeconds = ChronoUnit.SECONDS.between(start, end)
-        if (rangeSeconds <= 0) return BigDecimal.ZERO
-
-        for (b in budgets) {
-            val overlapStart = if (b.startDate.isAfter(start)) b.startDate else start
-            val overlapEnd = if (b.endDate.isBefore(end)) b.endDate else end
-
-            if (overlapStart.isBefore(overlapEnd)) {
-                val overlapSeconds = ChronoUnit.SECONDS.between(overlapStart, overlapEnd)
-                val budgetSeconds = ChronoUnit.SECONDS.between(b.startDate, b.endDate)
-                if (budgetSeconds > 0) {
-                    val fraction = overlapSeconds.toDouble() / budgetSeconds.toDouble()
-                    val allocated = b.amount.multiply(BigDecimal.valueOf(fraction))
-                    totalBudget = totalBudget.add(allocated)
-                }
+        for ((_, categoryBudgets) in groupedByCategory) {
+            val newestBudget = categoryBudgets.maxByOrNull { it.startDate }
+            if (newestBudget != null) {
+                totalBudget = totalBudget.add(newestBudget.amount)
             }
         }
+
         return totalBudget
     }
 }

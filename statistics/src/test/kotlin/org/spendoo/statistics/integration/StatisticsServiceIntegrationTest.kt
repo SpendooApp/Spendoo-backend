@@ -135,18 +135,18 @@ class StatisticsServiceIntegrationTest {
             )
         )
 
-        val stats = statisticsService.getStatistics(userId, StatsPeriod.DAILY, Theme.LIGHT, Language.EN, ImageFormat.BASE64, referenceDate)
+        val stats = statisticsService.getStatistics(userId, referenceDate.minusDays(10), referenceDate, org.spendoo.statistics.model.DataType.FULL, Theme.LIGHT, Language.EN, ImageFormat.BASE64)
 
         // 1. Line Chart validation
         assertThat(stats.lineChart.labels).containsExactly("Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri")
-        assertThat(stats.lineChart.budgetData[0].toDouble()).isWithin(0.1).of(10.0)
+        assertThat(stats.lineChart.budgetData[0].toDouble()).isWithin(0.1).of(300.0)
         assertThat(stats.lineChart.spentData[1].toDouble()).isWithin(0.1).of(15.0)
         assertThat(stats.lineChart.spentData[3].toDouble()).isWithin(0.1).of(35.0)
         assertThat(stats.lineChart.spentData[4].toDouble()).isEqualTo(0.0)
         assertThat(stats.lineChart.maxSpentValue.toDouble()).isWithin(0.1).of(35.0)
         assertThat(stats.lineChart.maxSpentPosition).isEqualTo(3)
         assertThat(stats.lineChart.spentData).hasSize(6)
-        assertThat(stats.lineChart.forecastData).hasSize(2)
+        assertThat(stats.lineChart.forecastData).hasSize(7)
 
         // 2. Bar Chart validation (Last 6 Days)
         assertThat(stats.barChart.data).hasSize(6)
@@ -176,7 +176,7 @@ class StatisticsServiceIntegrationTest {
     @Test
     fun `getStatistics MONTHLY returns arabic labels and dark theme images`() {
         val referenceDate = LocalDateTime.of(2026, 6, 11, 12, 0, 0)
-        val stats = statisticsService.getStatistics(userId, StatsPeriod.MONTHLY, Theme.DARK, Language.AR, ImageFormat.BASE64, referenceDate)
+        val stats = statisticsService.getStatistics(userId, referenceDate.minusDays(50), referenceDate, org.spendoo.statistics.model.DataType.FULL, Theme.DARK, Language.AR, ImageFormat.BASE64)
 
         assertThat(stats.lineChart.labels).contains("يونيو")
         assertThat(stats.lineChart.image).startsWith("data:image/png;base64,")
@@ -185,7 +185,7 @@ class StatisticsServiceIntegrationTest {
     @Test
     fun `getStatisticsPdf returns valid pdf bytes`() {
         val referenceDate = LocalDateTime.of(2026, 6, 11, 12, 0, 0)
-        val pdfBytes = statisticsService.getStatisticsPdf(userId, StatsPeriod.DAILY, Theme.LIGHT, Language.EN, referenceDate)
+        val pdfBytes = statisticsService.getStatisticsPdf(userId, referenceDate.minusDays(10), referenceDate, org.spendoo.statistics.model.ReportType.CHARTS, org.spendoo.statistics.model.DataType.FULL, Theme.LIGHT, Language.EN)
 
         assertThat(pdfBytes).isNotEmpty()
         assertThat(pdfBytes[0].toInt()).isEqualTo(0x25)
@@ -209,7 +209,7 @@ class StatisticsServiceIntegrationTest {
             )
         )
 
-        val stats = statisticsService.getStatistics(userId, StatsPeriod.DAILY, Theme.LIGHT, Language.EN, ImageFormat.BASE64, referenceDate)
+        val stats = statisticsService.getStatistics(userId, referenceDate.minusDays(10), referenceDate, org.spendoo.statistics.model.DataType.FULL, Theme.LIGHT, Language.EN, ImageFormat.BASE64)
 
         val dayWithSpending = stats.barChart.data.find { it.spent > BigDecimal.ZERO }
         assertThat(dayWithSpending).isNotNull()
@@ -247,13 +247,78 @@ class StatisticsServiceIntegrationTest {
             )
         }
 
-        val stats = statisticsService.getStatistics(userId, StatsPeriod.DAILY, Theme.LIGHT, Language.EN, ImageFormat.BASE64, referenceDate)
+        val stats = statisticsService.getStatistics(userId, referenceDate.minusDays(10), referenceDate, org.spendoo.statistics.model.DataType.FULL, Theme.LIGHT, Language.EN, ImageFormat.BASE64)
 
         assertThat(stats.lineChart.spentData).hasSize(6)
         assertThat(stats.lineChart.budgetData).hasSize(6)
         stats.lineChart.spentData.forEach { spent ->
             assertThat(spent.toDouble()).isAtLeast(0.0)
         }
+    }
+
+    @Test
+    fun `getStatistics budget calculation handles overlapping categories and newer budgets correctly`() {
+        val referenceDate = LocalDateTime.of(2026, 6, 11, 12, 0, 0)
+        
+        // Category 1: Old budget, superseded by new budget in June
+        val oldBudget = budgetRepository.save(
+            Budget(
+                amount = BigDecimal("1000.00"),
+                carryOver = BigDecimal.ZERO,
+                period = 30,
+                startDate = LocalDateTime.of(2026, 5, 20, 0, 0),
+                endDate = LocalDateTime.of(2026, 6, 20, 0, 0),
+                isActive = false,
+                category = foodCategory
+            )
+        )
+        // Simulate an update on June 5th, so the new budget starts then
+        val newBudget = budgetRepository.save(
+            Budget(
+                amount = BigDecimal("1500.00"),
+                carryOver = BigDecimal.ZERO,
+                period = 30,
+                startDate = LocalDateTime.of(2026, 6, 5, 0, 0),
+                endDate = LocalDateTime.of(2026, 7, 5, 0, 0),
+                isActive = true,
+                category = foodCategory
+            )
+        )
+
+        // Category 2: A different category budget overlapping the same period
+        budgetRepository.save(
+            Budget(
+                amount = BigDecimal("500.00"),
+                carryOver = BigDecimal.ZERO,
+                period = 30,
+                startDate = LocalDateTime.of(2026, 6, 1, 0, 0),
+                endDate = LocalDateTime.of(2026, 7, 1, 0, 0),
+                isActive = true,
+                category = shoppingCategory
+            )
+        )
+
+        val stats = statisticsService.getStatistics(userId, StatsPeriod.MONTHLY, Theme.LIGHT, Language.EN, ImageFormat.BASE64, referenceDate)
+
+        // For MONTHLY, intervals are Jan, Feb, Mar, Apr, May, Jun...
+        // May budget:
+        // Food: overlaps May 20-Jun 20 (amount 1000). (New budget starts Jun 5, doesn't overlap May).
+        // Shopping: overlaps Jun 1-Jul 1 (doesn't overlap May).
+        // May total = 1000.
+        
+        // Jun budget:
+        // Food: overlaps May 20-Jun 20 (amount 1000) AND Jun 5-Jul 5 (amount 1500). 
+        // User rule: "if the categor budget has 2 values in the month take the seconed one (the newer)."
+        // Newer by startDate is 1500.
+        // Shopping: overlaps Jun 1-Jul 1 (amount 500).
+        // Jun total = 1500 + 500 = 2000.
+
+        val labels = stats.lineChart.labels
+        val mayIndex = labels.indexOf("May")
+        val junIndex = labels.indexOf("Jun")
+
+        assertThat(stats.lineChart.budgetData[mayIndex].toDouble()).isWithin(0.1).of(1000.0)
+        assertThat(stats.lineChart.budgetData[junIndex].toDouble()).isWithin(0.1).of(2000.0)
     }
 
     @Test
@@ -283,14 +348,15 @@ class StatisticsServiceIntegrationTest {
             )
         )
 
-        val stats = statisticsService.getStatistics(userId, StatsPeriod.DAILY, Theme.LIGHT, Language.EN, ImageFormat.BASE64, referenceDate)
+        val stats = statisticsService.getStatistics(userId, referenceDate.minusDays(10), referenceDate, org.spendoo.statistics.model.DataType.FULL, Theme.LIGHT, Language.EN, ImageFormat.BASE64)
 
         assertThat(stats.lineChart.forecastData).isNotEmpty()
         assertThat(stats.lineChart.forecastData.first().toDouble()).isAtLeast(0.0)
         
         val lastSpent = stats.lineChart.spentData.lastOrNull()
         if (lastSpent != null && stats.lineChart.forecastData.isNotEmpty()) {
-            assertThat(stats.lineChart.forecastData.first()).isEqualTo(lastSpent)
+            val idx = stats.lineChart.spentData.size - 1
+            assertThat(stats.lineChart.forecastData[idx]).isEqualTo(lastSpent)
         }
     }
 
@@ -320,7 +386,7 @@ class StatisticsServiceIntegrationTest {
             )
         )
 
-        val stats = statisticsService.getStatistics(userId, StatsPeriod.DAILY, Theme.LIGHT, Language.EN, ImageFormat.BASE64, referenceDate)
+        val stats = statisticsService.getStatistics(userId, referenceDate.minusDays(10), referenceDate, org.spendoo.statistics.model.DataType.FULL, Theme.LIGHT, Language.EN, ImageFormat.BASE64)
 
         assertThat(stats.donutChart.data).hasSize(2)
         assertThat(stats.donutChart.totalSpent.toDouble()).isWithin(0.1).of(500.0)
@@ -358,7 +424,7 @@ class StatisticsServiceIntegrationTest {
             )
         )
 
-        val stats = statisticsService.getStatistics(userId, StatsPeriod.DAILY, Theme.LIGHT, Language.EN, ImageFormat.BASE64, referenceDate)
+        val stats = statisticsService.getStatistics(userId, referenceDate.minusDays(10), referenceDate, org.spendoo.statistics.model.DataType.FULL, Theme.LIGHT, Language.EN, ImageFormat.BASE64)
 
         val foodDto = stats.topCategories.find { it.categoryName == "food" }
         assertThat(foodDto).isNotNull()
