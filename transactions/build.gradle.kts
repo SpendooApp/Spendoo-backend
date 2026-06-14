@@ -20,12 +20,15 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
+    testImplementation("com.ninja-squad:springmockk:5.0.0")
     testImplementation("com.google.truth:truth:1.4.4")
     testRuntimeOnly("com.h2database:h2")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     runtimeOnly("org.postgresql:postgresql")
     implementation(projects.events)
+    implementation(projects.httpClient)
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
+
 }
 
 
