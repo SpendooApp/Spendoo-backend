@@ -26,6 +26,7 @@ dependencies {
     runtimeOnly("org.postgresql:postgresql")
     implementation(projects.events)
     implementation(projects.identity)
+    implementation(projects.httpClient)
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
 }
 
