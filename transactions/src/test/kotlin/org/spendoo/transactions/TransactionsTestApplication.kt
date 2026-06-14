@@ -1,5 +1,7 @@
 package org.spendoo.transactions
 
+import io.mockk.mockk
+import org.spendoo.client.ApiClient
 import org.spendoo.transactions.repository.BudgetRepository
 import org.spendoo.transactions.repository.CategoryRepository
 import org.spendoo.transactions.repository.TransactionRepository
@@ -19,13 +21,18 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories
 class TransactionsTestApplication {
 
     @Bean
+    fun apiClient(): ApiClient {
+        return mockk<ApiClient>(relaxed = true)
+    }
+    @Bean
     fun budgetService(
         budgetRepository: BudgetRepository,
         transactionRepository: TransactionRepository
     ): BudgetService {
         return BudgetService(
             budgetRepository = budgetRepository,
-            transactionRepository = transactionRepository
+            transactionRepository = transactionRepository,
+            apiClient = apiClient()
         )
     }
 
