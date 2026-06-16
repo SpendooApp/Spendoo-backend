@@ -14,7 +14,7 @@ class UserNotificationListener(
     private val userService: UserService,
     private val publisher: SpendooEventPublisher
 ) {
-    private val log = LoggerFactory.getLogger(javaClass)
+    private val log = LoggerFactory.getLogger(UserNotificationListener::class.java)
 
     @Async
     @EventListener
