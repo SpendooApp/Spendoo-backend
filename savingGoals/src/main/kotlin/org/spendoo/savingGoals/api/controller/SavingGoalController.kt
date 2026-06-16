@@ -41,7 +41,7 @@ class SavingGoalController(
         @Valid @RequestBody request: AssignAmountRequest
     ): ResponseEntity<Unit> {
         savingGoalService.assignAmountToGoal(goalId, userId, request)
-        return ResponseEntity.status(HttpStatus.CREATED).build()
+        return ResponseEntity.ok().build()
     }
 
     @PostMapping("/add-to-savings")
