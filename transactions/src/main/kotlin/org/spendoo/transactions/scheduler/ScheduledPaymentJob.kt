@@ -1,5 +1,6 @@
 package org.spendoo.transactions.scheduler
 
+import org.slf4j.LoggerFactory
 import org.spendoo.events.notifications.UserNotificationsEvent
 import org.spendoo.events.publisher.SpendooEventPublisher
 import org.spendoo.events.notifications.NotificationDetails
@@ -18,6 +19,9 @@ class ScheduledPaymentJob (
     private val publisher: SpendooEventPublisher
 ){
 
+    private val log = LoggerFactory.getLogger(ScheduledPaymentJob::class.java)
+
+
     @Scheduled(cron = "0 0 * * * *")
     @Transactional
     fun processScheduledTasks(){
@@ -28,14 +32,12 @@ class ScheduledPaymentJob (
 
     private fun processReminders(now: LocalDateTime) {
         val batchRequest = PageRequest.of(0, BATCH_SIZE)
-        var hasRecords = true
 
-        while (hasRecords) {
+        while (true) {
             val paymentsToNotify = scheduledPaymentRepository.findByNextReminderDateBeforeAndIsNotifiedFalse(now, batchRequest)
 
             if (paymentsToNotify.isEmpty){
-                hasRecords = false
-                continue
+                break
             }
 
             val detailsList = paymentsToNotify.content.map{ payment ->
@@ -55,32 +57,36 @@ class ScheduledPaymentJob (
             }
             publisher.publish(UserNotificationsEvent(notifications = detailsList))
 
-            for (payment in paymentsToNotify.content) {
-                val updatedPayment = payment.copy(isNotified = true)
-                scheduledPaymentRepository.save(updatedPayment)
-            }
+            val paymentIds = paymentsToNotify.content.map { it.id }
+            scheduledPaymentRepository.markPaymentsNotified(paymentIds)
         }
     }
 
 
     private fun processAutoPayments(now: LocalDateTime) {
         val batchRequest = PageRequest.of(0, BATCH_SIZE)
-        var hasRecords = true
 
-        while (hasRecords) {
+        while (true) {
             val paymentsToNotify = scheduledPaymentRepository.findByNextDueDateBefore(now, batchRequest)
 
             if (paymentsToNotify.isEmpty){
-                hasRecords = false
-                continue
+                break
             }
+
+            var processedAnySuccess = false
 
             for(payment in paymentsToNotify.content) {
                 try{
                     scheduledPaymentService.payScheduledItem(payment.userId, payment.id)
+                    processedAnySuccess = true
                 } catch (ex: Exception) {
-                    println("Error processing auto-payment for paymentId: ${payment.id}. Reason: ${ex.message}")
+                    log.error("Error processing auto-payment for paymentId: ${payment.id}. Reason: ${ex.message}")
                 }
+            }
+
+            if (!processedAnySuccess) {
+                log.warn("Breaking auto-payment loop to prevent infinite retry loop on failing payments.")
+                break
             }
         }
     }

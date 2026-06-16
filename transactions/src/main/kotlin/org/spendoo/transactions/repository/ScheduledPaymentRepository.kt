@@ -4,6 +4,7 @@ import org.spendoo.transactions.entity.ScheduledPayment
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import java.math.BigDecimal
@@ -22,4 +23,8 @@ interface ScheduledPaymentRepository : JpaRepository<ScheduledPayment, UUID> {
     fun findByNextReminderDateBeforeAndIsNotifiedFalse(now: LocalDateTime, pageable: Pageable): Page<ScheduledPayment>
 
     fun findByNextDueDateBefore(now: LocalDateTime, pageable: Pageable): Page<ScheduledPayment>
+
+    @Modifying
+    @Query("UPDATE ScheduledPayment sp SET sp.isNotified = true WHERE sp.id IN :ids")
+    fun markPaymentsNotified(@Param("ids") ids: List<UUID>)
 }
