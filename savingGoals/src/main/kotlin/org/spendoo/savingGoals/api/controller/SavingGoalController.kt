@@ -93,7 +93,7 @@ class SavingGoalController(
         return ResponseEntity.ok(page)
     }
 
-    @GetMapping("/goals_summary")
+    @GetMapping("/goals-summary")
     fun getGoalsSummary(
         @AuthenticationPrincipal userId: UUID
     ): ResponseEntity<GoalsSummary> {
