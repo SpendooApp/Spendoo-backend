@@ -50,7 +50,7 @@ class SavingGoalController(
         @Valid @RequestBody request: AssignAmountRequest
     ): ResponseEntity<Unit> {
         savingGoalService.addToSavings(userId, amount = request.amount)
-        return ResponseEntity.status(HttpStatus.CREATED).build()
+        return ResponseEntity.ok().build()
     }
 
     @PatchMapping("/{goalId}")
@@ -84,11 +84,15 @@ class SavingGoalController(
     @GetMapping
     fun getAll(
         @AuthenticationPrincipal userId: UUID,
-        @PageableDefault(size = 10)
-        pageable: Pageable
+        @PageableDefault(size = 10) pageable: Pageable
     ): ResponseEntity<Page<GoalResponse>> {
-        val sort = Sort.by(Sort.Order.asc("isCompleted"), Sort.Order.desc("priority"))
-        val pageRequest = PageRequest.of(pageable.pageNumber, pageable.pageSize, sort)
+        val pageRequest = if (pageable.sort.isSorted) {
+            pageable
+        } else {
+            val sort = Sort.by(Sort.Order.asc("isCompleted"), Sort.Order.desc("priority"))
+            PageRequest.of(pageable.pageNumber, pageable.pageSize, sort)
+        }
+
         val page = savingGoalService.getAllGoals(userId, pageRequest)
         return ResponseEntity.ok(page)
     }
