@@ -5,7 +5,10 @@ import org.spendoo.client.ApiClient
 import org.spendoo.transactions.api.dto.request.CreateExpenseTransactionRequest
 import org.spendoo.transactions.api.dto.request.CreateIncomeTransactionRequest
 import org.spendoo.transactions.api.dto.request.TransactionUpdateRequest
-import org.spendoo.transactions.api.dto.response.*
+import org.spendoo.transactions.api.dto.response.AiExtractionResponse
+import org.spendoo.transactions.api.dto.response.BalanceSummary
+import org.spendoo.transactions.api.dto.response.TransactionResponse
+import org.spendoo.transactions.api.dto.response.toResponse
 import org.spendoo.transactions.service.TransactionService
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
