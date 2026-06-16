@@ -17,6 +17,36 @@ interface SavingGoalRepository : JpaRepository<SavingGoal, UUID> {
 
     @Query(
         """
+        SELECT NEW org.spendoo.savingGoals.service.model.GoalParams(
+            g.id,
+            g.goalName,
+            g.priority,
+            g.goalIcon,
+            g.deadline,
+            SUM(h.amount),
+            g.targetAmount,
+            g.isCompleted
+        )
+        FROM SavingGoal g
+        LEFT JOIN g.savingGoalHistory h ON g.id = h.goal.id 
+        WHERE g.id = :id AND g.userId = :userId
+        GROUP BY
+            g.id,
+            g.goalName,
+            g.priority,
+            g.goalIcon,
+            g.deadline,
+            g.targetAmount,
+            g.isCompleted
+        """
+    )
+    fun findGoalWithSavedAmount(
+        id: UUID,
+        userId: UUID
+    ): GoalParams?
+
+    @Query(
+        """
     SELECT NEW org.spendoo.savingGoals.service.model.GoalParams(
         g.id,
         g.goalName,

@@ -39,11 +39,11 @@ class SavingGoalService(
             ?: throw IllegalArgumentException("Saving goal not found")
 
         val updatedGoal = existingGoal.copy(
-            goalName = request.goalName ?: existingGoal.goalName,
-            targetAmount = request.targetAmount ?: existingGoal.targetAmount,
-            deadline = request.deadline ?: existingGoal.deadline,
-            goalIcon = request.goalIcon ?: existingGoal.goalIcon,
-            priority = request.priority ?: existingGoal.priority
+            goalName = request.goalName,
+            targetAmount = request.targetAmount,
+            deadline = request.deadline,
+            goalIcon = request.goalIcon,
+            priority = request.priority
         )
 
         return savingGoalRepository.save(updatedGoal)
@@ -56,13 +56,12 @@ class SavingGoalService(
         }
     }
 
-    @Transactional(readOnly = true)
-    fun getSavingGoalById(goalId: UUID, userId: UUID): GoalResponse {
-        val goal = savingGoalRepository.findByIdAndUserId(goalId, userId)
-            ?: throw IllegalArgumentException("Saving goal not found")
-        val currentAmount = savingGoalHistoryRepository.getCurrentAmountByGoalId(goal.id)
-        return goal.toResponse(currentAmount)
-    }
+@Transactional(readOnly = true)
+fun getSavingGoalById(goalId: UUID, userId: UUID): GoalResponse {
+    val goal = savingGoalRepository.findGoalWithSavedAmount(goalId, userId)
+        ?: throw IllegalArgumentException("Saving goal not found")
+    return goal.toResponse()
+}
 
     @Transactional(readOnly = true)
     fun getAllGoals(userId: UUID, pageable: Pageable): Page<GoalResponse> {

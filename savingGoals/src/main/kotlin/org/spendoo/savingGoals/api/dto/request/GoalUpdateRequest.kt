@@ -7,15 +7,15 @@ import java.math.BigDecimal
 import java.time.LocalDateTime
 
 data class GoalUpdateRequest(
-    val goalName: String?,
+    val goalName: String,
 
     @field:Positive(message = "Target amount must be greater than 0")
-    val targetAmount: BigDecimal?,
+    val targetAmount: BigDecimal,
 
     @field:Future(message = "Deadline must be a future date")
-    val deadline: LocalDateTime?,
+    val deadline: LocalDateTime,
 
-    val goalIcon: GoalIcon?,
+    val goalIcon: GoalIcon,
 
-    val priority: Int?
+    val priority: Int
 )
