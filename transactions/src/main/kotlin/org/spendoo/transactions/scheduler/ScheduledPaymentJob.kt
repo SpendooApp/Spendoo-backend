@@ -59,6 +59,10 @@ class ScheduledPaymentJob (
 
             val paymentIds = paymentsToNotify.content.map { it.id }
             scheduledPaymentRepository.markPaymentsNotified(paymentIds)
+
+            if (paymentsToNotify.isLast) {
+                break
+            }
         }
     }
 
@@ -86,6 +90,9 @@ class ScheduledPaymentJob (
 
             if (!processedAnySuccess) {
                 log.warn("Breaking auto-payment loop to prevent infinite retry loop on failing payments.")
+                break
+            }
+            if (paymentsToNotify.isLast) {
                 break
             }
         }
