@@ -73,9 +73,9 @@ class SavingGoalServiceIntegrationTest {
         val updateRequest = GoalUpdateRequest(
             goalName = "Updated Mobile Fund",
             targetAmount = BigDecimal("10600.00"),
-            deadline = null,
-            goalIcon = null,
-            priority = null
+            deadline = originalGoal.deadline,
+            goalIcon = originalGoal.goalIcon,
+            priority = originalGoal.priority
         )
 
         val updatedGoal = savingGoalService.updateGoal(originalGoal.id, updateRequest, userId)
@@ -89,7 +89,9 @@ class SavingGoalServiceIntegrationTest {
     @Test
     fun `updateGoal throws IllegalArgumentException if goal does not exist`() {
         val missingGoalId = UUID.randomUUID()
-        val updateRequest = GoalUpdateRequest(goalName = "Ghost Goal", null, null, null, null)
+        val updateRequest = GoalUpdateRequest(
+            "PlayStation", BigDecimal("10600.00"), LocalDateTime.now().plusMonths(6), GoalIcon.ENTERTAINMENT, 2
+        )
 
         val exception = assertThrows<IllegalArgumentException> {
             savingGoalService.updateGoal(missingGoalId, updateRequest, userId)
