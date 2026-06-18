@@ -9,7 +9,14 @@ import org.spendoo.transactions.api.dto.request.TransactionUpdateRequest
 import org.spendoo.transactions.api.dto.request.toEntity
 import org.spendoo.transactions.api.dto.response.BalanceSummary
 import org.spendoo.transactions.entity.Transaction
+import org.spendoo.client.ApiClient
+import org.spendoo.transactions.api.dto.response.AiExtractionResponse
+import org.spendoo.transactions.api.dto.response.EnrichedAiExtractionItem
+import org.spendoo.transactions.api.dto.response.EnrichedAiExtractionResponse
 import org.spendoo.transactions.repository.CategoryRepository
+import org.springframework.http.HttpMethod
+import org.springframework.util.LinkedMultiValueMap
+import org.springframework.web.multipart.MultipartFile
 import org.spendoo.transactions.repository.TransactionRepository
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
@@ -22,7 +29,8 @@ import java.util.*
 @Service
 class TransactionService(
     private val transactionRepository: TransactionRepository,
-    private val categoryRepository: CategoryRepository
+    private val categoryRepository: CategoryRepository,
+    private val apiClient: ApiClient
 ) {
 
     @Transactional
@@ -117,4 +125,57 @@ class TransactionService(
     }
 
 
+    fun processVoiceTransaction(file: MultipartFile, userId: UUID): EnrichedAiExtractionResponse? {
+        val response = apiClient.call(AiExtractionResponse::class.java) {
+            callAIService = true
+            path = "/api/v1/voice/process/$userId"
+            method = HttpMethod.POST
+            val multiValueMap = LinkedMultiValueMap<String, Any>()
+            multiValueMap.add("file", file.resource)
+            body = multiValueMap
+        }
+        return enrichAiExtractionResponse(response, userId)
+    }
+
+    fun processOcrTransaction(file: MultipartFile, userId: UUID): EnrichedAiExtractionResponse? {
+        val response = apiClient.call(AiExtractionResponse::class.java) {
+            callAIService = true
+            path = "/api/v1/ocr/scan/$userId"
+            method = HttpMethod.POST
+            val multiValueMap = LinkedMultiValueMap<String, Any>()
+            multiValueMap.add("file", file.resource)
+            body = multiValueMap
+        }
+        return enrichAiExtractionResponse(response, userId)
+    }
+
+    private fun enrichAiExtractionResponse(response: AiExtractionResponse?, userId: UUID): EnrichedAiExtractionResponse? {
+        if (response == null) return null
+        val categoryIds = response.items.mapNotNull { it.categoryId }.distinct()
+
+        val categoryMap = if (categoryIds.isNotEmpty()) {
+            categoryRepository.findAllByIdInAndUserIdAndIsDeletedFalse(categoryIds, userId)
+                .associateBy { it.id }
+        } else {
+            emptyMap()
+        }
+
+        val enrichedItems = response.items.map { item ->
+            val category = item.categoryId?.let { categoryMap[it] }
+            EnrichedAiExtractionItem(
+                id = item.id,
+                itemName = item.itemName,
+                price = item.price,
+                category = item.category,
+                categoryId = item.categoryId,
+                categoryName = category?.categoryName,
+                categoryIcon = category?.categoryIcon
+            )
+        }
+        return EnrichedAiExtractionResponse(
+            items = enrichedItems,
+            grandTotal = response.grandTotal,
+            model = response.model
+        )
+    }
 }

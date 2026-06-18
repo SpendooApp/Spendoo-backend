@@ -54,11 +54,13 @@ class TransactionsTestApplication {
     @Bean
     fun transactionService(
         transactionRepository: TransactionRepository,
-        categoryRepository: CategoryRepository
+        categoryRepository: CategoryRepository,
+        apiClient: ApiClient
     ): TransactionService {
         return TransactionService(
             transactionRepository = transactionRepository,
-            categoryRepository = categoryRepository
+            categoryRepository = categoryRepository,
+            apiClient = apiClient
         )
     }
 
