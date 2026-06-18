@@ -3,6 +3,7 @@ package org.spendoo.transactions.api.dto.request
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Positive
+import org.spendoo.transactions.entity.Category
 import org.spendoo.transactions.entity.ReminderUnit
 import org.spendoo.transactions.entity.ScheduledPayment
 import java.math.BigDecimal
@@ -52,7 +53,7 @@ fun LocalDateTime.minusReminder(period: Int, unit: ReminderUnit): LocalDateTime 
     }
 }
 
-fun PaymentRequest.toEntity(userId: UUID): ScheduledPayment {
+fun PaymentRequest.toEntity(userId: UUID, category: Category): ScheduledPayment {
 
     val firstPaymentDate = this.frequency.alignNextDueDate(this.startDate)
     val reminderDate = firstPaymentDate.minusReminder(this.reminderPeriod, this.reminderUnit)
@@ -61,8 +62,8 @@ fun PaymentRequest.toEntity(userId: UUID): ScheduledPayment {
         userId = userId,
         title = this.title,
         amount = this.amount,
-        categoryId = this.categoryId,
         startDate = this.startDate,
+        category = category,
         nextDueDate = firstPaymentDate,
         nextReminderDate = reminderDate,
         frequency = this.frequency,

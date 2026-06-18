@@ -67,11 +67,13 @@ class TransactionsTestApplication {
     @Bean
     fun scheduledPaymentService(
         paymentRepository: ScheduledPaymentRepository,
-        transactionService: TransactionService
+        transactionService: TransactionService,
+        categoryRepository: CategoryRepository
     ): ScheduledPaymentService {
         return ScheduledPaymentService(
             paymentRepository = paymentRepository,
-            transactionService = transactionService
+            transactionService = transactionService,
+            categoryRepository = categoryRepository,
         )
     }
 

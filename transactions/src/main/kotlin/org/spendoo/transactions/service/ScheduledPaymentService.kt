@@ -10,6 +10,7 @@ import org.spendoo.transactions.api.dto.response.ScheduledPaymentResponse
 import org.spendoo.transactions.api.dto.response.ScheduledPaymentsDashboardResponse
 import org.spendoo.transactions.api.dto.response.toResponse
 import org.spendoo.transactions.entity.ScheduledPayment
+import org.spendoo.transactions.repository.CategoryRepository
 import org.spendoo.transactions.repository.ScheduledPaymentRepository
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
@@ -23,12 +24,17 @@ import java.util.UUID
 class ScheduledPaymentService (
 
     private val paymentRepository: ScheduledPaymentRepository,
-    private val transactionService: TransactionService
-) {
+    private val transactionService: TransactionService,
+    private val categoryRepository: CategoryRepository,
+
+    ) {
 
     @Transactional
     fun createPayment(userId: UUID, request: PaymentRequest){
-        val entity = request.toEntity(userId)
+
+        val category = categoryRepository.findByIdAndUserIdAndIsDeletedFalse(request.categoryId, userId)
+            ?: throw IllegalArgumentException("Category not found ")
+        val entity = request.toEntity(userId, category)
         paymentRepository.save(entity)
     }
 
@@ -36,13 +42,16 @@ class ScheduledPaymentService (
     fun updatePayment(userId: UUID, paymentId: UUID, request: PaymentRequest){
         val payment = getPaymentEntity(paymentId, userId)
 
+        val category = categoryRepository.findByIdAndUserIdAndIsDeletedFalse(request.categoryId, userId)
+            ?: throw IllegalArgumentException("Category not found")
+
         val newNextDueDate = request.frequency.alignNextDueDate(request.startDate)
         val newReminderDate = newNextDueDate.minusReminder(request.reminderPeriod, request.reminderUnit)
 
         val updatedPayment = payment.copy(
             title = request.title,
             amount = request.amount,
-            categoryId = request.categoryId,
+            category = category,
             startDate = request.startDate,
             frequency = request.frequency,
             nextDueDate = newNextDueDate,
@@ -73,7 +82,7 @@ class ScheduledPaymentService (
                 ExpenseTransactionEntryDto(
                     title = currentPayment.title,
                     amount = currentPayment.amount,
-                    categoryId = currentPayment.categoryId,
+                    categoryId = currentPayment.category.id,
                     transactionDate = LocalDateTime.now(),
                     note = "Payment for ${currentPayment.title}"
                 )
