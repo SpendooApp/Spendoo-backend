@@ -52,4 +52,8 @@ class UserService(
             eventPublisher.publish(savedUser.toUserUpdatedEvent())
         }
     }
+    fun findEmailsByUserIds(userIds: List<UUID>): Map<String, String> {
+        val users = userRepository.findAllById(userIds)
+        return users.associate { it.id.toString() to it.email }
+    }
 }
