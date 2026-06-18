@@ -22,8 +22,9 @@ data class BudgetResponse(
 
 fun Budget.toBudgetResponse(spentAmount: BigDecimal = BigDecimal.ZERO): BudgetResponse {
 
+    val absoluteSpent = spentAmount.abs()
     val spendingPercentage =
-        if (this.amount > BigDecimal.ZERO) ((spentAmount / this.amount) * BigDecimal(100)).toInt() else 0
+        if (this.amount > BigDecimal.ZERO) ((absoluteSpent / this.amount) * BigDecimal(100)).toInt() else 0
 
     return BudgetResponse(
         amount = this.amount,
@@ -39,8 +40,9 @@ fun CategoryParams.toBudgetResponse(spentAmount: BigDecimal?): BudgetResponse {
 
     val amount = this.amount ?: BigDecimal.ZERO
     val spentAmount = spentAmount ?: BigDecimal.ZERO
+    val absoluteSpent = spentAmount?.abs() ?: BigDecimal.ZERO
     val spendingPercentage =
-        if (amount > BigDecimal.ZERO) ((spentAmount / amount) * BigDecimal(100)).toInt() else 0
+        if (amount > BigDecimal.ZERO) ((absoluteSpent / amount) * BigDecimal(100)).toInt() else 0
     return BudgetResponse(
         amount = amount,
         spentAmount = spentAmount,

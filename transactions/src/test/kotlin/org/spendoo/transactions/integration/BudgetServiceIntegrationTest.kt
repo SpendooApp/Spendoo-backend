@@ -1,8 +1,12 @@
 package org.spendoo.transactions.integration
 
 import com.google.common.truth.Truth.assertThat
+import com.ninjasquad.springmockk.MockkBean
+import io.mockk.clearMocks
+import io.mockk.verify
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.spendoo.client.ApiClient
 import org.spendoo.transactions.TransactionsTestApplication
 import org.spendoo.transactions.api.dto.request.BudgetCreateRequest
 import org.spendoo.transactions.entity.*
@@ -33,11 +37,15 @@ class BudgetServiceIntegrationTest {
     @Autowired
     private lateinit var transactionRepository: TransactionRepository
 
+    @MockkBean(relaxed = true)
+    private lateinit var apiClient: ApiClient
+
     @BeforeEach
     fun setUp() {
         transactionRepository.deleteAll()
         budgetRepository.deleteAll()
         categoryRepository.deleteAll()
+        clearMocks(apiClient)
     }
 
     @Test
@@ -285,10 +293,13 @@ class BudgetServiceIntegrationTest {
     }
 
     @Test
-    fun `moveToSavings returns without side effects for now`() {
-        budgetService.moveToSavings(BigDecimal.valueOf(100.0))
-
-        assertThat(budgetRepository.count()).isEqualTo(0)
+    fun `moveToSavings triggers apiClient call when amount is positive`() {
+        val userId = UUID.randomUUID()
+        val positiveAmount = BigDecimal.valueOf(100.0)
+        budgetService.moveToSavings(userId, positiveAmount)
+        verify(exactly = 1) {
+            apiClient.call(Unit::class.java, any())
+        }
     }
 
     private fun createCategory(

@@ -1,5 +1,6 @@
 package org.spendoo.transactions.service
 
+import org.spendoo.client.ApiClient
 import org.spendoo.transactions.api.dto.request.BudgetCreateRequest
 import org.spendoo.transactions.api.dto.request.toBudget
 import org.spendoo.transactions.entity.Budget
@@ -8,6 +9,7 @@ import org.spendoo.transactions.entity.LeftOverOptions
 import org.spendoo.transactions.repository.BudgetRepository
 import org.spendoo.transactions.repository.TransactionRepository
 import org.springframework.stereotype.Service
+import org.springframework.http.HttpMethod
 import java.math.BigDecimal
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
@@ -17,6 +19,7 @@ import java.util.*
 class BudgetService(
     private val budgetRepository: BudgetRepository,
     private val transactionRepository: TransactionRepository,
+    private val apiClient: ApiClient
 ) {
 
     fun createZeroBudget(category: Category, startDate: LocalDateTime = LocalDateTime.now()): Budget {
@@ -79,7 +82,7 @@ class BudgetService(
                 }
 
                 LeftOverOptions.MOVE_TO_SAVINGS -> {
-                    moveToSavings(leftover)
+                    moveToSavings(category.userId,leftover)
                     leftover
                 }
             }
@@ -87,8 +90,17 @@ class BudgetService(
         return BigDecimal.ZERO
     }
 
-    fun moveToSavings(amount: BigDecimal) {
-        // call savings service
+    fun moveToSavings(userId: UUID,amount: BigDecimal) {
+
+        if (amount > BigDecimal.ZERO) {
+                apiClient.call(Unit::class.java) {
+                    path = "api/v1/goals/add-to-savings"
+                    method = HttpMethod.POST
+                    body = mapOf("amount" to amount)
+                    addToken = true
+                    this.userId = userId
+                }
+        }
     }
 
     fun calculateSpentAmount(userId: UUID, categoryId: UUID): BigDecimal {
