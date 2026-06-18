@@ -390,4 +390,59 @@ class CategoryServiceIntegrationTest {
 
         return category
     }
+
+    @Test
+    fun `getTopSpendingCategories returns categories with spending if expense data exists`() {
+        val foodCategory = createCategory(existingUserId, "Food", withBudget = false)
+        val transportCategory = createCategory(existingUserId, "Transport", withBudget = false)
+
+        transactionRepository.save(
+            Transaction(
+                userId = existingUserId,
+                title = "Food Expense",
+                amount = BigDecimal.valueOf(-500.0),
+                note = null,
+                transactionDate = LocalDateTime.now(),
+                category = foodCategory
+            )
+        )
+        transactionRepository.save(
+            Transaction(
+                userId = existingUserId,
+                title = "Transport Expense",
+                amount = BigDecimal.valueOf(-200.0),
+                note = null,
+                transactionDate = LocalDateTime.now(),
+                category = transportCategory
+            )
+        )
+        val topSpendingPage = categoryService.getTopSpendingCategories(existingUserId, PageRequest.of(0, 10))
+
+        assertThat(topSpendingPage.totalElements).isEqualTo(2)
+        assertThat(topSpendingPage.content.map { it.categoryName }).containsExactly("Food", "Transport").inOrder()
+
+        assertThat(topSpendingPage.content[0].id).isEqualTo(foodCategory.id)
+        assertThat(topSpendingPage.content[1].id).isEqualTo(transportCategory.id)
+    }
+
+    @Test
+    fun `getTopSpendingCategories returns empty page if user has no expense data`() {
+        transactionRepository.save(
+            Transaction(
+                userId = existingUserId,
+                title = "Salary",
+                amount = BigDecimal.valueOf(3000.0),
+                note = null,
+                transactionDate = LocalDateTime.now(),
+                category = null
+            )
+        )
+
+        val topSpendingPage = categoryService.getTopSpendingCategories(existingUserId, PageRequest.of(0, 10))
+
+        assertThat(topSpendingPage.totalElements).isEqualTo(0)
+    }
+
+
+
 }

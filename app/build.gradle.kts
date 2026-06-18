@@ -28,6 +28,7 @@ dependencies {
 	implementation(platform("software.amazon.awssdk:bom:2.33.8"))
 	implementation("software.amazon.awssdk:s3")
 	implementation(kotlin("stdlib"))
+	implementation("software.amazon.awssdk:url-connection-client")
 }
 
 tasks.withType<Test> {

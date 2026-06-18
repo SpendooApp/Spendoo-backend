@@ -8,7 +8,6 @@ import org.spendoo.transactions.api.dto.request.CreateIncomeTransactionRequest
 import org.spendoo.transactions.api.dto.request.TransactionUpdateRequest
 import org.spendoo.transactions.api.dto.request.toEntity
 import org.spendoo.transactions.api.dto.response.BalanceSummary
-import org.spendoo.transactions.api.dto.response.CategorySpendingDto
 import org.spendoo.transactions.entity.Transaction
 import org.spendoo.transactions.repository.CategoryRepository
 import org.spendoo.transactions.repository.TransactionRepository
@@ -118,7 +117,4 @@ class TransactionService(
     }
 
 
-    fun getTopSpendingCategories(userId: UUID, pageable: Pageable): Page<CategorySpendingDto> {
-        return transactionRepository.findTopSpendingCategories(userId, pageable)
-    }
 }

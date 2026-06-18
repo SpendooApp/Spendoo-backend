@@ -4,10 +4,12 @@ import jakarta.validation.Valid
 import org.spendoo.transactions.api.dto.request.CategoryCreateRequest
 import org.spendoo.transactions.api.dto.request.CategoryUpdateRequest
 import org.spendoo.transactions.api.dto.response.CategoryResponse
+import org.spendoo.transactions.api.dto.response.CategorySpendingDto
 import org.spendoo.transactions.service.CategoryService
 import org.spendoo.transactions.service.model.CategoriesSummary
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
+import org.springframework.data.web.PageableDefault
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
@@ -73,5 +75,15 @@ class CategoryController(
     ): ResponseEntity<CategoriesSummary> {
         val summary = categoryService.getSummary(userId)
         return ResponseEntity.ok(summary)
+    }
+
+    @GetMapping("/top-spending")
+    fun getTopSpending(
+        @AuthenticationPrincipal userId: UUID,
+        @PageableDefault(size = 5)
+        pageable: Pageable,
+    ): ResponseEntity<Page<CategorySpendingDto>> {
+        val topSpending = categoryService.getTopSpendingCategories(userId, pageable)
+        return ResponseEntity.ok(topSpending)
     }
 }
