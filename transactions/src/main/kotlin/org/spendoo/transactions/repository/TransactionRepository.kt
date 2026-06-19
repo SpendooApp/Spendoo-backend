@@ -32,7 +32,7 @@ interface TransactionRepository : JpaRepository<Transaction, UUID>, JpaSpecifica
 
     @Query(
         """
-        SELECT new org.spendoo.transactions.api.dto.response.CategorySpendingDto(c.categoryName, c.categoryIcon, SUM(t.amount)) 
+        SELECT new org.spendoo.transactions.api.dto.response.CategorySpendingDto(c.id, c.categoryName, c.categoryIcon, SUM(t.amount)) 
         FROM Transaction t 
         JOIN t.category c 
         WHERE t.userId = :userId AND t.amount < 0

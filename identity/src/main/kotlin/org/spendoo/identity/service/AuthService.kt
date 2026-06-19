@@ -37,7 +37,8 @@ class AuthService(
 ) {
 
     fun register(request: RegisterRequest): String {
-        val user = userRepository.findByEmail(request.email)
+        val lowerCaseEmail = request.email.lowercase()
+        val user = userRepository.findByEmail(lowerCaseEmail)
 
         val userToSave = user?.let {
             if (user.isVerified) throw UserAlreadyExistsException("Email is already registered and verified.")
@@ -46,7 +47,8 @@ class AuthService(
             request.toEntity(passwordEncoder.encode(request.password)!!)
         }
 
-        val savedUser = userRepository.save(userToSave)
+        val finalUserToSave = userToSave.copy(email = lowerCaseEmail)
+        val savedUser = userRepository.save(finalUserToSave)
 
         val otpCode = emailService.generateOtp()
         val verificationToken = EmailVerification(otp = otpCode, user = savedUser)
@@ -203,7 +205,8 @@ class AuthService(
     }
 
     private fun getUserByEmailOrThrow(email: String): User {
-        return userRepository.findByEmail(email) ?: throw EntityNotFoundException("User not found with this email")
+        val lowerCaseEmail = email.lowercase()
+        return userRepository.findByEmail(lowerCaseEmail) ?: throw EntityNotFoundException("User not found with this email")
     }
 
     @Scheduled(cron = "0 0 0 * * *")

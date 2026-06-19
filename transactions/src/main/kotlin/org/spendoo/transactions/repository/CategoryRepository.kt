@@ -110,8 +110,9 @@ interface CategoryRepository : JpaRepository<Category, UUID> {
     )
     fun sumActiveBudget(userId: UUID): BigDecimal?
 
-    @Query("""
-    SELECT NEW org.spendoo.transactions.service.model.CategoriesSummary(
+    @Query(
+        """
+     SELECT NEW org.spendoo.transactions.service.model.CategoriesSummary(
     
         (SELECT COALESCE(SUM(b.amount), 0.0)
          FROM Budget b
@@ -135,6 +136,7 @@ interface CategoryRepository : JpaRepository<Category, UUID> {
          WHERE i.userId = :userId
            AND i.category IS NULL)
     )
-    """)
+    """
+    )
     fun getCategoriesSummaryForUser(userId: UUID): CategoriesSummary
 }

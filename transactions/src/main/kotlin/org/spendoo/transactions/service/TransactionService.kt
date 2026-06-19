@@ -1,14 +1,20 @@
 package org.spendoo.transactions.service
 
+import org.spendoo.client.ApiClient
 import org.spendoo.transactions.api.dto.request.CreateExpenseTransactionRequest
 import org.spendoo.transactions.api.dto.request.CreateIncomeTransactionRequest
 import org.spendoo.transactions.api.dto.request.TransactionUpdateRequest
 import org.spendoo.transactions.api.dto.request.toEntity
 import org.spendoo.transactions.api.dto.response.BalanceSummary
-import org.spendoo.transactions.api.dto.response.CategorySpendingDto
 import org.spendoo.transactions.entity.Transaction
+import org.spendoo.transactions.api.dto.response.AiExtractionResponse
+import org.spendoo.transactions.api.dto.response.EnrichedAiExtractionItem
+import org.spendoo.transactions.api.dto.response.EnrichedAiExtractionResponse
 import org.spendoo.transactions.entity.TransactionView
 import org.spendoo.transactions.repository.CategoryRepository
+import org.springframework.http.HttpMethod
+import org.springframework.util.LinkedMultiValueMap
+import org.springframework.web.multipart.MultipartFile
 import org.spendoo.transactions.repository.TransactionRepository
 import org.spendoo.transactions.repository.TransactionViewRepository
 import org.springframework.data.domain.Page
@@ -23,7 +29,8 @@ import java.util.*
 class TransactionService(
     private val transactionRepository: TransactionRepository,
     private val categoryRepository: CategoryRepository,
-    private val transactionViewRepository: TransactionViewRepository
+    private val transactionViewRepository: TransactionViewRepository,
+    private val apiClient: ApiClient
 ) {
 
     @Transactional
@@ -116,7 +123,57 @@ class TransactionService(
     }
 
 
-    fun getTopSpendingCategories(userId: UUID, pageable: Pageable): Page<CategorySpendingDto> {
-        return transactionRepository.findTopSpendingCategories(userId, pageable)
+    fun processVoiceTransaction(file: MultipartFile, userId: UUID): EnrichedAiExtractionResponse? {
+        val response = apiClient.call(AiExtractionResponse::class.java) {
+            callAIService = true
+            path = "/api/v1/voice/process/$userId"
+            method = HttpMethod.POST
+            val multiValueMap = LinkedMultiValueMap<String, Any>()
+            multiValueMap.add("file", file.resource)
+            body = multiValueMap
+        }
+        return enrichAiExtractionResponse(response, userId)
+    }
+
+    fun processOcrTransaction(file: MultipartFile, userId: UUID): EnrichedAiExtractionResponse? {
+        val response = apiClient.call(AiExtractionResponse::class.java) {
+            callAIService = true
+            path = "/api/v1/ocr/scan/$userId"
+            method = HttpMethod.POST
+            val multiValueMap = LinkedMultiValueMap<String, Any>()
+            multiValueMap.add("file", file.resource)
+            body = multiValueMap
+        }
+        return enrichAiExtractionResponse(response, userId)
+    }
+
+    private fun enrichAiExtractionResponse(response: AiExtractionResponse?, userId: UUID): EnrichedAiExtractionResponse? {
+        if (response == null) return null
+        val categoryIds = response.items.mapNotNull { it.categoryId }.distinct()
+
+        val categoryMap = if (categoryIds.isNotEmpty()) {
+            categoryRepository.findAllByIdInAndUserIdAndIsDeletedFalse(categoryIds, userId)
+                .associateBy { it.id }
+        } else {
+            emptyMap()
+        }
+
+        val enrichedItems = response.items.map { item ->
+            val category = item.categoryId?.let { categoryMap[it] }
+            EnrichedAiExtractionItem(
+                id = item.id,
+                itemName = item.itemName,
+                price = item.price,
+                category = item.category,
+                categoryId = item.categoryId,
+                categoryName = category?.categoryName,
+                categoryIcon = category?.categoryIcon
+            )
+        }
+        return EnrichedAiExtractionResponse(
+            items = enrichedItems,
+            grandTotal = response.grandTotal,
+            model = response.model
+        )
     }
 }

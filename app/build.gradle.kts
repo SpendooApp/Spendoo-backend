@@ -15,6 +15,7 @@ dependencies {
 	implementation(projects.events)
 	implementation(projects.storage)
 	implementation(projects.transactions)
+	implementation(projects.savingGoals)
 	implementation(projects.statistics)
 	implementation(projects.i18n)
 	implementation("org.springframework.boot:spring-boot-starter-web")
@@ -28,6 +29,8 @@ dependencies {
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 	implementation(platform("software.amazon.awssdk:bom:2.33.8"))
 	implementation("software.amazon.awssdk:s3")
+	implementation(kotlin("stdlib"))
+	implementation("software.amazon.awssdk:url-connection-client")
 }
 
 tasks.withType<Test> {
