@@ -10,6 +10,7 @@ import org.spendoo.transactions.api.dto.request.*
 import org.spendoo.transactions.entity.*
 import org.spendoo.transactions.repository.BudgetRepository
 import org.spendoo.transactions.repository.CategoryRepository
+import org.spendoo.transactions.repository.ScheduledPaymentRepository
 import org.spendoo.transactions.repository.TransactionRepository
 import org.spendoo.transactions.service.TransactionService
 import org.springframework.beans.factory.annotation.Autowired
@@ -31,6 +32,9 @@ class TransactionServiceIntegrationTest {
     private lateinit var categoryRepository: CategoryRepository
 
     @Autowired
+    private lateinit var scheduledPaymentRepository: ScheduledPaymentRepository
+
+    @Autowired
     private lateinit var budgetRepository: BudgetRepository
 
     @Autowired
@@ -42,6 +46,7 @@ class TransactionServiceIntegrationTest {
     @BeforeEach
     fun setUp() {
         transactionRepository.deleteAll()
+        scheduledPaymentRepository.deleteAll()
         budgetRepository.deleteAll()
         categoryRepository.deleteAll()
         existingUserId = UUID.randomUUID()
