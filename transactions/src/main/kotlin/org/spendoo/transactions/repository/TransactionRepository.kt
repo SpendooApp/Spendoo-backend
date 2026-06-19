@@ -5,13 +5,12 @@ import org.spendoo.transactions.entity.Transaction
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import java.math.BigDecimal
 import java.time.LocalDateTime
 import java.util.*
-
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor
 
 interface TransactionRepository : JpaRepository<Transaction, UUID>, JpaSpecificationExecutor<Transaction> {
 
@@ -94,7 +93,7 @@ interface TransactionRepository : JpaRepository<Transaction, UUID>, JpaSpecifica
 
     @Query(
         """
-            SELECT new org.spendoo.transactions.api.dto.response.CategorySpendingDto(c.categoryName, c.categoryIcon, SUM(t.amount))
+            SELECT new org.spendoo.transactions.api.dto.response.CategorySpendingDto(c.id, c.categoryName, c.categoryIcon, SUM(t.amount))
             FROM Transaction t
             JOIN t.category c
             WHERE t.userId = :userId
@@ -113,7 +112,7 @@ interface TransactionRepository : JpaRepository<Transaction, UUID>, JpaSpecifica
 
     @Query(
         """
-            SELECT new org.spendoo.transactions.api.dto.response.CategorySpendingDto(c.categoryName, c.categoryIcon, SUM(t.amount))
+            SELECT new org.spendoo.transactions.api.dto.response.CategorySpendingDto(c.id, c.categoryName, c.categoryIcon, SUM(t.amount))
             FROM Transaction t
             JOIN t.category c
             WHERE t.userId = :userId
@@ -132,7 +131,7 @@ interface TransactionRepository : JpaRepository<Transaction, UUID>, JpaSpecifica
 
     @Query(
         """
-            SELECT new org.spendoo.transactions.api.dto.response.CategorySpendingDto(c.categoryName, c.categoryIcon, SUM(t.amount))
+            SELECT new org.spendoo.transactions.api.dto.response.CategorySpendingDto(c.id, c.categoryName, c.categoryIcon, SUM(t.amount))
             FROM Transaction t
             JOIN t.category c
             WHERE t.userId = :userId
