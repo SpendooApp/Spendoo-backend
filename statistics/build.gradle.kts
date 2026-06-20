@@ -19,6 +19,7 @@ dependencies {
     implementation(projects.transactions)
     implementation(projects.storage)
     implementation(projects.i18n)
+    implementation(projects.httpClient)
     implementation("io.github.openhtmltopdf:openhtmltopdf-pdfbox:1.1.24")
     implementation("io.github.openhtmltopdf:openhtmltopdf-rtl-support:1.1.24")
 

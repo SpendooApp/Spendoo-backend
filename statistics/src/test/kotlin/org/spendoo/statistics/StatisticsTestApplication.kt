@@ -12,7 +12,7 @@ import org.springframework.context.annotation.Import
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories
 import org.spendoo.i18n.I18nConfig
 import org.spendoo.i18n.I18nService
-import org.spendoo.storage.service.ImageStorageService
+import org.spendoo.client.ApiClient
 import io.mockk.mockk
 
 @SpringBootConfiguration
@@ -23,7 +23,7 @@ import io.mockk.mockk
 class StatisticsTestApplication {
 
     @Bean
-    fun imageStorageService(): ImageStorageService {
+    fun apiClient(): ApiClient {
         return mockk(relaxed = true)
     }
 
@@ -33,14 +33,14 @@ class StatisticsTestApplication {
         budgetRepository: BudgetRepository,
         transactionViewRepository: TransactionViewRepository,
         i18nService: I18nService,
-        imageStorageService: ImageStorageService
+        apiClient: ApiClient
     ): StatisticsService {
         return StatisticsService(
             transactionRepository = transactionRepository,
             budgetRepository = budgetRepository,
             transactionViewRepository = transactionViewRepository,
             i18nService = i18nService,
-            imageStorageService = imageStorageService
+            apiClient = apiClient
         )
     }
 }

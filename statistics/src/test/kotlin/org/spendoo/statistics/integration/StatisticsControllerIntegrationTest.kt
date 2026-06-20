@@ -5,7 +5,7 @@ import io.mockk.mockk
 import org.junit.jupiter.api.Test
 import org.spendoo.statistics.api.controller.StatisticsController
 import org.spendoo.statistics.api.dto.response.*
-import org.spendoo.statistics.model.StatsPeriod
+import org.spendoo.statistics.model.Granularity
 import org.spendoo.statistics.service.StatisticsService
 import org.springframework.http.HttpStatus
 import java.math.BigDecimal
@@ -20,25 +20,27 @@ class StatisticsControllerIntegrationTest {
         val controller = StatisticsController(statisticsService)
         
         val userId = UUID.randomUUID()
-        val mockResponse = StatisticsResponse(
-            lineChart = LineChartData(emptyList(), emptyList(), emptyList(), emptyList(), BigDecimal.ZERO, 0, "mock"),
-            barChart = BarChartData(emptyList(), emptyList(), "mock"),
-            donutChart = DonutChartData(BigDecimal.ZERO, emptyList(), "mock"),
-            topCategories = emptyList()
+        val mockResponse = CombinedStatsResponse(
+            financialStats = FinancialStatsResponse(emptyList(), 0, BigDecimal.ZERO),
+            budgetStatus = BudgetStatusResponse(emptyList(), BigDecimal.ZERO),
+            topCategories = TopCategoriesResponse(BigDecimal.ZERO, emptyList())
         )
 
         every {
             statisticsService.getStatistics(
                 userId = any(),
-                period = any(),
-                theme = any(),
-                lang = any(),
-                imageFormat = any(),
-                referenceDate = any()
+                granularity = any(),
+                startDate = any(),
+                endDate = any()
             )
         } returns mockResponse
 
-        val response = controller.getStatistics(userId, StatsPeriod.MONTHLY, org.spendoo.statistics.model.ImageFormat.BASE64, org.spendoo.statistics.model.Theme.LIGHT, org.spendoo.statistics.model.Language.EN)
+        val response = controller.getStatistics(
+            userId = userId,
+            granularity = Granularity.MONTH,
+            startDate = LocalDateTime.now(),
+            endDate = LocalDateTime.now().plusDays(1)
+        )
         
         org.junit.jupiter.api.Assertions.assertEquals(HttpStatus.OK, response.statusCode)
         org.junit.jupiter.api.Assertions.assertEquals(mockResponse, response.body)

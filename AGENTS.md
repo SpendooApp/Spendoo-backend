@@ -48,6 +48,7 @@
 - Centralize localization: use a centralized translation registry rather than inline language check branching.
 - Do not write comments in code: write clean, readable, self-explanatory code instead.
 - Use MockK instead of Mockito for all testing/mocking needs across the codebase.
+- Do not use fully qualified class names; always import them instead.
 
 ## External dependencies and config touchpoints
 - Prod DB is PostgreSQL; tests use H2 in PostgreSQL mode (`*/src/test/resources/application-test.properties`).
