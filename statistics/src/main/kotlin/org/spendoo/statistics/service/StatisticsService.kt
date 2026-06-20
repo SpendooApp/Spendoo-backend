@@ -67,7 +67,6 @@ class StatisticsService(
             i18nService = i18nService,
             transactionRepository = transactionRepository,
             transactionViewRepository = transactionViewRepository,
-            budgetRepository = budgetRepository
         )
     }
 }
