@@ -5,12 +5,12 @@ import jakarta.persistence.criteria.Predicate
 import org.spendoo.transactions.entity.TransactionView
 import org.springframework.data.jpa.domain.Specification
 import java.math.BigDecimal
-import java.util.UUID
+import java.util.*
 
 object TransactionViewSpecification {
 
     fun buildSearchSpecification(userId: UUID, search: String?): Specification<TransactionView> {
-        return Specification { root, query, criteriaBuilder ->
+        return Specification { root, _, criteriaBuilder ->
             val predicates = mutableListOf<Predicate>()
 
             predicates.add(criteriaBuilder.equal(root.get<UUID>("userId"), userId))
@@ -36,7 +36,7 @@ object TransactionViewSpecification {
                     val amount = BigDecimal(search)
                     searchPredicates.add(criteriaBuilder.equal(root.get<BigDecimal>("amount"), amount))
                     searchPredicates.add(criteriaBuilder.equal(root.get<BigDecimal>("amount"), amount.negate()))
-                } catch (e: NumberFormatException) {
+                } catch (_: NumberFormatException) {
                 }
 
                 predicates.add(criteriaBuilder.or(*searchPredicates.toTypedArray()))

@@ -91,62 +91,6 @@ interface TransactionRepository : JpaRepository<Transaction, UUID>, JpaSpecifica
         @Param("endDate") endDate: LocalDateTime
     ): BigDecimal
 
-    @Query(
-        """
-            SELECT new org.spendoo.transactions.api.dto.response.CategorySpendingDto(c.id, c.categoryName, c.categoryIcon, SUM(t.amount))
-            FROM Transaction t
-            JOIN t.category c
-            WHERE t.userId = :userId
-              AND t.amount < 0
-              AND t.transactionDate >= :startDate
-              AND t.transactionDate < :endDate
-            GROUP BY c.id, c.categoryName, c.categoryIcon
-            ORDER BY ABS(SUM(t.amount)) DESC
-        """
-    )
-    fun findTopSpendingCategoriesInDateRange(
-        @Param("userId") userId: UUID,
-        @Param("startDate") startDate: LocalDateTime,
-        @Param("endDate") endDate: LocalDateTime
-    ): List<CategorySpendingDto>
-
-    @Query(
-        """
-            SELECT new org.spendoo.transactions.api.dto.response.CategorySpendingDto(c.id, c.categoryName, c.categoryIcon, SUM(t.amount))
-            FROM Transaction t
-            JOIN t.category c
-            WHERE t.userId = :userId
-              AND t.amount >= 0
-              AND t.transactionDate >= :startDate
-              AND t.transactionDate < :endDate
-            GROUP BY c.id, c.categoryName, c.categoryIcon
-            ORDER BY ABS(SUM(t.amount)) DESC
-        """
-    )
-    fun findTopIncomeCategoriesInDateRange(
-        @Param("userId") userId: UUID,
-        @Param("startDate") startDate: LocalDateTime,
-        @Param("endDate") endDate: LocalDateTime
-    ): List<CategorySpendingDto>
-
-    @Query(
-        """
-            SELECT new org.spendoo.transactions.api.dto.response.CategorySpendingDto(c.id, c.categoryName, c.categoryIcon, SUM(t.amount))
-            FROM Transaction t
-            JOIN t.category c
-            WHERE t.userId = :userId
-              AND t.transactionDate >= :startDate
-              AND t.transactionDate < :endDate
-            GROUP BY c.id, c.categoryName, c.categoryIcon
-            ORDER BY ABS(SUM(t.amount)) DESC
-        """
-    )
-    fun findTopAllCategoriesInDateRange(
-        @Param("userId") userId: UUID,
-        @Param("startDate") startDate: LocalDateTime,
-        @Param("endDate") endDate: LocalDateTime
-    ): List<CategorySpendingDto>
-
     fun findByIdAndUserId(id: UUID, userId: UUID): Transaction?
 
     fun deleteByIdAndUserId(id: UUID, userId: UUID): Int
