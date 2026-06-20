@@ -56,7 +56,7 @@ class TransactionsTestApplication {
     fun transactionService(
         transactionRepository: TransactionRepository,
         categoryRepository: CategoryRepository,
-        transactionViewRepository: TransactionViewRepository
+        transactionViewRepository: TransactionViewRepository,
         apiClient: ApiClient
     ): TransactionService {
         return TransactionService(

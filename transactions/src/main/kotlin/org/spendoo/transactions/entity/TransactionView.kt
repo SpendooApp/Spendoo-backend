@@ -14,6 +14,7 @@ import java.util.*
         id, user_id as user_id, title, amount, note, transaction_date as transaction_date, category_id as category_id, 
         CASE WHEN amount >= 0 THEN 'INCOME' ELSE 'EXPENSE' END as type
     FROM spending.transactions
+    WHERE amount >= 0 OR category_id IS NOT NULL
     UNION ALL
     SELECT 
         b.id, c.user_id as user_id, c.category_name as title, b.amount, null as note, b.start_date as transaction_date, b.category_id as category_id, 
