@@ -3,24 +3,21 @@ package org.spendoo.statistics.service
 import org.spendoo.client.ApiClient
 import org.spendoo.i18n.I18nService
 import org.spendoo.statistics.api.dto.response.CombinedStatsResponse
-import org.spendoo.statistics.model.ReportDataType
 import org.spendoo.statistics.model.Granularity
 import org.spendoo.statistics.model.Language
+import org.spendoo.statistics.model.ReportDataType
 import org.spendoo.statistics.model.Theme
 import org.spendoo.statistics.util.PdfGenerator
-import org.spendoo.transactions.repository.BudgetRepository
-import org.spendoo.transactions.repository.TransactionRepository
 import org.spendoo.transactions.repository.TransactionViewRepository
 import org.springframework.http.HttpMethod
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.math.BigDecimal
 import java.time.LocalDateTime
 import java.util.*
 
 @Service
 class StatisticsService(
-    private val transactionRepository: TransactionRepository,
-    private val budgetRepository: BudgetRepository,
     private val transactionViewRepository: TransactionViewRepository,
     private val i18nService: I18nService,
     private val apiClient: ApiClient
@@ -57,6 +54,18 @@ class StatisticsService(
         theme: Theme,
         lang: Language
     ): ByteArray {
+        val goalsSummary = apiClient.call(Map::class.java) {
+            path = "/api/v1/goals/goals-summary"
+            method = HttpMethod.GET
+            addToken = true
+            this.userId = userId
+        }
+        val totalSaved = when (val totalSavedVal = goalsSummary?.get("totalSaved")) {
+            is Number -> BigDecimal(totalSavedVal.toDouble())
+            is String -> BigDecimal(totalSavedVal)
+            else -> BigDecimal.ZERO
+        }
+
         return PdfGenerator.generateDetailedPdf(
             userId = userId,
             startDate = startDate,
@@ -65,8 +74,8 @@ class StatisticsService(
             theme = theme,
             lang = lang,
             i18nService = i18nService,
-            transactionRepository = transactionRepository,
             transactionViewRepository = transactionViewRepository,
+            totalSaved = totalSaved
         )
     }
 }

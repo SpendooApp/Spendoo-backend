@@ -8,7 +8,7 @@ import org.spendoo.i18n.I18nService
 import org.spendoo.statistics.model.Language
 import org.spendoo.statistics.model.ReportDataType
 import org.spendoo.statistics.model.Theme
-import org.spendoo.transactions.repository.TransactionRepository
+import org.spendoo.transactions.entity.TransactionType
 import org.spendoo.transactions.repository.TransactionViewRepository
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
@@ -29,8 +29,8 @@ object PdfGenerator {
         theme: Theme,
         lang: Language,
         i18nService: I18nService,
-        transactionRepository: TransactionRepository,
         transactionViewRepository: TransactionViewRepository,
+        totalSaved: BigDecimal,
     ): ByteArray {
         val themeClass = if (theme == Theme.DARK) "dark-theme" else ""
         val directionClass = if (lang == Language.AR) "rtl" else ""
@@ -43,10 +43,6 @@ object PdfGenerator {
 
         val formatter = DateTimeFormatter.ofPattern("MMM dd yyyy", locale)
         val periodStr = "${startDate.format(formatter)} - ${endDate.format(formatter)}"
-        
-        val income = transactionRepository.sumIncomeByUserIdAndDateRange(userId, startDate, endDate)
-        val expenses = transactionRepository.sumExpensesByUserIdAndDateRange(userId, startDate, endDate).negate()
-        val saved = income.subtract(expenses)
 
         val detailedReportTitle = i18nService.getMessage("detailed_report_title", locale, "Detailed Report")
         val totalEarningsLabel = i18nService.getMessage("total_earnings", locale, "Total earnings")
@@ -85,6 +81,69 @@ object PdfGenerator {
             """.trimIndent()
         }
 
+        // 1. Fetch transactions page-by-page, accumulating sums and building row HTML in a single pass
+        var incomeSum = BigDecimal.ZERO
+        var expensesSum = BigDecimal.ZERO
+        val rowsBuilder = StringBuilder()
+
+        var page = 0
+        val size = 500
+        var hasMore = true
+
+        while (hasMore) {
+            val pageRequest = PageRequest.of(page, size, Sort.by("transactionDate").descending())
+            val pageResult = transactionViewRepository.findAllByUserIdAndTransactionDateBetween(userId, startDate, endDate, pageRequest)
+            
+            for (t in pageResult.content) {
+                // Compute sums in memory
+                if (t.type == TransactionType.INCOME) {
+                    incomeSum = incomeSum.add(t.amount)
+                } else if (t.type == TransactionType.EXPENSE) {
+                    expensesSum = expensesSum.add(t.amount.abs())
+                }
+
+                // Filter row based on reportDataType
+                if (reportDataType == ReportDataType.EXPENSES && t.amount >= BigDecimal.ZERO) continue
+                if (reportDataType == ReportDataType.INCOME && t.amount < BigDecimal.ZERO) continue
+
+                val typeStr = i18nService.getMessage("transaction.type.${t.type.name.lowercase()}", locale, t.type.name.lowercase())
+                val amountClass = if (t.amount >= BigDecimal.ZERO) "amount-in" else "amount-out"
+                val amountFormatted = String.format("%,.2f", t.amount.abs().toDouble())
+                val categoryName = t.category?.categoryName ?: "-"
+                val dateStr = t.transactionDate.format(DateTimeFormatter.ofPattern("yyyy/MM/dd h:mm a", locale))
+                val noteStr = t.note ?: ""
+
+                val rowHtml = if (lang == Language.AR) {
+                    """
+                        <tr>
+                            <td>$noteStr</td>
+                            <td>$dateStr</td>
+                            <td>$categoryName</td>
+                            <td class="$amountClass">$amountFormatted</td>
+                            <td>${t.title}</td>
+                            <td>$typeStr</td>
+                        </tr>
+                    """.trimIndent()
+                } else {
+                    """
+                        <tr>
+                            <td>$typeStr</td>
+                            <td>${t.title}</td>
+                            <td class="$amountClass">$amountFormatted</td>
+                            <td>$categoryName</td>
+                            <td>$dateStr</td>
+                            <td>$noteStr</td>
+                        </tr>
+                    """.trimIndent()
+                }
+                rowsBuilder.append(rowHtml)
+            }
+
+            hasMore = pageResult.hasNext()
+            page++
+        }
+
+        // 2. Assemble the final HTML content using computed sums and pre-fetched totalSaved
         val htmlContent = StringBuilder()
         htmlContent.append("""
             <!DOCTYPE html>
@@ -144,56 +203,9 @@ object PdfGenerator {
                         $headerRowHtml
                     </thead>
                     <tbody>
-        """.trimIndent().format(income.toDouble(), expenses.toDouble(), saved.toDouble()))
+        """.trimIndent().format(incomeSum.toDouble(), expensesSum.toDouble(), totalSaved.toDouble()))
 
-        var page = 0
-        val size = 500
-        var hasMore = true
-
-        while (hasMore) {
-            val pageRequest = PageRequest.of(page, size, Sort.by("transactionDate").descending())
-            val transactions = transactionViewRepository.findAllByUserIdAndTransactionDateBetween(userId, startDate, endDate, pageRequest)
-            
-            for (t in transactions.content) {
-                if (reportDataType == ReportDataType.EXPENSES && t.amount >= BigDecimal.ZERO) continue
-                if (reportDataType == ReportDataType.INCOME && t.amount < BigDecimal.ZERO) continue
-
-                val typeStr = i18nService.getMessage("transaction.type.${t.type.name.lowercase()}", locale, t.type.name.lowercase())
-                val amountClass = if (t.amount >= BigDecimal.ZERO) "amount-in" else "amount-out"
-                val amountFormatted = String.format("%,.2f", t.amount.abs().toDouble())
-                val categoryName = t.category?.categoryName ?: "-"
-                val dateStr = t.transactionDate.format(DateTimeFormatter.ofPattern("yyyy/MM/dd h:mm a", locale))
-                val noteStr = t.note ?: ""
-
-                val rowHtml = if (lang == Language.AR) {
-                    """
-                        <tr>
-                            <td>$noteStr</td>
-                            <td>$dateStr</td>
-                            <td>$categoryName</td>
-                            <td class="$amountClass">$amountFormatted</td>
-                            <td>${t.title}</td>
-                            <td>$typeStr</td>
-                        </tr>
-                    """.trimIndent()
-                } else {
-                    """
-                        <tr>
-                            <td>$typeStr</td>
-                            <td>${t.title}</td>
-                            <td class="$amountClass">$amountFormatted</td>
-                            <td>$categoryName</td>
-                            <td>$dateStr</td>
-                            <td>$noteStr</td>
-                        </tr>
-                    """.trimIndent()
-                }
-                htmlContent.append(rowHtml)
-            }
-
-            hasMore = transactions.hasNext()
-            page++
-        }
+        htmlContent.append(rowsBuilder.toString())
 
         htmlContent.append("""
                     </tbody>

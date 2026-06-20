@@ -96,6 +96,10 @@ class StatisticsServiceIntegrationTest {
     @Test
     fun `getStatisticsPdf returns valid pdf bytes`() {
         val referenceDate = LocalDateTime.of(2026, 6, 11, 12, 0, 0)
+
+        every {
+            apiClient.call(Map::class.java, any())
+        } returns mapOf("totalSaved" to 100.0)
         
         // Add a transaction so the detailed report is generated with some data
         transactionRepository.save(
