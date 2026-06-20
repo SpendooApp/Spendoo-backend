@@ -1,6 +1,7 @@
 package org.spendoo.transactions.repository
 
 import org.spendoo.transactions.api.dto.response.CategorySpendingDto
+import org.spendoo.transactions.api.dto.response.FrequencyItemsResponse
 import org.spendoo.transactions.entity.Transaction
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
@@ -42,6 +43,37 @@ interface TransactionRepository : JpaRepository<Transaction, UUID> {
         @Param("userId") userId: UUID,
         pageable: Pageable
     ): Page<CategorySpendingDto>
+
+    @Query(
+        """
+        SELECT new org.spendoo.transactions.api.dto.response.FrequencyItemsResponse(t.title, COUNT(t), SUM(t.amount), c.id, c.categoryIcon)
+        FROM Transaction t
+        JOIN t.category c
+        WHERE t.userId = :userId AND t.amount < 0 AND c.id IS NOT NULL
+        GROUP BY t.title, c.id, c.categoryIcon
+        ORDER BY COUNT(t) DESC, ABS(SUM(t.amount)) DESC
+    """
+    )
+    fun findTopSpendingItems(
+        userId: UUID,
+        pageable: Pageable
+    ): Page<FrequencyItemsResponse>
+
+    @Query(
+        """
+        SELECT new org.spendoo.transactions.api.dto.response.FrequencyItemsResponse(t.title, COUNT(t), SUM(t.amount), c.id, c.categoryIcon)
+        FROM Transaction t
+        JOIN t.category c
+        WHERE t.userId = :userId AND c.id = :categoryId AND t.amount < 0
+        GROUP BY t.title, c.id, c.categoryIcon
+        ORDER BY COUNT(t) DESC, ABS(SUM(t.amount)) DESC
+    """
+    )
+    fun findTopSpendingItemsByCategoryId(
+        userId: UUID,
+        categoryId: UUID,
+        pageable: Pageable
+    ): Page<FrequencyItemsResponse>
 
     @Query(
         """

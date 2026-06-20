@@ -8,6 +8,7 @@ import org.spendoo.transactions.api.dto.request.CreateIncomeTransactionRequest
 import org.spendoo.transactions.api.dto.request.TransactionUpdateRequest
 import org.spendoo.transactions.api.dto.request.toEntity
 import org.spendoo.transactions.api.dto.response.BalanceSummary
+import org.spendoo.transactions.api.dto.response.FrequencyItemsResponse
 import org.spendoo.transactions.entity.Transaction
 import org.spendoo.transactions.repository.CategoryRepository
 import org.spendoo.transactions.repository.TransactionRepository
@@ -97,11 +98,21 @@ class TransactionService(
             throw IllegalArgumentException("Transaction not found")
     }
 
+    @Transactional(readOnly = true)
+    fun getTopFrequencyItems(userId: UUID, categoryId: UUID?, pageable: Pageable): Page<FrequencyItemsResponse> {
+        if (categoryId != null) {
+            return transactionRepository.findTopSpendingItemsByCategoryId(userId, categoryId, pageable)
+        }
+        return transactionRepository.findTopSpendingItems(userId, pageable)
+    }
+
     suspend fun getBalanceSummary(userId: UUID): BalanceSummary = coroutineScope {
         // Run blocking JPA calls on IO dispatcher so they can execute in parallel.
         val budgetsDeferred = async(Dispatchers.IO) { categoryRepository.sumActiveBudget(userId) ?: BigDecimal.ZERO }
-        val incomeDeferred = async(Dispatchers.IO) { transactionRepository.sumIncomeByUserId(userId) ?: BigDecimal.ZERO }
-        val expensesDeferred = async(Dispatchers.IO) { transactionRepository.sumExpensesByUserId(userId) ?: BigDecimal.ZERO }
+        val incomeDeferred =
+            async(Dispatchers.IO) { transactionRepository.sumIncomeByUserId(userId) ?: BigDecimal.ZERO }
+        val expensesDeferred =
+            async(Dispatchers.IO) { transactionRepository.sumExpensesByUserId(userId) ?: BigDecimal.ZERO }
 
         val budgets = budgetsDeferred.await()
         val income = budgets + incomeDeferred.await()
@@ -115,6 +126,4 @@ class TransactionService(
             expenses = -expenses
         )
     }
-
-
 }
