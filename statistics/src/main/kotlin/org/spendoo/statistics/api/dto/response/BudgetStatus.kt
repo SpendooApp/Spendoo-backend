@@ -1,9 +1,9 @@
 package org.spendoo.statistics.api.dto.response
 
-import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.annotation.JsonAlias
 
 enum class BudgetStatus {
-    @JsonProperty("within") WITHIN,
-    @JsonProperty("risk") RISK,
-    @JsonProperty("overspend") OVERSPEND
+    @field:JsonAlias("within") WITHIN,
+    @field:JsonAlias("risk") RISK,
+    @field:JsonAlias("overspend") OVERSPEND
 }
