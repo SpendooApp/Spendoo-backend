@@ -128,6 +128,7 @@ class TransactionService(
             callAIService = true
             path = "/api/v1/voice/process/$userId"
             method = HttpMethod.POST
+            header("Content-Type", "multipart/form-data")
             val multiValueMap = LinkedMultiValueMap<String, Any>()
             multiValueMap.add("file", file.resource)
             body = multiValueMap
@@ -140,6 +141,7 @@ class TransactionService(
             callAIService = true
             path = "/api/v1/ocr/scan/$userId"
             method = HttpMethod.POST
+            header("Content-Type", "multipart/form-data")
             val multiValueMap = LinkedMultiValueMap<String, Any>()
             multiValueMap.add("file", file.resource)
             body = multiValueMap
