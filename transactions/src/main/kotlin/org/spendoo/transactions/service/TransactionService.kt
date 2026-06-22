@@ -1,23 +1,22 @@
 package org.spendoo.transactions.service
 
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
+import org.spendoo.client.ApiClient
 import org.spendoo.transactions.api.dto.request.CreateExpenseTransactionRequest
 import org.spendoo.transactions.api.dto.request.CreateIncomeTransactionRequest
 import org.spendoo.transactions.api.dto.request.TransactionUpdateRequest
 import org.spendoo.transactions.api.dto.request.toEntity
 import org.spendoo.transactions.api.dto.response.BalanceSummary
 import org.spendoo.transactions.entity.Transaction
-import org.spendoo.client.ApiClient
 import org.spendoo.transactions.api.dto.response.AiExtractionResponse
 import org.spendoo.transactions.api.dto.response.EnrichedAiExtractionItem
 import org.spendoo.transactions.api.dto.response.EnrichedAiExtractionResponse
+import org.spendoo.transactions.entity.TransactionView
 import org.spendoo.transactions.repository.CategoryRepository
 import org.springframework.http.HttpMethod
 import org.springframework.util.LinkedMultiValueMap
 import org.springframework.web.multipart.MultipartFile
 import org.spendoo.transactions.repository.TransactionRepository
+import org.spendoo.transactions.repository.TransactionViewRepository
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
@@ -30,6 +29,7 @@ import java.util.*
 class TransactionService(
     private val transactionRepository: TransactionRepository,
     private val categoryRepository: CategoryRepository,
+    private val transactionViewRepository: TransactionViewRepository,
     private val apiClient: ApiClient
 ) {
 
@@ -95,8 +95,9 @@ class TransactionService(
     }
 
     @Transactional(readOnly = true)
-    fun getAll(userId: UUID, pageable: Pageable): Page<Transaction> {
-        return transactionRepository.findAllByUserId(userId, pageable)
+    fun getAll(userId: UUID, search: String?, pageable: Pageable): Page<TransactionView> {
+        val spec = org.spendoo.transactions.repository.TransactionViewSpecification.buildSearchSpecification(userId, search)
+        return transactionViewRepository.findAll(spec, pageable)
     }
 
     @Transactional
@@ -105,22 +106,19 @@ class TransactionService(
             throw IllegalArgumentException("Transaction not found")
     }
 
-    suspend fun getBalanceSummary(userId: UUID): BalanceSummary = coroutineScope {
-        // Run blocking JPA calls on IO dispatcher so they can execute in parallel.
-        val budgetsDeferred = async(Dispatchers.IO) { categoryRepository.sumActiveBudget(userId) ?: BigDecimal.ZERO }
-        val incomeDeferred = async(Dispatchers.IO) { transactionRepository.sumIncomeByUserId(userId) ?: BigDecimal.ZERO }
-        val expensesDeferred = async(Dispatchers.IO) { transactionRepository.sumExpensesByUserId(userId) ?: BigDecimal.ZERO }
+    fun getBalanceSummary(userId: UUID): BalanceSummary {
+        val budgets = categoryRepository.sumActiveBudget(userId) ?: BigDecimal.ZERO
+        val incomeDeferred = transactionRepository.sumIncomeByUserId(userId) ?: BigDecimal.ZERO
+        val expensesDeferred = transactionRepository.sumExpensesByUserId(userId) ?: BigDecimal.ZERO
 
-        val budgets = budgetsDeferred.await()
-        val income = budgets + incomeDeferred.await()
-        val expenses = expensesDeferred.await()
+        val income = budgets + incomeDeferred
 
-        val totalBalance = income.plus(expenses)
+        val totalBalance = income.plus(expensesDeferred)
 
-        return@coroutineScope BalanceSummary(
+        return BalanceSummary(
             totalBalance = totalBalance,
             income = income,
-            expenses = -expenses
+            expenses = -expensesDeferred
         )
     }
 
@@ -130,6 +128,7 @@ class TransactionService(
             callAIService = true
             path = "/api/v1/voice/process/$userId"
             method = HttpMethod.POST
+            header("Content-Type", "multipart/form-data")
             val multiValueMap = LinkedMultiValueMap<String, Any>()
             multiValueMap.add("file", file.resource)
             body = multiValueMap
@@ -142,6 +141,7 @@ class TransactionService(
             callAIService = true
             path = "/api/v1/ocr/scan/$userId"
             method = HttpMethod.POST
+            header("Content-Type", "multipart/form-data")
             val multiValueMap = LinkedMultiValueMap<String, Any>()
             multiValueMap.add("file", file.resource)
             body = multiValueMap

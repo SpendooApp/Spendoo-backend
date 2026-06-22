@@ -6,6 +6,7 @@ import org.spendoo.transactions.repository.BudgetRepository
 import org.spendoo.transactions.repository.CategoryRepository
 import org.spendoo.transactions.repository.ScheduledPaymentRepository
 import org.spendoo.transactions.repository.TransactionRepository
+import org.spendoo.transactions.repository.TransactionViewRepository
 import org.spendoo.transactions.service.BudgetService
 import org.spendoo.transactions.service.CategoryService
 import org.spendoo.transactions.service.ScheduledPaymentService
@@ -55,11 +56,13 @@ class TransactionsTestApplication {
     fun transactionService(
         transactionRepository: TransactionRepository,
         categoryRepository: CategoryRepository,
+        transactionViewRepository: TransactionViewRepository,
         apiClient: ApiClient
     ): TransactionService {
         return TransactionService(
             transactionRepository = transactionRepository,
             categoryRepository = categoryRepository,
+            transactionViewRepository = transactionViewRepository,
             apiClient = apiClient
         )
     }

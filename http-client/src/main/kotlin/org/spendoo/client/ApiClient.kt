@@ -1,5 +1,8 @@
 package org.spendoo.client
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter
 import org.spendoo.identity.security.JwtUtil
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.security.core.context.SecurityContextHolder
@@ -14,7 +17,19 @@ class ApiClient(
     @Value("\${internal.api.base-url:http://localhost:8080}") baseUrl: String,
     @Value("\${ai.service.base-url:https://localhost:8000}") private val aiBaseUrl: String
 ) {
-    private val restClient: RestClient = RestClient.builder().baseUrl(baseUrl).build()
+    private val restClient: RestClient = RestClient.builder()
+        .baseUrl(baseUrl)
+        .messageConverters { converters ->
+            val objectMapper = jacksonObjectMapper().registerModule(JavaTimeModule())
+            val jacksonConverter = MappingJackson2HttpMessageConverter(objectMapper)
+            val index = converters.indexOfFirst { it is MappingJackson2HttpMessageConverter }
+            if (index != -1) {
+                converters[index] = jacksonConverter
+            } else {
+                converters.add(0, jacksonConverter)
+            }
+        }
+        .build()
 
     fun <T : Any> call(responseType: Class<T>, configure: ApiRequest.() -> Unit): T? {
         val request = ApiRequest().apply(configure)

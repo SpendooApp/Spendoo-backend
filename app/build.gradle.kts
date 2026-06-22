@@ -16,6 +16,8 @@ dependencies {
 	implementation(projects.storage)
 	implementation(projects.transactions)
 	implementation(projects.savingGoals)
+	implementation(projects.statistics)
+	implementation(projects.i18n)
 	implementation("org.springframework.boot:spring-boot-starter-web")
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 	runtimeOnly("org.postgresql:postgresql")

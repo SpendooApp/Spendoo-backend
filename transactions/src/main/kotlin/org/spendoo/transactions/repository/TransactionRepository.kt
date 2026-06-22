@@ -5,13 +5,14 @@ import org.spendoo.transactions.entity.Transaction
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import java.math.BigDecimal
 import java.time.LocalDateTime
 import java.util.*
 
-interface TransactionRepository : JpaRepository<Transaction, UUID> {
+interface TransactionRepository : JpaRepository<Transaction, UUID>, JpaSpecificationExecutor<Transaction> {
 
     fun findAllByUserId(userId: UUID, pageable: Pageable): Page<Transaction>
 
@@ -57,6 +58,38 @@ interface TransactionRepository : JpaRepository<Transaction, UUID> {
         @Param("userId") userId: UUID,
         @Param("categoryId") categoryId: UUID
     ): BigDecimal?
+
+    @Query(
+        """
+            SELECT COALESCE(SUM(t.amount), 0)
+            FROM Transaction t
+            WHERE t.userId = :userId
+              AND t.amount < 0
+              AND t.transactionDate >= :startDate
+              AND t.transactionDate < :endDate
+        """
+    )
+    fun sumExpensesByUserIdAndDateRange(
+        @Param("userId") userId: UUID,
+        @Param("startDate") startDate: LocalDateTime,
+        @Param("endDate") endDate: LocalDateTime
+    ): BigDecimal
+
+    @Query(
+        """
+            SELECT COALESCE(SUM(t.amount), 0)
+            FROM Transaction t
+            WHERE t.userId = :userId
+              AND t.amount >= 0
+              AND t.transactionDate >= :startDate
+              AND t.transactionDate < :endDate
+        """
+    )
+    fun sumIncomeByUserIdAndDateRange(
+        @Param("userId") userId: UUID,
+        @Param("startDate") startDate: LocalDateTime,
+        @Param("endDate") endDate: LocalDateTime
+    ): BigDecimal
 
     fun findByIdAndUserId(id: UUID, userId: UUID): Transaction?
 
