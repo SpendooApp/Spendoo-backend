@@ -53,7 +53,6 @@ class AchievementServiceIntegrationTest {
         savingBalanceRepository.deleteAll()
         achievementRepository.deleteAll()
 
-        // 🌟 Seed default achievement blueprints into DB with unique static IDs
        seedDefaultAchievements()
     }
 

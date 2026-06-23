@@ -1,5 +1,7 @@
 package org.spendoo.savingGoals.service
 
+import org.spendoo.events.achievements.AchievementEarnedEvent
+import org.spendoo.events.publisher.SpendooEventPublisher
 import org.spendoo.savingGoals.api.dto.response.AchievementResponse
 import org.spendoo.savingGoals.api.dto.response.toResponse
 import org.spendoo.savingGoals.entity.Achievement
@@ -19,7 +21,8 @@ import java.util.*
 class AchievementService(
     private val userAchievementRepository: UserAchievementRepository,
     private val achievementRepository: AchievementRepository,
-    private val savingGoalRepository: SavingGoalRepository
+    private val savingGoalRepository: SavingGoalRepository,
+    private val eventPublisher: SpendooEventPublisher
 ) {
 
     @Transactional
@@ -75,7 +78,7 @@ class AchievementService(
     fun createDefaultAchievementsForUser(userId: UUID) {
         val defaultAchievements = listOf(
             Achievement(
-                id = userId,
+                id = UUID.randomUUID(),
                 targetValue = BigDecimal("10000.00"),
                 level = 4,
                 achievementType = AchievementType.SAVINGS,
@@ -85,7 +88,7 @@ class AchievementService(
                 descriptionAr = "وصول إجمالي مدخراتك إلى 10,000"
             ),
             Achievement(
-                id = userId,
+                id = UUID.randomUUID(),
                 targetValue = BigDecimal("1.00"),
                 level = 1,
                 achievementType = AchievementType.SAVINGS,
@@ -105,7 +108,7 @@ class AchievementService(
                 descriptionAr = "أكمل 5 من أهداف الادخار الخاصة بك بنجاح"
             ),
             Achievement(
-                id = userId,
+                id = UUID.randomUUID(),
                 targetValue = BigDecimal("10.00"),
                 level = 3,
                 achievementType = AchievementType.GOALS,
@@ -115,7 +118,7 @@ class AchievementService(
                 descriptionAr = "أكمل 10 من أهداف الادخار الخاصة بك بنجاح"
             ),
             Achievement(
-                id = userId,
+                id = UUID.randomUUID(),
                 targetValue = BigDecimal("15.00"),
                 level = 4,
                 achievementType = AchievementType.GOALS,
@@ -125,7 +128,7 @@ class AchievementService(
                 descriptionAr = "أكمل 15 من أهداف الادخار الخاصة بك بنجاح"
             ),
             Achievement(
-                id = userId,
+                id = UUID.randomUUID(),
                 targetValue = BigDecimal("1.00"),
                 level = 1,
                 achievementType = AchievementType.GOALS,
@@ -153,8 +156,22 @@ class AchievementService(
 
             if (currentProgress >= achievement.targetValue) {
                 userAchievement.isUnlocked = true
+
+                userAchievementRepository.save(userAchievement)
+
+                eventPublisher.publish(
+                    AchievementEarnedEvent(
+                        achievementId = achievement.id,
+                        userId = userId,
+                        titleEn = achievement.titleEn,
+                        descriptionEn = achievement.descriptionEn,
+                        level = achievement.level,
+                        achievementType = org.spendoo.events.achievements.utils.AchievementType.valueOf(achievement.achievementType.name)
+                    )
+                )
+            } else {
+                userAchievementRepository.save(userAchievement)
             }
-            userAchievementRepository.save(userAchievement)
         }
     }
 }
