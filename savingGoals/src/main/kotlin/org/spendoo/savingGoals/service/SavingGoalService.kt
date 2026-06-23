@@ -25,7 +25,8 @@ import java.util.*
 class SavingGoalService(
     private val savingGoalRepository: SavingGoalRepository,
     private val savingBalanceRepository: SavingBalanceRepository,
-    private val savingGoalHistoryRepository: SavingGoalHistoryRepository
+    private val savingGoalHistoryRepository: SavingGoalHistoryRepository,
+    private val achievementService: AchievementService
 ) {
     @Transactional
     fun createSavingGoal(request: GoalCreateRequest, userId: UUID) {
@@ -56,12 +57,12 @@ class SavingGoalService(
         }
     }
 
-@Transactional(readOnly = true)
-fun getSavingGoalById(goalId: UUID, userId: UUID): GoalResponse {
-    val goal = savingGoalRepository.findGoalWithSavedAmount(goalId, userId)
-        ?: throw IllegalArgumentException("Saving goal not found")
-    return goal.toResponse()
-}
+    @Transactional(readOnly = true)
+    fun getSavingGoalById(goalId: UUID, userId: UUID): GoalResponse {
+        val goal = savingGoalRepository.findGoalWithSavedAmount(goalId, userId)
+            ?: throw IllegalArgumentException("Saving goal not found")
+        return goal.toResponse()
+    }
 
     @Transactional(readOnly = true)
     fun getAllGoals(userId: UUID, pageable: Pageable): Page<GoalResponse> {
@@ -90,9 +91,20 @@ fun getSavingGoalById(goalId: UUID, userId: UUID): GoalResponse {
                 amount = request.amount
             )
         )
+
+        achievementService.checkSpendooKingBadge(userId)
+
         val currentAmount = savingGoalHistoryRepository.getCurrentAmountByGoalId(goalId)
         if (currentAmount >= goal.targetAmount && !goal.isCompleted) {
             savingGoalRepository.save(goal.copy(isCompleted = true))
+
+            // Check general goal completion achievements (High Five, Double Five, Finisher)
+            achievementService.checkCompletedGoalAchievements(userId)
+
+            // Check Priority Saver Badge (if the completed goal's priority is greater than 3)
+            if (goal.priority > 3) {
+                achievementService.checkPrioritySaverBadge(userId)
+            }
         }
 
         savingBalanceRepository.save(
@@ -108,12 +120,16 @@ fun getSavingGoalById(goalId: UUID, userId: UUID): GoalResponse {
         userId: UUID,
         amount: BigDecimal
     ) {
+        val isFirstTimeSaving = !savingBalanceRepository.existsByUserId(userId)
         savingBalanceRepository.save(
             SavingBalance(
                 userId = userId,
                 unassignedAmount = amount
             )
         )
+        if (isFirstTimeSaving && amount > BigDecimal.ZERO) {
+            achievementService.checkFirstStepBadge(userId)
+        }
     }
 
     fun getSummary(userId: UUID): GoalsSummary {

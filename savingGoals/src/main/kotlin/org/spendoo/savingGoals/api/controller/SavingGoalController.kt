@@ -4,8 +4,10 @@ import jakarta.validation.Valid
 import org.spendoo.savingGoals.api.dto.request.AssignAmountRequest
 import org.spendoo.savingGoals.api.dto.request.GoalCreateRequest
 import org.spendoo.savingGoals.api.dto.request.GoalUpdateRequest
+import org.spendoo.savingGoals.api.dto.response.AchievementResponse
 import org.spendoo.savingGoals.api.dto.response.GoalResponse
 import org.spendoo.savingGoals.api.dto.response.GoalsSummary
+import org.spendoo.savingGoals.service.AchievementService
 import org.spendoo.savingGoals.service.SavingGoalService
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
@@ -23,6 +25,7 @@ import java.util.*
 @RequestMapping("/api/v1/goals")
 class SavingGoalController(
     private val savingGoalService: SavingGoalService,
+    private val achievementService: AchievementService
 ) {
 
     @PostMapping
@@ -103,6 +106,16 @@ class SavingGoalController(
     ): ResponseEntity<GoalsSummary> {
         val summary = savingGoalService.getSummary(userId)
         return ResponseEntity.ok(summary)
+    }
+
+    @GetMapping("/achievements")
+    fun getAllUserAchievements(
+        @AuthenticationPrincipal userId: UUID,
+        @PageableDefault(size = 10) pageable: Pageable,
+        @RequestHeader(name = "Accept-Language", defaultValue = "en") languageCode: String
+    ): ResponseEntity<Page<AchievementResponse>> {
+        val userAchievements = achievementService.getAllAchievements(userId, pageable,languageCode)
+        return ResponseEntity.ok(userAchievements)
     }
 
 }
