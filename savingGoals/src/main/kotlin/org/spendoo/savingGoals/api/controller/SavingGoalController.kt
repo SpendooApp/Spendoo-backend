@@ -114,7 +114,7 @@ class SavingGoalController(
         @PageableDefault(size = 10) pageable: Pageable,
         @RequestHeader(name = "Accept-Language", defaultValue = "en") languageCode: String
     ): ResponseEntity<Page<AchievementResponse>> {
-        val userAchievements = achievementService.getAllAchievements(userId, pageable,languageCode)
+        val userAchievements = achievementService.getAllAchievements(userId, pageable, languageCode)
         return ResponseEntity.ok(userAchievements)
     }
 

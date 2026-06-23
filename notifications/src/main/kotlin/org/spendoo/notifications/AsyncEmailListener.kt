@@ -1,7 +1,7 @@
 package org.spendoo.notifications
 
-import org.spendoo.client.ApiClient
 import org.slf4j.LoggerFactory
+import org.spendoo.client.ApiClient
 import org.spendoo.events.notifications.EmailEvent
 import org.springframework.context.event.EventListener
 import org.springframework.http.HttpMethod
@@ -25,7 +25,7 @@ class AsyncEmailListener(
                 "subject" to event.subject,
                 "message" to event.text
             )
-            apiClient.call(String::class.java){
+            apiClient.call(String::class.java) {
                 path = emailServiceUrl
                 method = HttpMethod.POST
                 body = requestBody
@@ -33,8 +33,7 @@ class AsyncEmailListener(
             }
 
             log.info("Email sent successfully to ${event.to} with subject '${event.subject}'.")
-        }
-        catch (e: Exception) {
+        } catch (e: Exception) {
             log.error("Failed to send email to ${event.to}", e)
         }
     }

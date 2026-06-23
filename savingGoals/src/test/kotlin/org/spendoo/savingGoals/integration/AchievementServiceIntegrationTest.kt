@@ -53,7 +53,7 @@ class AchievementServiceIntegrationTest {
         savingBalanceRepository.deleteAll()
         achievementRepository.deleteAll()
 
-       seedDefaultAchievements()
+        seedDefaultAchievements()
     }
 
     private fun seedDefaultAchievements() {

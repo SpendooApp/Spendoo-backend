@@ -1,7 +1,7 @@
 package org.spendoo.events.notifications
 
 import org.spendoo.events.SpendooEvent
-import java.util.UUID
+import java.util.*
 
 data class NotificationDetails(
     val userId: UUID,
@@ -11,4 +11,4 @@ data class NotificationDetails(
 
 data class UserNotificationsEvent(
     val notifications: List<NotificationDetails>
-): SpendooEvent
+) : SpendooEvent
