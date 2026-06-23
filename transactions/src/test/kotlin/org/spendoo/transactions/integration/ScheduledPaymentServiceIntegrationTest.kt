@@ -235,7 +235,7 @@ class ScheduledPaymentServiceIntegrationTest {
         return paymentRepository.save(
             ScheduledPayment(
                 userId = existingUserId,
-                categoryId = existingCategory.id,
+                category = existingCategory,
                 title = title,
                 amount = amount,
                 startDate = startDate,

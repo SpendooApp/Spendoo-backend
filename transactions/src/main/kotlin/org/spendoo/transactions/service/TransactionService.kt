@@ -1,17 +1,23 @@
 package org.spendoo.transactions.service
 
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
+import org.spendoo.client.ApiClient
 import org.spendoo.transactions.api.dto.request.CreateExpenseTransactionRequest
 import org.spendoo.transactions.api.dto.request.CreateIncomeTransactionRequest
 import org.spendoo.transactions.api.dto.request.TransactionUpdateRequest
 import org.spendoo.transactions.api.dto.request.toEntity
 import org.spendoo.transactions.api.dto.response.BalanceSummary
-import org.spendoo.transactions.api.dto.response.FrequencyItemsResponse
 import org.spendoo.transactions.entity.Transaction
+import org.spendoo.transactions.api.dto.response.AiExtractionResponse
+import org.spendoo.transactions.api.dto.response.EnrichedAiExtractionItem
+import org.spendoo.transactions.api.dto.response.EnrichedAiExtractionResponse
+import org.spendoo.transactions.api.dto.response.FrequencyItemsResponse
+import org.spendoo.transactions.entity.TransactionView
 import org.spendoo.transactions.repository.CategoryRepository
+import org.springframework.http.HttpMethod
+import org.springframework.util.LinkedMultiValueMap
+import org.springframework.web.multipart.MultipartFile
 import org.spendoo.transactions.repository.TransactionRepository
+import org.spendoo.transactions.repository.TransactionViewRepository
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
@@ -23,7 +29,9 @@ import java.util.*
 @Service
 class TransactionService(
     private val transactionRepository: TransactionRepository,
-    private val categoryRepository: CategoryRepository
+    private val categoryRepository: CategoryRepository,
+    private val transactionViewRepository: TransactionViewRepository,
+    private val apiClient: ApiClient
 ) {
 
     @Transactional
@@ -88,8 +96,9 @@ class TransactionService(
     }
 
     @Transactional(readOnly = true)
-    fun getAll(userId: UUID, pageable: Pageable): Page<Transaction> {
-        return transactionRepository.findAllByUserId(userId, pageable)
+    fun getAll(userId: UUID, search: String?, pageable: Pageable): Page<TransactionView> {
+        val spec = org.spendoo.transactions.repository.TransactionViewSpecification.buildSearchSpecification(userId, search)
+        return transactionViewRepository.findAll(spec, pageable)
     }
 
     @Transactional
@@ -98,6 +107,21 @@ class TransactionService(
             throw IllegalArgumentException("Transaction not found")
     }
 
+    fun getBalanceSummary(userId: UUID): BalanceSummary {
+        val budgets = categoryRepository.sumActiveBudget(userId) ?: BigDecimal.ZERO
+        val incomeDeferred = transactionRepository.sumIncomeByUserId(userId) ?: BigDecimal.ZERO
+        val expensesDeferred = transactionRepository.sumExpensesByUserId(userId) ?: BigDecimal.ZERO
+
+        val income = budgets + incomeDeferred
+
+        val totalBalance = income.plus(expensesDeferred)
+
+        return BalanceSummary(
+            totalBalance = totalBalance,
+            income = income,
+            expenses = -expensesDeferred
+        )
+    }
     @Transactional(readOnly = true)
     fun getTopFrequencyItems(userId: UUID, categoryId: UUID?, pageable: Pageable): Page<FrequencyItemsResponse> {
         if (categoryId != null) {
@@ -106,24 +130,60 @@ class TransactionService(
         return transactionRepository.findTopSpendingItems(userId, pageable)
     }
 
-    suspend fun getBalanceSummary(userId: UUID): BalanceSummary = coroutineScope {
-        // Run blocking JPA calls on IO dispatcher so they can execute in parallel.
-        val budgetsDeferred = async(Dispatchers.IO) { categoryRepository.sumActiveBudget(userId) ?: BigDecimal.ZERO }
-        val incomeDeferred =
-            async(Dispatchers.IO) { transactionRepository.sumIncomeByUserId(userId) ?: BigDecimal.ZERO }
-        val expensesDeferred =
-            async(Dispatchers.IO) { transactionRepository.sumExpensesByUserId(userId) ?: BigDecimal.ZERO }
 
-        val budgets = budgetsDeferred.await()
-        val income = budgets + incomeDeferred.await()
-        val expenses = expensesDeferred.await()
+    fun processVoiceTransaction(file: MultipartFile, userId: UUID): EnrichedAiExtractionResponse? {
+        val response = apiClient.call(AiExtractionResponse::class.java) {
+            callAIService = true
+            path = "/api/v1/voice/process/$userId"
+            method = HttpMethod.POST
+            header("Content-Type", "multipart/form-data")
+            val multiValueMap = LinkedMultiValueMap<String, Any>()
+            multiValueMap.add("file", file.resource)
+            body = multiValueMap
+        }
+        return enrichAiExtractionResponse(response, userId)
+    }
 
-        val totalBalance = income.plus(expenses)
+    fun processOcrTransaction(file: MultipartFile, userId: UUID): EnrichedAiExtractionResponse? {
+        val response = apiClient.call(AiExtractionResponse::class.java) {
+            callAIService = true
+            path = "/api/v1/ocr/scan/$userId"
+            method = HttpMethod.POST
+            header("Content-Type", "multipart/form-data")
+            val multiValueMap = LinkedMultiValueMap<String, Any>()
+            multiValueMap.add("file", file.resource)
+            body = multiValueMap
+        }
+        return enrichAiExtractionResponse(response, userId)
+    }
 
-        return@coroutineScope BalanceSummary(
-            totalBalance = totalBalance,
-            income = income,
-            expenses = -expenses
+    private fun enrichAiExtractionResponse(response: AiExtractionResponse?, userId: UUID): EnrichedAiExtractionResponse? {
+        if (response == null) return null
+        val categoryIds = response.items.mapNotNull { it.categoryId }.distinct()
+
+        val categoryMap = if (categoryIds.isNotEmpty()) {
+            categoryRepository.findAllByIdInAndUserIdAndIsDeletedFalse(categoryIds, userId)
+                .associateBy { it.id }
+        } else {
+            emptyMap()
+        }
+
+        val enrichedItems = response.items.map { item ->
+            val category = item.categoryId?.let { categoryMap[it] }
+            EnrichedAiExtractionItem(
+                id = item.id,
+                itemName = item.itemName,
+                price = item.price,
+                category = item.category,
+                categoryId = item.categoryId,
+                categoryName = category?.categoryName,
+                categoryIcon = category?.categoryIcon
+            )
+        }
+        return EnrichedAiExtractionResponse(
+            items = enrichedItems,
+            grandTotal = response.grandTotal,
+            model = response.model
         )
     }
 }

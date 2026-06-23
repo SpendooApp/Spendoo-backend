@@ -1,5 +1,6 @@
 package org.spendoo.transactions.api.dto.response
 
+import org.spendoo.transactions.entity.CategoryIcon
 import org.spendoo.transactions.entity.ReminderUnit
 import org.spendoo.transactions.entity.ScheduledPayment
 import java.math.BigDecimal
@@ -10,7 +11,10 @@ data class ScheduledPaymentResponse(
     val id: UUID,
     val title: String,
     val amount: BigDecimal,
+    val startDate: LocalDateTime,
     val categoryId: UUID,
+    val categoryName: String,
+    val categoryIcon: CategoryIcon,
     val nextDueDate: LocalDateTime,
     val nextReminderDate: LocalDateTime,
     val frequency: Int,
@@ -23,7 +27,10 @@ fun ScheduledPayment.toResponse(): ScheduledPaymentResponse {
         id = this.id,
         title = this.title,
         amount = this.amount,
-        categoryId = this.categoryId,
+        startDate = this.startDate,
+        categoryId = this.category.id,
+        categoryName = this.category.categoryName,
+        categoryIcon = this.category.categoryIcon,
         nextDueDate = this.nextDueDate,
         nextReminderDate = this.nextReminderDate,
         frequency = this.frequency,

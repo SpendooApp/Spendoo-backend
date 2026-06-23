@@ -39,6 +39,26 @@ class ImageStorageService(
         }
     }
 
+    fun uploadImageFromBytes(
+        bytes: ByteArray,
+        contentType: String,
+        fileName: String,
+        folderName: String
+    ): String {
+        val extension = allowedMimeTypes[contentType] ?: throw InvalidImageException(contentType)
+        try {
+            val fullFileName = "${fileName}.$extension"
+            val randomParameter = LocalDateTime.now().toString()
+            val key = "$folderName/$fullFileName"
+            val putReq = createObjectRequest(key, contentType)
+            spendooS3Client.putObject(putReq, RequestBody.fromBytes(bytes))
+            val imageUri = "$fullFileName?time=$randomParameter"
+            return imageUri
+        } catch (e: Exception) {
+            throw UnknownErrorException(e.message ?: "Unknown error occurred", e)
+        }
+    }
+
     fun deleteImage(folderName: String, fileName: String) {
         try {
             val deleteRequest = deleteObjectRequest("$folderName/$fileName")

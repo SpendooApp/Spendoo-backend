@@ -16,9 +16,6 @@ data class ScheduledPayment(
     val userId: UUID = UUID.randomUUID(),
 
     @Column(nullable = false)
-    val categoryId: UUID = UUID.randomUUID(),
-
-    @Column(nullable = false)
     val title: String,
 
     @Column(nullable = false)
@@ -45,5 +42,9 @@ data class ScheduledPayment(
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     val reminderUnit: ReminderUnit,
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(nullable = false)
+    val category: Category
 
     )

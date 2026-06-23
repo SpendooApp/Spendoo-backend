@@ -13,4 +13,5 @@ interface BudgetRepository : JpaRepository<Budget, UUID> {
         endDate: LocalDateTime,
         pageable: Pageable
     ): List<Budget>
+
 }
