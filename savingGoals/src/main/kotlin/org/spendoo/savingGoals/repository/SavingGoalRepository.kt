@@ -92,4 +92,17 @@ interface SavingGoalRepository : JpaRepository<SavingGoal, UUID> {
 
     @Query("""SELECT SUM(g.targetAmount) FROM SavingGoal g WHERE g.userId = :userId """)
     fun sumTargetAmountByUserId(userId: UUID): BigDecimal?
+
+    fun countByUserIdAndIsCompletedTrue(userId: UUID): Long
+
+    @Query(
+        """
+    SELECT COUNT(g) 
+    FROM SavingGoal g
+    WHERE g.userId = :userId 
+      AND g.isCompleted = true 
+      AND g.priority >= 3
+    """
+    )
+    fun countCompletedHighPriorityGoals(userId: UUID): Long
 }
