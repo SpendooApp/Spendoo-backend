@@ -1,5 +1,7 @@
 package org.spendoo.identity.api.controller
 
+import jakarta.validation.Valid
+import org.spendoo.identity.api.dto.request.UpdateProfileRequest
 import org.spendoo.identity.api.dto.response.ProfileResponse
 import org.spendoo.identity.api.dto.response.UpdateImageResponse
 import org.spendoo.identity.service.UserService
@@ -39,6 +41,15 @@ class ProfileController(
     @DeleteMapping("/image")
     fun deleteUserImage(@AuthenticationPrincipal userId: UUID): ResponseEntity<Unit> {
         userService.deleteUserImage(userId)
+        return ResponseEntity.ok().build()
+    }
+
+    @PatchMapping
+    fun updateProfile(
+        @AuthenticationPrincipal userId: UUID,
+        @Valid @RequestBody request: UpdateProfileRequest
+    ): ResponseEntity<Unit> {
+        userService.updateProfile(userId, request)
         return ResponseEntity.ok().build()
     }
 }
