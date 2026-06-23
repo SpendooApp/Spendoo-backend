@@ -5,22 +5,22 @@ import org.spendoo.transactions.api.dto.request.CreateExpenseTransactionRequest
 import org.spendoo.transactions.api.dto.request.CreateIncomeTransactionRequest
 import org.spendoo.transactions.api.dto.request.TransactionUpdateRequest
 import org.spendoo.transactions.api.dto.request.toEntity
-import org.spendoo.transactions.api.dto.response.BalanceSummary
-import org.spendoo.transactions.entity.Transaction
 import org.spendoo.transactions.api.dto.response.AiExtractionResponse
+import org.spendoo.transactions.api.dto.response.BalanceSummary
 import org.spendoo.transactions.api.dto.response.EnrichedAiExtractionItem
 import org.spendoo.transactions.api.dto.response.EnrichedAiExtractionResponse
+import org.spendoo.transactions.entity.Transaction
 import org.spendoo.transactions.entity.TransactionView
 import org.spendoo.transactions.repository.CategoryRepository
-import org.springframework.http.HttpMethod
-import org.springframework.util.LinkedMultiValueMap
-import org.springframework.web.multipart.MultipartFile
 import org.spendoo.transactions.repository.TransactionRepository
 import org.spendoo.transactions.repository.TransactionViewRepository
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
+import org.springframework.http.HttpMethod
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.util.LinkedMultiValueMap
+import org.springframework.web.multipart.MultipartFile
 import java.math.BigDecimal
 import java.time.LocalDateTime
 import java.util.*
@@ -108,17 +108,17 @@ class TransactionService(
 
     fun getBalanceSummary(userId: UUID): BalanceSummary {
         val budgets = categoryRepository.sumActiveBudget(userId) ?: BigDecimal.ZERO
-        val incomeDeferred = transactionRepository.sumIncomeByUserId(userId) ?: BigDecimal.ZERO
-        val expensesDeferred = transactionRepository.sumExpensesByUserId(userId) ?: BigDecimal.ZERO
+        val income = transactionRepository.sumIncomeByUserId(userId) ?: BigDecimal.ZERO
+        val expenses = transactionRepository.sumExpensesByUserId(userId) ?: BigDecimal.ZERO
 
-        val income = budgets + incomeDeferred
+        val realIncome = budgets + income
 
-        val totalBalance = income.plus(expensesDeferred)
+        val totalBalance = realIncome.plus(expenses)
 
         return BalanceSummary(
             totalBalance = totalBalance,
-            income = income,
-            expenses = -expensesDeferred
+            income = realIncome,
+            expenses = -expenses
         )
     }
 
