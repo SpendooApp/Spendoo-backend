@@ -7,7 +7,7 @@ import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 
-@Component
+@Component("AchievementUserCreatedListener")
 
 class UserCreatedListener(
     private val achievementService: AchievementService
