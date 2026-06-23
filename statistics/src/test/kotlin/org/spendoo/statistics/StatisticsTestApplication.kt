@@ -1,8 +1,10 @@
 package org.spendoo.statistics
 
+import io.mockk.mockk
+import org.spendoo.client.ApiClient
+import org.spendoo.i18n.I18nConfig
+import org.spendoo.i18n.I18nService
 import org.spendoo.statistics.service.StatisticsService
-import org.spendoo.transactions.repository.BudgetRepository
-import org.spendoo.transactions.repository.TransactionRepository
 import org.spendoo.transactions.repository.TransactionViewRepository
 import org.springframework.boot.SpringBootConfiguration
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration
@@ -10,10 +12,6 @@ import org.springframework.boot.persistence.autoconfigure.EntityScan
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Import
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories
-import org.spendoo.i18n.I18nConfig
-import org.spendoo.i18n.I18nService
-import org.spendoo.client.ApiClient
-import io.mockk.mockk
 
 @SpringBootConfiguration
 @EnableAutoConfiguration
@@ -29,15 +27,11 @@ class StatisticsTestApplication {
 
     @Bean
     fun statisticsService(
-        transactionRepository: TransactionRepository,
-        budgetRepository: BudgetRepository,
         transactionViewRepository: TransactionViewRepository,
         i18nService: I18nService,
         apiClient: ApiClient
     ): StatisticsService {
         return StatisticsService(
-            transactionRepository = transactionRepository,
-            budgetRepository = budgetRepository,
             transactionViewRepository = transactionViewRepository,
             i18nService = i18nService,
             apiClient = apiClient

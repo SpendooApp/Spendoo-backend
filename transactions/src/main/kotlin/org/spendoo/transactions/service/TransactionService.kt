@@ -113,7 +113,7 @@ class TransactionService(
 
         val realIncome = budgets + income
 
-        val totalBalance = income.plus(expenses)
+        val totalBalance = realIncome.plus(expenses)
 
         return BalanceSummary(
             totalBalance = totalBalance,
