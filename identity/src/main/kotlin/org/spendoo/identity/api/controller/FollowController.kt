@@ -90,6 +90,15 @@ class FollowController (
         return ResponseEntity.ok().build()
     }
 
+    @GetMapping("/check-status")
+    fun checkFollowStatus(
+        @RequestParam followerId: UUID,
+        @RequestParam followeeId: UUID
+    ): ResponseEntity<Map<String, Boolean>> {
+        val isFollowing = followService.checkFollowStatus(followerId, followeeId)
+        return ResponseEntity.ok(mapOf("isFollowing" to isFollowing))
+    }
+
 
 
 }
