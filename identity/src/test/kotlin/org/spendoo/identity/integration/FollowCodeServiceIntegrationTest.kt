@@ -41,12 +41,12 @@ class FollowCodeServiceIntegrationTest {
     fun `generateCode creates a new code if user does not have one`() {
         val user = createUser("new-code@mail.com")
 
-        val generatedCode = followCodeService.generateCode(user.id)
+        val response = followCodeService.generateCode(user.id)
 
         val savedCode = followCodeRepository.findByUserId(user.id)
-        assertThat(generatedCode).hasLength(10)
+        assertThat(response.code).hasLength(10)
         assertThat(savedCode).isNotNull()
-        assertThat(savedCode?.code).isEqualTo(generatedCode)
+        assertThat(savedCode?.code).isEqualTo(response.code)
     }
 
     @Test
@@ -55,11 +55,11 @@ class FollowCodeServiceIntegrationTest {
         val oldCode = FollowCode(user = user, code = "1234567890")
         followCodeRepository.save(oldCode)
 
-        val newGeneratedCode = followCodeService.generateCode(user.id)
+        val newResponse = followCodeService.generateCode(user.id)
 
         val updatedCodeInDb = followCodeRepository.findByUserId(user.id)
-        assertThat(newGeneratedCode).isNotEqualTo("1234567890")
-        assertThat(updatedCodeInDb?.code).isEqualTo(newGeneratedCode)
+        assertThat(newResponse.code).isNotEqualTo("1234567890")
+        assertThat(updatedCodeInDb?.code).isEqualTo(newResponse.code)
     }
 
     @Test

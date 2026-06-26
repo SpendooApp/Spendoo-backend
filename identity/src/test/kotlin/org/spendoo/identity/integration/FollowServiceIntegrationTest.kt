@@ -151,9 +151,9 @@ class FollowServiceIntegrationTest {
         val followee = createUser("followee@mail.com", "Followee")
         createFollowRelation(follower, followee, FollowStatus.ACCEPTED)
 
-        val isFollowing = followService.checkFollowStatus(follower.id, followee.id)
+        val response = followService.checkFollowStatus(follower.id, followee.id)
 
-        assertThat(isFollowing).isTrue()
+        assertThat(response.isFollowing).isTrue()
     }
 
     @Test
@@ -162,18 +162,18 @@ class FollowServiceIntegrationTest {
         val followee = createUser("followee@mail.com", "Followee")
         createFollowRelation(follower, followee, FollowStatus.PENDING)
 
-        val isFollowing = followService.checkFollowStatus(follower.id, followee.id)
+        val response = followService.checkFollowStatus(follower.id, followee.id)
 
-        assertThat(isFollowing).isFalse()
+        assertThat(response.isFollowing).isFalse()
     }
 
     @Test
     fun `checkFollowStatus returns true if checking own status`() {
         val user = createUser("self@mail.com", "Self")
 
-        val isFollowing = followService.checkFollowStatus(user.id, user.id)
+        val response = followService.checkFollowStatus(user.id, user.id)
 
-        assertThat(isFollowing).isTrue()
+        assertThat(response.isFollowing).isTrue()
     }
 
     private fun createUser(email: String, fullName: String): User {
