@@ -1,7 +1,7 @@
-package org.spendoo.notifications
+package org.spendoo.notifications.eventListener
 
-import org.spendoo.client.ApiClient
 import org.slf4j.LoggerFactory
+import org.spendoo.client.ApiClient
 import org.spendoo.events.notifications.EmailEvent
 import org.springframework.context.event.EventListener
 import org.springframework.http.HttpMethod
