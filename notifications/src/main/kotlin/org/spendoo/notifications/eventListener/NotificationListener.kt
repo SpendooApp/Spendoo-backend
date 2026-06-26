@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component
 class NotificationListener(
     private val notificationService: NotificationService
 ) {
-    private val log = LoggerFactory.getLogger(javaClass)
+    private val log = LoggerFactory.getLogger(NotificationListener::class.java)
 
     @Async
     @EventListener
@@ -26,9 +26,9 @@ class NotificationListener(
                     type = org.spendoo.notifications.entity.NotificationType.valueOf(detail.type.name)
                 )
             }
-            log.info("Successfully saved ${event.notifications.size} in-app notifications to database.")
+            log.info("Successfully saved notifications to database.")
         } catch (e: Exception) {
-            log.error("Failed to save in-app notifications to database", e)
+            log.error("Failed to save notifications to database", e)
         }
     }
 }

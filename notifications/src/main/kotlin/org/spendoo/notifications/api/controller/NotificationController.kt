@@ -1,6 +1,7 @@
 package org.spendoo.notifications.api.controller
 
-import org.spendoo.notifications.entity.Notification
+import org.spendoo.notifications.api.dto.response.NotificationResponse
+import org.spendoo.notifications.api.dto.response.UnreadCountResponse
 import org.spendoo.notifications.service.NotificationService
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
@@ -22,16 +23,16 @@ class NotificationController(
     fun getAllNotifications(
         @AuthenticationPrincipal userId: UUID,
         pageable: Pageable
-    ): ResponseEntity<Page<Notification>> {
+    ): ResponseEntity<Page<NotificationResponse>> {
         return ResponseEntity.ok(notificationService.getUserNotifications(userId, pageable))
     }
 
     @GetMapping("/unread-count")
     fun getUnreadCount(
         @AuthenticationPrincipal userId: UUID
-    ): ResponseEntity<Map<String, Long>> {
+    ): ResponseEntity<UnreadCountResponse> {
         val count = notificationService.getUnreadCount(userId)
-        return ResponseEntity.ok(mapOf("unreadCount" to count))
+        return ResponseEntity.ok(UnreadCountResponse(unreadCount = count))
     }
 
     @PatchMapping("/mark-all-read")
