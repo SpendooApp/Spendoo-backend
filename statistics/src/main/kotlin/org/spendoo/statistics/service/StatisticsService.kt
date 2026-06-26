@@ -3,6 +3,7 @@ package org.spendoo.statistics.service
 import org.spendoo.client.ApiClient
 import org.spendoo.i18n.I18nService
 import org.spendoo.statistics.api.dto.response.CombinedStatsResponse
+import org.spendoo.statistics.api.dto.response.FollowStatusDto
 import org.spendoo.statistics.model.Granularity
 import org.spendoo.statistics.model.Language
 import org.spendoo.statistics.model.ReportDataType
@@ -113,17 +114,17 @@ class StatisticsService(
     private fun validateFollowPermission(currentUserId: UUID, targetUserId: UUID) {
         if (currentUserId == targetUserId) return
 
-        val response = apiClient.call(Map::class.java) {
+        val response = apiClient.call(FollowStatusDto::class.java) {
             path = "/api/v1/identity/follows/check-status?followerId=$currentUserId&followeeId=$targetUserId"
             method = HttpMethod.GET
             addToken = true
         }
 
-        val isFollowing = response?.get("isFollowing") as? Boolean ?: false
+        val isFollowing = response?.isFollowing ?: false
 
         if (!isFollowing) {
             throw ResponseStatusException(
-                HttpStatus.FORBIDDEN,
+                HttpStatus.BAD_REQUEST,
                 "You must follow this user to view their statistics"
             )
         }

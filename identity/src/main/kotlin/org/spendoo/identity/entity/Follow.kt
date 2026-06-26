@@ -5,7 +5,15 @@ import java.time.LocalDateTime
 import java.util.UUID
 
 @Entity
-@Table(name = "follows", schema = "identity")
+@Table(
+    name = "follows", schema = "identity",
+    uniqueConstraints = [
+        UniqueConstraint(
+            name = "uk_follower_followee",
+            columnNames = ["follower_id", "followee_id"]
+        )
+    ]
+)
 data class Follow(
     @Id
     @Column(columnDefinition = "uuid", updatable = false, nullable = false)
@@ -27,9 +35,4 @@ data class Follow(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "followee_id", nullable = false)
     val followee: User
-
-
-
-
-
-    )
+)

@@ -10,6 +10,4 @@ interface FollowCodeRepository: JpaRepository<FollowCode, UUID> {
     fun findByUserId(userId: UUID): FollowCode?
     fun existsByCode(code: String): Boolean
     fun deleteByUserId(userId: UUID)
-
-
 }

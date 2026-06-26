@@ -11,9 +11,7 @@ interface FollowRepository: JpaRepository<Follow, UUID> {
 
     fun existsByFollowerIdAndFolloweeId(followerId: UUID, followeeId: UUID): Boolean
 
-
     fun findByFollowerIdAndStatus(followerId: UUID, status: FollowStatus, pageable: Pageable): Page<Follow>
-
 
     fun findByFolloweeIdAndStatus(followeeId: UUID, status: FollowStatus, pageable: Pageable): Page<Follow>
 

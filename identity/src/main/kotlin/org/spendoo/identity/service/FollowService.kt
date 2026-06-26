@@ -1,5 +1,6 @@
 package org.spendoo.identity.service
 
+import org.spendoo.identity.api.dto.response.FollowStatusResponse
 import org.spendoo.identity.api.dto.response.UserSearchResponse
 import org.spendoo.identity.entity.Follow
 import org.spendoo.identity.entity.FollowStatus
@@ -14,8 +15,7 @@ import java.time.LocalDateTime
 import java.util.UUID
 
 @Service
-class FollowService (
-
+class FollowService(
     private val followRepository: FollowRepository,
     private val followCodeRepository: FollowCodeRepository,
     private val userRepository: UserRepository
@@ -85,6 +85,7 @@ class FollowService (
             UserSearchResponse(it.followee.id, it.followee.fullName, it.followee.imageUrl)
         }
     }
+
     @Transactional(readOnly = true)
     fun getFollowers(userId: UUID, pageable: Pageable): Page<UserSearchResponse> {
 
@@ -120,18 +121,15 @@ class FollowService (
     }
 
     @Transactional(readOnly = true)
-    fun checkFollowStatus(followerId: UUID, followeeId: UUID): Boolean {
+    fun checkFollowStatus(followerId: UUID, followeeId: UUID): FollowStatusResponse {
 
-        if(followerId == followeeId)
-            return true
+        if (followerId == followeeId)
+            return FollowStatusResponse(isFollowing = true)
 
         val follow = followRepository.findByFollowerIdAndFolloweeId(followerId, followeeId)
 
-        return follow != null && follow.status == FollowStatus.ACCEPTED
+        val isFollowing = follow != null && follow.status == FollowStatus.ACCEPTED
 
+        return FollowStatusResponse(isFollowing = isFollowing)
     }
-
-
-
-
 }

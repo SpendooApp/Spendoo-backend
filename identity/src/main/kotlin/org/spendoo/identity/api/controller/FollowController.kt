@@ -1,5 +1,6 @@
 package org.spendoo.identity.api.controller
 
+import org.spendoo.identity.api.dto.response.FollowStatusResponse
 import org.spendoo.identity.api.dto.response.UserSearchResponse
 import org.spendoo.identity.service.FollowService
 import org.springframework.data.domain.Page
@@ -19,11 +20,10 @@ import java.util.UUID
 
 @RestController
 @RequestMapping("/api/v1/identity/follows")
-class FollowController (
+class FollowController(
     private val followService: FollowService
 
-){
-
+) {
     @GetMapping("/search")
     fun searchUserByCode(@RequestParam code: String): ResponseEntity<UserSearchResponse> {
         return ResponseEntity.ok(followService.searchUserByCode(code))
@@ -94,11 +94,8 @@ class FollowController (
     fun checkFollowStatus(
         @RequestParam followerId: UUID,
         @RequestParam followeeId: UUID
-    ): ResponseEntity<Map<String, Boolean>> {
-        val isFollowing = followService.checkFollowStatus(followerId, followeeId)
-        return ResponseEntity.ok(mapOf("isFollowing" to isFollowing))
+    ): ResponseEntity<FollowStatusResponse> {
+        val response = followService.checkFollowStatus(followerId, followeeId)
+        return ResponseEntity.ok(response)
     }
-
-
-
 }

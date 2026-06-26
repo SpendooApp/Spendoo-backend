@@ -1,5 +1,6 @@
 package org.spendoo.identity.api.controller
 
+import org.spendoo.identity.api.dto.response.FollowCodeResponse
 import org.spendoo.identity.service.FollowCodeService
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
@@ -11,18 +12,14 @@ import java.util.UUID
 
 @RestController
 @RequestMapping("/api/v1/identity/follow-code")
-class FollowCodeController (
+class FollowCodeController(
     private val followService: FollowCodeService
-){
+) {
 
     @PostMapping("/generate-code")
-    fun generateOrRegenerateCode(@AuthenticationPrincipal userId: UUID): ResponseEntity<Map<String, String>> {
+    fun generateOrRegenerateCode(@AuthenticationPrincipal userId: UUID):
+            ResponseEntity<FollowCodeResponse> {
         val code = followService.generateCode(userId)
-        return ResponseEntity.ok(mapOf("code" to code))
-
+        return ResponseEntity.ok(code)
     }
-
-
-
-
 }

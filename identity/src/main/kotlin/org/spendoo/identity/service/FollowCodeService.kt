@@ -1,5 +1,6 @@
 package org.spendoo.identity.service
 
+import org.spendoo.identity.api.dto.response.FollowCodeResponse
 import org.spendoo.identity.entity.FollowCode
 import org.spendoo.identity.repository.FollowCodeRepository
 import org.spendoo.identity.repository.UserRepository
@@ -9,13 +10,13 @@ import java.util.UUID
 
 
 @Service
-class FollowCodeService (
+class FollowCodeService(
     private val followCodeRepository: FollowCodeRepository,
-    private val userRepository : UserRepository,
-){
+    private val userRepository: UserRepository,
+) {
 
     @Transactional
-    fun generateCode(userId : UUID): String {
+    fun generateCode(userId: UUID): FollowCodeResponse {
 
         val user = userRepository.findById(userId)
             .orElseThrow { RuntimeException("User not found") }
@@ -37,15 +38,14 @@ class FollowCodeService (
             )
             followCodeRepository.save(newFollowCode)
         }
-        return newCode
+        return FollowCodeResponse(code = newCode)
     }
 
 
-    private fun generateRandomString(length: Int) : String {
+    private fun generateRandomString(length: Int): String {
         val allowedChars = ('0'..'9')
         return (1..length)
             .map { allowedChars.random() }
             .joinToString("")
     }
-
 }
