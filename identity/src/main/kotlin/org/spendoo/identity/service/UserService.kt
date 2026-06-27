@@ -1,6 +1,7 @@
 package org.spendoo.identity.service
 
 import org.spendoo.events.publisher.SpendooEventPublisher
+import org.spendoo.identity.api.dto.request.UpdateProfileRequest
 import org.spendoo.identity.entity.User
 import org.spendoo.identity.exception.UserNotFoundException
 import org.spendoo.identity.repository.UserRepository
@@ -39,6 +40,19 @@ class UserService(
         val savedUser = userRepository.save(user.copy(imageUrl = newImageUrl))
         eventPublisher.publish(savedUser.toUserUpdatedEvent())
         return newImageUrl
+    }
+
+    fun updateProfile(userId: UUID, request: UpdateProfileRequest) {
+        val user = findById(userId)
+
+        val updatedUser = user.copy(
+            fullName = request.fullName,
+            gender = request.gender,
+            birthDate = request.birthDate,
+        )
+
+        val savedUser = userRepository.save(updatedUser)
+        eventPublisher.publish(savedUser.toUserUpdatedEvent())
     }
 
     fun deleteUserImage(userId: UUID) {
