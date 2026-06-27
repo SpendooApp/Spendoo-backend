@@ -92,19 +92,12 @@ class SavingGoalService(
             )
         )
 
-        achievementService.checkSpendooKingBadge(userId)
+        achievementService.checkSavingsAchievements(userId)
 
         val currentAmount = savingGoalHistoryRepository.getCurrentAmountByGoalId(goalId)
         if (currentAmount >= goal.targetAmount && !goal.isCompleted) {
             savingGoalRepository.save(goal.copy(isCompleted = true))
-
-            // Check general goal completion achievements (High Five, Double Five, Finisher)
-            achievementService.checkCompletedGoalAchievements(userId)
-
-            // Check Priority Saver Badge (if the completed goal's priority is greater than 3)
-            if (goal.priority > 3) {
-                achievementService.checkPrioritySaverBadge(userId)
-            }
+            achievementService.checkGoalAchievements(userId)
         }
 
         savingBalanceRepository.save(
@@ -128,7 +121,7 @@ class SavingGoalService(
             )
         )
         if (isFirstTimeSaving && amount > BigDecimal.ZERO) {
-            achievementService.checkFirstStepBadge(userId)
+            achievementService.checkSavingsAchievements(userId)
         }
     }
 

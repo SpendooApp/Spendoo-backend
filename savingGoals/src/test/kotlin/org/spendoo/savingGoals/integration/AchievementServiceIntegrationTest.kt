@@ -17,7 +17,6 @@ import java.math.BigDecimal
 import java.time.LocalDateTime
 import java.util.*
 
-
 @SpringBootTest(classes = [SavingGoalsTestApplication::class])
 @ActiveProfiles("test")
 class AchievementServiceIntegrationTest {
@@ -54,13 +53,15 @@ class AchievementServiceIntegrationTest {
         achievementRepository.deleteAll()
 
         seedDefaultAchievements()
+        achievementService.createDefaultAchievementsForUser(userId)
     }
 
     private fun seedDefaultAchievements() {
         val defaultAchievements = listOf(
             Achievement(
                 id = UUID.randomUUID(),
-                targetValue = BigDecimal("10000.00"),
+                code = AchievementCode.SPENDOO_KING,
+                targetValue = BigDecimal(10000.0),
                 level = 4,
                 achievementType = AchievementType.SAVINGS,
                 titleEn = "Spendoo King",
@@ -70,7 +71,8 @@ class AchievementServiceIntegrationTest {
             ),
             Achievement(
                 id = UUID.randomUUID(),
-                targetValue = BigDecimal("1.00"),
+                code = AchievementCode.FIRST_STEP,
+                targetValue = BigDecimal(1.0),
                 level = 1,
                 achievementType = AchievementType.SAVINGS,
                 titleEn = "First Step",
@@ -80,7 +82,8 @@ class AchievementServiceIntegrationTest {
             ),
             Achievement(
                 id = UUID.randomUUID(),
-                targetValue = BigDecimal("5.00"),
+                code = AchievementCode.HIGH_FIVE,
+                targetValue = BigDecimal(5.0),
                 level = 2,
                 achievementType = AchievementType.GOALS,
                 titleEn = "High Five",
@@ -90,7 +93,8 @@ class AchievementServiceIntegrationTest {
             ),
             Achievement(
                 id = UUID.randomUUID(),
-                targetValue = BigDecimal("10.00"),
+                code = AchievementCode.DOUBLE_FIVE,
+                targetValue = BigDecimal(10.0),
                 level = 3,
                 achievementType = AchievementType.GOALS,
                 titleEn = "Double Five",
@@ -100,7 +104,8 @@ class AchievementServiceIntegrationTest {
             ),
             Achievement(
                 id = UUID.randomUUID(),
-                targetValue = BigDecimal("15.00"),
+                code = AchievementCode.THE_FINISHER,
+                targetValue = BigDecimal(15.0),
                 level = 4,
                 achievementType = AchievementType.GOALS,
                 titleEn = "The Finisher",
@@ -110,7 +115,8 @@ class AchievementServiceIntegrationTest {
             ),
             Achievement(
                 id = UUID.randomUUID(),
-                targetValue = BigDecimal("1.00"),
+                code = AchievementCode.PRIORITY_SAVER,
+                targetValue = BigDecimal(1.0),
                 level = 1,
                 achievementType = AchievementType.GOALS,
                 titleEn = "Priority Saver",
@@ -124,27 +130,27 @@ class AchievementServiceIntegrationTest {
 
     @Test
     fun `addToSavings awards First Step badge on first deposit`() {
-        val depositAmount = BigDecimal("150.00")
+        val depositAmount = BigDecimal(150.0)
 
         savingGoalService.addToSavings(userId, depositAmount)
 
         val userAchievements = userAchievementRepository.findAllByUserId(userId, PageRequest.of(0, 10)).content
-        val firstStepBadge = userAchievements.find { it.achievement.titleEn == "First Step" }
+        val firstStepBadge = userAchievements.find { it.achievement.code == AchievementCode.FIRST_STEP }
 
         assertThat(firstStepBadge).isNotNull()
         assertThat(firstStepBadge!!.isUnlocked).isTrue()
-        assertThat(firstStepBadge.currentProgress.compareTo(BigDecimal("1.00"))).isEqualTo(0)
+        assertThat(firstStepBadge.currentProgress.compareTo(BigDecimal(1.0))).isEqualTo(0)
     }
 
     @Test
     fun `addToSavings does not unlock duplicate First Step badges on subsequent deposits`() {
         // Deposit twice
-        savingGoalService.addToSavings(userId, BigDecimal("100.00"))
-        savingGoalService.addToSavings(userId, BigDecimal("200.00"))
+        savingGoalService.addToSavings(userId, BigDecimal(100.0))
+        savingGoalService.addToSavings(userId, BigDecimal(200.0))
 
         // Ensure exactly one achievement entry exists
         val userAchievements = userAchievementRepository.findAllByUserId(userId, PageRequest.of(0, 10)).content
-        val firstStepMatches = userAchievements.filter { it.achievement.titleEn == "First Step" }
+        val firstStepMatches = userAchievements.filter { it.achievement.code == AchievementCode.FIRST_STEP }
 
         assertThat(firstStepMatches).hasSize(1)
         assertThat(firstStepMatches.first().isUnlocked).isTrue()
@@ -152,43 +158,40 @@ class AchievementServiceIntegrationTest {
 
     @Test
     fun `assignAmountToGoal awards Spendoo King badge when cumulative savings history reaches 10000`() {
+        savingBalanceRepository.save(SavingBalance(userId = userId, unassignedAmount = BigDecimal(12000.0)))
+        val goal = createAndSaveGoal(targetAmount = BigDecimal(10000.0), priority = 2)
 
-        savingBalanceRepository.save(SavingBalance(userId = userId, unassignedAmount = BigDecimal("12000.00")))
-        val goal = createAndSaveGoal(targetAmount = BigDecimal("10000.00"), priority = 2)
-
-
-        savingGoalService.assignAmountToGoal(goal.id, userId, AssignAmountRequest(amount = BigDecimal("10000.00")))
+        savingGoalService.assignAmountToGoal(goal.id, userId, AssignAmountRequest(amount = BigDecimal(10000.0)))
 
         val userAchievements = userAchievementRepository.findAllByUserId(userId, PageRequest.of(0, 10)).content
-        val kingBadge = userAchievements.find { it.achievement.titleEn == "Spendoo King" }
+        val kingBadge = userAchievements.find { it.achievement.code == AchievementCode.SPENDOO_KING }
 
         assertThat(kingBadge).isNotNull()
         assertThat(kingBadge!!.isUnlocked).isTrue()
-        assertThat(kingBadge.currentProgress.compareTo(BigDecimal("10000.00"))).isEqualTo(0)
+        assertThat(kingBadge.currentProgress.compareTo(BigDecimal(10000.0))).isEqualTo(0)
     }
 
     @Test
     fun `assignAmountToGoal awards High Five badge when completing 5 goals`() {
-
-        savingBalanceRepository.save(SavingBalance(userId = userId, unassignedAmount = BigDecimal("5000.00")))
+        savingBalanceRepository.save(SavingBalance(userId = userId, unassignedAmount = BigDecimal(5000.0)))
 
         // Complete 4 goals
         for (i in 1..4) {
-            val goal = createAndSaveGoal(targetAmount = BigDecimal("100.00"), priority = 2)
-            savingGoalService.assignAmountToGoal(goal.id, userId, AssignAmountRequest(amount = BigDecimal("100.00")))
+            val goal = createAndSaveGoal(targetAmount = BigDecimal(100.0), priority = 2)
+            savingGoalService.assignAmountToGoal(goal.id, userId, AssignAmountRequest(amount = BigDecimal(100.0)))
         }
 
         var userAchievements = userAchievementRepository.findAllByUserId(userId, PageRequest.of(0, 10)).content
-        var highFiveBadge = userAchievements.find { it.achievement.titleEn == "High Five" }
+        var highFiveBadge = userAchievements.find { it.achievement.code == AchievementCode.HIGH_FIVE }
         assertThat(highFiveBadge?.isUnlocked ?: false).isFalse()
 
         // Complete the 5th goal
-        val finalGoal = createAndSaveGoal(targetAmount = BigDecimal("100.00"), priority = 2)
-        savingGoalService.assignAmountToGoal(finalGoal.id, userId, AssignAmountRequest(amount = BigDecimal("100.00")))
+        val finalGoal = createAndSaveGoal(targetAmount = BigDecimal(100.0), priority = 2)
+        savingGoalService.assignAmountToGoal(finalGoal.id, userId, AssignAmountRequest(amount = BigDecimal(100.0)))
 
-        //  High Five badge is unlocked dynamically
+        // High Five badge is unlocked dynamically
         userAchievements = userAchievementRepository.findAllByUserId(userId, PageRequest.of(0, 10)).content
-        highFiveBadge = userAchievements.find { it.achievement.titleEn == "High Five" }
+        highFiveBadge = userAchievements.find { it.achievement.code == AchievementCode.HIGH_FIVE }
 
         assertThat(highFiveBadge).isNotNull()
         assertThat(highFiveBadge!!.isUnlocked).isTrue()
@@ -196,20 +199,17 @@ class AchievementServiceIntegrationTest {
 
     @Test
     fun `assignAmountToGoal awards Priority Saver when priority goal exceeds 3 is completed`() {
-
-        savingBalanceRepository.save(SavingBalance(userId = userId, unassignedAmount = BigDecimal("1000.00")))
-        val highPriorityGoal = createAndSaveGoal(targetAmount = BigDecimal("500.00"), priority = 4)
-
+        savingBalanceRepository.save(SavingBalance(userId = userId, unassignedAmount = BigDecimal(1000.0)))
+        val highPriorityGoal = createAndSaveGoal(targetAmount = BigDecimal(500.0), priority = 4)
 
         savingGoalService.assignAmountToGoal(
             highPriorityGoal.id,
             userId,
-            AssignAmountRequest(amount = BigDecimal("500.00"))
+            AssignAmountRequest(amount = BigDecimal(500.0))
         )
 
-
         val userAchievements = userAchievementRepository.findAllByUserId(userId, PageRequest.of(0, 10)).content
-        val priorityBadge = userAchievements.find { it.achievement.titleEn == "Priority Saver" }
+        val priorityBadge = userAchievements.find { it.achievement.code == AchievementCode.PRIORITY_SAVER }
 
         assertThat(priorityBadge).isNotNull()
         assertThat(priorityBadge!!.isUnlocked).isTrue()
@@ -217,27 +217,23 @@ class AchievementServiceIntegrationTest {
 
     @Test
     fun `assignAmountToGoal does not award Priority Saver when completed goal priority is 3 or less`() {
-
-        savingBalanceRepository.save(SavingBalance(userId = userId, unassignedAmount = BigDecimal("1000.00")))
-        val lowPriorityGoal = createAndSaveGoal(targetAmount = BigDecimal("500.00"), priority = 2)
-
+        savingBalanceRepository.save(SavingBalance(userId = userId, unassignedAmount = BigDecimal(1000.0)))
+        val lowPriorityGoal = createAndSaveGoal(targetAmount = BigDecimal(500.0), priority = 2)
 
         savingGoalService.assignAmountToGoal(
             lowPriorityGoal.id,
             userId,
-            AssignAmountRequest(amount = BigDecimal("500.00"))
+            AssignAmountRequest(amount = BigDecimal(500.0))
         )
 
-
         val userAchievements = userAchievementRepository.findAllByUserId(userId, PageRequest.of(0, 10)).content
-        val priorityBadge = userAchievements.find { it.achievement.titleEn == "Priority Saver" }
+        val priorityBadge = userAchievements.find { it.achievement.code == AchievementCode.PRIORITY_SAVER }
 
         assertThat(priorityBadge?.isUnlocked ?: false).isFalse()
     }
 
-
     private fun createAndSaveGoal(
-        targetAmount: BigDecimal = BigDecimal("1000.00"),
+        targetAmount: BigDecimal = BigDecimal(1000.0),
         goalName: String = "Mobile",
         priority: Int = 2
     ): SavingGoal {

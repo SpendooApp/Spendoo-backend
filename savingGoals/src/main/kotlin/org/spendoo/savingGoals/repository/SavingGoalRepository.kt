@@ -95,14 +95,5 @@ interface SavingGoalRepository : JpaRepository<SavingGoal, UUID> {
 
     fun countByUserIdAndIsCompletedTrue(userId: UUID): Long
 
-    @Query(
-        """
-    SELECT COUNT(g) 
-    FROM SavingGoal g
-    WHERE g.userId = :userId 
-      AND g.isCompleted = true 
-      AND g.priority >= 3
-    """
-    )
-    fun countCompletedHighPriorityGoals(userId: UUID): Long
+    fun countByUserIdAndIsCompletedTrueAndPriorityGreaterThanEqual(userId: UUID, priority: Int): Long
 }

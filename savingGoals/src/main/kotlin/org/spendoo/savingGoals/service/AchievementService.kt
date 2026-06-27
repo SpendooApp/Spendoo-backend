@@ -5,12 +5,15 @@ import org.spendoo.events.publisher.SpendooEventPublisher
 import org.spendoo.savingGoals.api.dto.response.AchievementResponse
 import org.spendoo.savingGoals.api.dto.response.toResponse
 import org.spendoo.savingGoals.entity.Achievement
+import org.spendoo.savingGoals.entity.AchievementCode
 import org.spendoo.savingGoals.entity.AchievementType
 import org.spendoo.savingGoals.entity.UserAchievement
 import org.spendoo.savingGoals.repository.AchievementRepository
+import org.spendoo.savingGoals.repository.SavingBalanceRepository
 import org.spendoo.savingGoals.repository.SavingGoalRepository
 import org.spendoo.savingGoals.repository.UserAchievementRepository
 import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -22,84 +25,26 @@ class AchievementService(
     private val userAchievementRepository: UserAchievementRepository,
     private val achievementRepository: AchievementRepository,
     private val savingGoalRepository: SavingGoalRepository,
+    private val savingBalanceRepository: SavingBalanceRepository,
     private val eventPublisher: SpendooEventPublisher
 ) {
 
-    @Transactional
-    fun checkSpendooKingBadge(userId: UUID) {
-
-        val targetAmountThreshold = BigDecimal("10000.00")
-        val kingAchievement = achievementRepository.findByTargetValue(targetAmountThreshold) ?: return
-        val totalSavings = savingGoalRepository.sumSavedAmountByUserId(userId) ?: BigDecimal.ZERO
-        processAchievementProgress(userId, kingAchievement, totalSavings)
-    }
-
-    @Transactional
-    fun checkCompletedGoalAchievements(userId: UUID) {
-
-        val completedGoalsCount = BigDecimal(savingGoalRepository.countByUserIdAndIsCompletedTrue(userId))
-        val goalThresholds = listOf(
-            BigDecimal("5.00"),
-            BigDecimal("10.00"),
-            BigDecimal("15.00")
-        )
-
-        for (threshold in goalThresholds) {
-            val achievement = achievementRepository.findByTargetValue(threshold) ?: continue
-            processAchievementProgress(userId, achievement, completedGoalsCount)
-        }
-    }
-
-    @Transactional
-    fun checkPrioritySaverBadge(userId: UUID) {
-
-        val priorityAchievement = achievementRepository.findByTitleEn("Priority Saver") ?: return
-        val highPriorityCompletedCount = BigDecimal(savingGoalRepository.countCompletedHighPriorityGoals(userId))
-        processAchievementProgress(userId, priorityAchievement, highPriorityCompletedCount)
-    }
-
-    @Transactional
-    fun checkFirstStepBadge(userId: UUID) {
-
-        val firstStepAchievement = achievementRepository.findByTitleEn("First Step") ?: return
-        //this function is only called on the very first deposit, the progress is exactly 1
-        val currentProgress = BigDecimal("1.00")
-        processAchievementProgress(userId, firstStepAchievement, currentProgress)
-
-    }
-
-    @Transactional(readOnly = true)
-    fun getAllAchievements(userId: UUID, pageable: Pageable, languageCode: String): Page<AchievementResponse> {
-        val achievementPage = userAchievementRepository.findAllByUserId(userId, pageable)
-        return achievementPage.map { it.toResponse(languageCode) }
-    }
-
-    @Transactional
-    fun createDefaultAchievementsForUser(userId: UUID) {
-        val defaultAchievements = listOf(
+    private fun getGoalSeed() = listOf(
             Achievement(
                 id = UUID.randomUUID(),
-                targetValue = BigDecimal("10000.00"),
-                level = 4,
-                achievementType = AchievementType.SAVINGS,
-                titleEn = "Spendoo King",
-                titleAr = "ملك سبيندو",
-                descriptionEn = "Reach a total savings of 10,000",
-                descriptionAr = "وصول إجمالي مدخراتك إلى 10,000"
-            ),
-            Achievement(
-                id = UUID.randomUUID(),
-                targetValue = BigDecimal("1.00"),
+                code = AchievementCode.PRIORITY_SAVER,
+                targetValue = BigDecimal(1.0),
                 level = 1,
-                achievementType = AchievementType.SAVINGS,
-                titleEn = "First Step",
-                titleAr = "الخطوة الاولى",
-                descriptionEn = "add amount to saving balance for the first time",
-                descriptionAr = "قم بإضافة الأموال إلى رصيد مدخراتك للمرة الأولى"
+                achievementType = AchievementType.GOALS,
+                titleEn = "Priority Saver",
+                titleAr = "مُدخر الاولويات",
+                descriptionEn = "complete first goal that set with high priority",
+                descriptionAr = "  أكمل هدف ذو أولوية عالية للمرة الأولى بنجاح"
             ),
             Achievement(
-                id = userId,
-                targetValue = BigDecimal("5.00"),
+                id = UUID.randomUUID(),
+                code = AchievementCode.HIGH_FIVE,
+                targetValue = BigDecimal(5.0),
                 level = 2,
                 achievementType = AchievementType.GOALS,
                 titleEn = "High Five",
@@ -109,7 +54,8 @@ class AchievementService(
             ),
             Achievement(
                 id = UUID.randomUUID(),
-                targetValue = BigDecimal("10.00"),
+                code = AchievementCode.DOUBLE_FIVE,
+                targetValue = BigDecimal(10.0),
                 level = 3,
                 achievementType = AchievementType.GOALS,
                 titleEn = "Double Five",
@@ -119,59 +65,177 @@ class AchievementService(
             ),
             Achievement(
                 id = UUID.randomUUID(),
-                targetValue = BigDecimal("15.00"),
+                code = AchievementCode.THE_FINISHER,
+                targetValue = BigDecimal(15.0),
                 level = 4,
                 achievementType = AchievementType.GOALS,
                 titleEn = "The Finisher",
                 titleAr = "المنجز الاسطوري",
                 descriptionEn = "complete 15 goals",
                 descriptionAr = "أكمل 15 من أهداف الادخار الخاصة بك بنجاح"
-            ),
-            Achievement(
-                id = UUID.randomUUID(),
-                targetValue = BigDecimal("1.00"),
-                level = 1,
-                achievementType = AchievementType.GOALS,
-                titleEn = "Priority Saver",
-                titleAr = "مُدخر الاولويات",
-                descriptionEn = "complete first goal that set with high priority",
-                descriptionAr = "  أكمل هدف ذو أولوية عالية للمرة الأولى بنجاح"
             )
         )
-        achievementRepository.saveAll(defaultAchievements)
+
+    private fun getSavingSeed() = listOf(
+        Achievement(
+            id = UUID.randomUUID(),
+            code = AchievementCode.FIRST_STEP,
+            targetValue = BigDecimal(1.0),
+            level = 1,
+            achievementType = AchievementType.SAVINGS,
+            titleEn = "First Step",
+            titleAr = "الخطوة الاولى",
+            descriptionEn = "add amount to saving balance for the first time",
+            descriptionAr = "قم بإضافة الأموال إلى رصيد مدخراتك للمرة الأولى"
+        ),
+        Achievement(
+            id = UUID.randomUUID(),
+            code = AchievementCode.SPENDOO_KING,
+            targetValue = BigDecimal(10000.0),
+            level = 2,
+            achievementType = AchievementType.SAVINGS,
+            titleEn = "Spendoo King",
+            titleAr = "ملك سبيندو",
+            descriptionEn = "Reach a total savings of 10,000",
+            descriptionAr = "وصول إجمالي مدخراتك إلى 10,000"
+        )
+    )
+
+    @Transactional
+    fun seedDefaultAchievementsIfEmpty() {
+        if (achievementRepository.count() == 0L) {
+            val defaultAchievements = getSavingSeed() + getGoalSeed()
+
+            achievementRepository.saveAll(defaultAchievements)
+        }
     }
 
-    private fun processAchievementProgress(userId: UUID, achievement: Achievement, currentProgress: BigDecimal) {
-        val userAchievement = userAchievementRepository.findByUserIdAndAchievementId(userId, achievement.id)
-            ?: UserAchievement(
-                userId = userId,
-                achievement = achievement,
-                currentProgress = BigDecimal.ZERO,
-                isUnlocked = false
-            )
+    @Transactional
+    fun ensureUserAchievementsCreated(userId: UUID) {
+        seedDefaultAchievementsIfEmpty()
 
-        // Only modify records if the user hasn't completed the badge already
-        if (!userAchievement.isUnlocked) {
-            userAchievement.currentProgress = currentProgress
-
-            if (currentProgress >= achievement.targetValue) {
-                userAchievement.isUnlocked = true
-
-                userAchievementRepository.save(userAchievement)
-
-                eventPublisher.publish(
-                    AchievementEarnedEvent(
-                        achievementId = achievement.id,
-                        userId = userId,
-                        titleEn = achievement.titleEn,
-                        descriptionEn = achievement.descriptionEn,
-                        level = achievement.level,
-                        achievementType = org.spendoo.events.achievements.utils.AchievementType.valueOf(achievement.achievementType.name)
-                    )
+        var page = 0
+        val pageSize = 100
+        do {
+            val missingPage = achievementRepository.findMissingAchievementsForUser(userId, PageRequest.of(page, pageSize))
+            val newLinks = missingPage.content.map { achievement ->
+                UserAchievement(
+                    userId = userId,
+                    achievement = achievement,
+                    currentProgress = BigDecimal.ZERO,
+                    isUnlocked = false
                 )
-            } else {
-                userAchievementRepository.save(userAchievement)
             }
+            userAchievementRepository.saveAll(newLinks)
+            page++
+        } while (missingPage.hasNext() && missingPage.content.isNotEmpty())
+    }
+
+    @Transactional
+    fun createDefaultAchievementsForUser(userId: UUID) {
+        ensureUserAchievementsCreated(userId)
+    }
+
+    @Transactional
+    fun syncMissingAchievementsForAllUsers() {
+        seedDefaultAchievementsIfEmpty()
+
+        var page = 0
+        val pageSize = 100
+        do {
+            val userIdsPage = userAchievementRepository.findDistinctUserIds(PageRequest.of(page, pageSize))
+            for (userId in userIdsPage.content) {
+                ensureUserAchievementsCreated(userId)
+            }
+            page++
+        } while (userIdsPage.hasNext() && userIdsPage.content.isNotEmpty())
+    }
+
+    @Transactional
+    fun checkSavingsAchievements(userId: UUID) {
+        val totalSavings = savingGoalRepository.sumSavedAmountByUserId(userId) ?: BigDecimal.ZERO
+        val hasSaved = savingBalanceRepository.existsByUserId(userId)
+
+        var page = 0
+        val pageSize = 50
+        do {
+            val userAchievementsPage = userAchievementRepository.findAllByUserIdAndAchievementAchievementTypeAndIsUnlockedIsFalse(
+                userId,
+                AchievementType.SAVINGS,
+                PageRequest.of(page, pageSize)
+            )
+            for (userAchievement in userAchievementsPage.content) {
+                val progress = when (userAchievement.achievement.code) {
+                    AchievementCode.FIRST_STEP -> if (hasSaved) BigDecimal(1.0) else BigDecimal.ZERO
+                    AchievementCode.SPENDOO_KING -> totalSavings
+                    else -> userAchievement.currentProgress
+                }
+                updateProgressAndUnlockIfNeeded(userAchievement, progress)
+            }
+            page++
+        } while (userAchievementsPage.hasNext())
+    }
+
+    @Transactional
+    fun checkGoalAchievements(userId: UUID) {
+        val completedCount = BigDecimal(savingGoalRepository.countByUserIdAndIsCompletedTrue(userId))
+        val highPriorityCount = BigDecimal(savingGoalRepository.countByUserIdAndIsCompletedTrueAndPriorityGreaterThanEqual(userId, 3))
+
+        var page = 0
+        val pageSize = 50
+        do {
+            val userAchievementsPage = userAchievementRepository.findAllByUserIdAndAchievementAchievementTypeAndIsUnlockedIsFalse(
+                userId,
+                AchievementType.GOALS,
+                PageRequest.of(page, pageSize)
+            )
+            for (userAchievement in userAchievementsPage.content) {
+                val progress = when (userAchievement.achievement.code) {
+                    AchievementCode.PRIORITY_SAVER -> highPriorityCount
+                    AchievementCode.HIGH_FIVE,
+                    AchievementCode.DOUBLE_FIVE,
+                    AchievementCode.THE_FINISHER -> completedCount
+                    else -> userAchievement.currentProgress
+                }
+                updateProgressAndUnlockIfNeeded(userAchievement, progress)
+            }
+            page++
+        } while (userAchievementsPage.hasNext())
+    }
+
+    @Transactional(readOnly = true)
+    fun getAllAchievements(userId: UUID, pageable: Pageable, languageCode: String): Page<AchievementResponse> {
+        val achievementPage = userAchievementRepository.findAllByUserId(userId, pageable)
+        return achievementPage.map { it.toResponse(languageCode) }
+    }
+
+    private fun updateProgressAndUnlockIfNeeded(userAchievement: UserAchievement, currentProgress: BigDecimal) {
+        userAchievement.currentProgress = currentProgress
+
+        if (currentProgress >= userAchievement.achievement.targetValue) {
+            userAchievement.isUnlocked = true
+            userAchievementRepository.save(userAchievement)
+
+            eventPublisher.publish(
+                AchievementEarnedEvent(
+                    achievementId = userAchievement.achievement.id,
+                    userId = userAchievement.userId,
+                    titleEn = userAchievement.achievement.titleEn,
+                    titleAr = userAchievement.achievement.titleAr,
+                    descriptionEn = userAchievement.achievement.descriptionEn,
+                    descriptionAr = userAchievement.achievement.descriptionAr,
+                    level = userAchievement.achievement.level,
+                    targetValue = userAchievement.achievement.targetValue,
+                    achievementType = org.spendoo.events.achievements.utils.AchievementType.valueOf(userAchievement.achievement.achievementType.name)
+                )
+            )
+        } else {
+            userAchievement.saveProgress(currentProgress)
         }
+    }
+
+    private fun UserAchievement.saveProgress(progress: BigDecimal) {
+        this.currentProgress = progress
+        userAchievementRepository.save(this)
     }
 }
