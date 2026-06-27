@@ -223,22 +223,17 @@ object PdfGenerator {
             builder.defaultTextDirection(TextDirection.RTL)
         }
         
-        val amiriRegularUrl = javaClass.getResource("/fonts/Amiri-Regular.ttf")
-        val amiriBoldUrl = javaClass.getResource("/fonts/Amiri-Bold.ttf")
-        val robotoRegularUrl = javaClass.getResource("/fonts/Roboto-Regular.ttf")
-        val robotoBoldUrl = javaClass.getResource("/fonts/Roboto-Bold.ttf")
-        
-        if (amiriRegularUrl != null) {
-            builder.useFont(File(amiriRegularUrl.toURI()), "Amiri")
+        if (javaClass.getResource("/fonts/Amiri-Regular.ttf") != null) {
+            builder.useFont({ javaClass.getResourceAsStream("/fonts/Amiri-Regular.ttf")!! }, "Amiri")
         }
-        if (amiriBoldUrl != null) {
-            builder.useFont(File(amiriBoldUrl.toURI()), "Amiri", 700, com.openhtmltopdf.outputdevice.helper.BaseRendererBuilder.FontStyle.NORMAL, true)
+        if (javaClass.getResource("/fonts/Amiri-Bold.ttf") != null) {
+            builder.useFont({ javaClass.getResourceAsStream("/fonts/Amiri-Bold.ttf")!! }, "Amiri", 700, com.openhtmltopdf.outputdevice.helper.BaseRendererBuilder.FontStyle.NORMAL, true)
         }
-        if (robotoRegularUrl != null) {
-            builder.useFont(File(robotoRegularUrl.toURI()), "Roboto")
+        if (javaClass.getResource("/fonts/Roboto-Regular.ttf") != null) {
+            builder.useFont({ javaClass.getResourceAsStream("/fonts/Roboto-Regular.ttf")!! }, "Roboto")
         }
-        if (robotoBoldUrl != null) {
-            builder.useFont(File(robotoBoldUrl.toURI()), "Roboto", 700, com.openhtmltopdf.outputdevice.helper.BaseRendererBuilder.FontStyle.NORMAL, true)
+        if (javaClass.getResource("/fonts/Roboto-Bold.ttf") != null) {
+            builder.useFont({ javaClass.getResourceAsStream("/fonts/Roboto-Bold.ttf")!! }, "Roboto", 700, com.openhtmltopdf.outputdevice.helper.BaseRendererBuilder.FontStyle.NORMAL, true)
         }
 
         builder.withHtmlContent(htmlContent.toString(), null)
