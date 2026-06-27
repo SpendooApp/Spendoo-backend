@@ -46,10 +46,6 @@ class FollowService(
         val followee = userRepository.findById(followeeId)
             .orElseThrow { RuntimeException("Followee not found") }
 
-        if (followRepository.existsByFollowerIdAndFolloweeId(followerId, followeeId)) {
-            throw IllegalStateException("Follow request already exists")
-        }
-
         val followRequest = Follow(
             follower = follower,
             followee = followee,
