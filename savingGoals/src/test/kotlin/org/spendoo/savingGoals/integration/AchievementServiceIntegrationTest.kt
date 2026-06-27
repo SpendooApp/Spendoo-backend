@@ -14,6 +14,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.data.domain.PageRequest
 import org.springframework.test.context.ActiveProfiles
 import java.math.BigDecimal
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.*
 
@@ -42,133 +43,68 @@ class AchievementServiceIntegrationTest {
     @Autowired
     private lateinit var savingGoalHistoryRepository: SavingGoalHistoryRepository
 
+    @Autowired
+    private lateinit var loginStreakRepository: LoginStreakRepository
+
+    @Autowired
+    private lateinit var transactionStreakRepository: TransactionStreakRepository
+
     private val userId = UUID.randomUUID()
 
     @BeforeEach
     fun setUp() {
+        loginStreakRepository.deleteAll()
+        transactionStreakRepository.deleteAll()
         savingGoalHistoryRepository.deleteAll()
         userAchievementRepository.deleteAll()
         savingGoalRepository.deleteAll()
         savingBalanceRepository.deleteAll()
         achievementRepository.deleteAll()
 
-        seedDefaultAchievements()
         achievementService.createDefaultAchievementsForUser(userId)
     }
 
-    private fun seedDefaultAchievements() {
-        val defaultAchievements = listOf(
-            Achievement(
-                id = UUID.randomUUID(),
-                code = AchievementCode.SPENDOO_KING,
-                targetValue = BigDecimal(10000.0),
-                level = 4,
-                achievementType = AchievementType.SAVINGS,
-                titleEn = "Spendoo King",
-                titleAr = "ملك سبيندو",
-                descriptionEn = "Reach a total savings of 10,000",
-                descriptionAr = "وصول إجمالي مدخراتك إلى 10,000"
-            ),
-            Achievement(
-                id = UUID.randomUUID(),
-                code = AchievementCode.FIRST_STEP,
-                targetValue = BigDecimal(1.0),
-                level = 1,
-                achievementType = AchievementType.SAVINGS,
-                titleEn = "First Step",
-                titleAr = "الخطوة الاولى",
-                descriptionEn = "add amount to saving balance for the first time",
-                descriptionAr = "قم بإضافة الأموال إلى رصيد مدخراتك للمرة الأولى"
-            ),
-            Achievement(
-                id = UUID.randomUUID(),
-                code = AchievementCode.HIGH_FIVE,
-                targetValue = BigDecimal(5.0),
-                level = 2,
-                achievementType = AchievementType.GOALS,
-                titleEn = "High Five",
-                titleAr = "الخماسية",
-                descriptionEn = "complete 5 goals",
-                descriptionAr = "أكمل 5 من أهداف الادخار الخاصة بك بنجاح"
-            ),
-            Achievement(
-                id = UUID.randomUUID(),
-                code = AchievementCode.DOUBLE_FIVE,
-                targetValue = BigDecimal(10.0),
-                level = 3,
-                achievementType = AchievementType.GOALS,
-                titleEn = "Double Five",
-                titleAr = "عشرة على عشرة",
-                descriptionEn = "complete 10 goals",
-                descriptionAr = "أكمل 10 من أهداف الادخار الخاصة بك بنجاح"
-            ),
-            Achievement(
-                id = UUID.randomUUID(),
-                code = AchievementCode.THE_FINISHER,
-                targetValue = BigDecimal(15.0),
-                level = 4,
-                achievementType = AchievementType.GOALS,
-                titleEn = "The Finisher",
-                titleAr = "المنجز الاسطوري",
-                descriptionEn = "complete 15 goals",
-                descriptionAr = "أكمل 15 من أهداف الادخار الخاصة بك بنجاح"
-            ),
-            Achievement(
-                id = UUID.randomUUID(),
-                code = AchievementCode.PRIORITY_SAVER,
-                targetValue = BigDecimal(1.0),
-                level = 1,
-                achievementType = AchievementType.GOALS,
-                titleEn = "Priority Saver",
-                titleAr = "مُدخر الاولويات",
-                descriptionEn = "complete first goal that set with high priority",
-                descriptionAr = "أكمل هدف ذو أولوية عالية للمرة الأولى بنجاح"
-            )
-        )
-        achievementRepository.saveAll(defaultAchievements)
-    }
-
     @Test
-    fun `addToSavings awards First Step badge on first deposit`() {
+    fun `addToSavings awards Savings L1 badge on first deposit`() {
         val depositAmount = BigDecimal(150.0)
 
         savingGoalService.addToSavings(userId, depositAmount)
 
-        val userAchievements = userAchievementRepository.findAllByUserId(userId, PageRequest.of(0, 10)).content
-        val firstStepBadge = userAchievements.find { it.achievement.code == AchievementCode.FIRST_STEP }
+        val userAchievements = userAchievementRepository.findAllByUserId(userId, PageRequest.of(0, 50)).content
+        val l1Badge = userAchievements.find { it.achievement.code == AchievementCode.SAVINGS_L1 }
 
-        assertThat(firstStepBadge).isNotNull()
-        assertThat(firstStepBadge!!.isUnlocked).isTrue()
-        assertThat(firstStepBadge.currentProgress.compareTo(BigDecimal(1.0))).isEqualTo(0)
+        assertThat(l1Badge).isNotNull()
+        assertThat(l1Badge!!.isUnlocked).isTrue()
+        assertThat(l1Badge.currentProgress.compareTo(BigDecimal(1.0))).isEqualTo(0)
     }
 
     @Test
-    fun `addToSavings does not unlock duplicate First Step badges on subsequent deposits`() {
+    fun `addToSavings does not unlock duplicate Savings L1 badges on subsequent deposits`() {
         // Deposit twice
         savingGoalService.addToSavings(userId, BigDecimal(100.0))
         savingGoalService.addToSavings(userId, BigDecimal(200.0))
 
         // Ensure exactly one achievement entry exists
-        val userAchievements = userAchievementRepository.findAllByUserId(userId, PageRequest.of(0, 10)).content
-        val firstStepMatches = userAchievements.filter { it.achievement.code == AchievementCode.FIRST_STEP }
+        val userAchievements = userAchievementRepository.findAllByUserId(userId, PageRequest.of(0, 50)).content
+        val matches = userAchievements.filter { it.achievement.code == AchievementCode.SAVINGS_L1 }
 
-        assertThat(firstStepMatches).hasSize(1)
-        assertThat(firstStepMatches.first().isUnlocked).isTrue()
+        assertThat(matches).hasSize(1)
+        assertThat(matches.first().isUnlocked).isTrue()
     }
 
     @Test
-    fun `assignAmountToGoal awards Spendoo King badge when cumulative savings history reaches 10000`() {
+    fun `assignAmountToGoal awards Savings L4 badge when cumulative savings history reaches 10000`() {
         savingBalanceRepository.save(SavingBalance(userId = userId, unassignedAmount = BigDecimal(12000.0)))
         val goal = createAndSaveGoal(targetAmount = BigDecimal(10000.0), priority = 2)
 
         savingGoalService.assignAmountToGoal(goal.id, userId, AssignAmountRequest(amount = BigDecimal(10000.0)))
 
-        val userAchievements = userAchievementRepository.findAllByUserId(userId, PageRequest.of(0, 10)).content
-        val kingBadge = userAchievements.find { it.achievement.code == AchievementCode.SPENDOO_KING }
+        val userAchievements = userAchievementRepository.findAllByUserId(userId, PageRequest.of(0, 50)).content
+        val l4Badge = userAchievements.find { it.achievement.code == AchievementCode.SAVINGS_L4 }
 
-        assertThat(kingBadge).isNotNull()
-        assertThat(kingBadge!!.isUnlocked).isTrue()
-        assertThat(kingBadge.currentProgress.compareTo(BigDecimal(10000.0))).isEqualTo(0)
+        assertThat(l4Badge).isNotNull()
+        assertThat(l4Badge!!.isUnlocked).isTrue()
+        assertThat(l4Badge.currentProgress.compareTo(BigDecimal(10000.0))).isEqualTo(0)
     }
 
     @Test
@@ -181,7 +117,7 @@ class AchievementServiceIntegrationTest {
             savingGoalService.assignAmountToGoal(goal.id, userId, AssignAmountRequest(amount = BigDecimal(100.0)))
         }
 
-        var userAchievements = userAchievementRepository.findAllByUserId(userId, PageRequest.of(0, 10)).content
+        var userAchievements = userAchievementRepository.findAllByUserId(userId, PageRequest.of(0, 50)).content
         var highFiveBadge = userAchievements.find { it.achievement.code == AchievementCode.HIGH_FIVE }
         assertThat(highFiveBadge?.isUnlocked ?: false).isFalse()
 
@@ -190,7 +126,7 @@ class AchievementServiceIntegrationTest {
         savingGoalService.assignAmountToGoal(finalGoal.id, userId, AssignAmountRequest(amount = BigDecimal(100.0)))
 
         // High Five badge is unlocked dynamically
-        userAchievements = userAchievementRepository.findAllByUserId(userId, PageRequest.of(0, 10)).content
+        userAchievements = userAchievementRepository.findAllByUserId(userId, PageRequest.of(0, 50)).content
         highFiveBadge = userAchievements.find { it.achievement.code == AchievementCode.HIGH_FIVE }
 
         assertThat(highFiveBadge).isNotNull()
@@ -208,7 +144,7 @@ class AchievementServiceIntegrationTest {
             AssignAmountRequest(amount = BigDecimal(500.0))
         )
 
-        val userAchievements = userAchievementRepository.findAllByUserId(userId, PageRequest.of(0, 10)).content
+        val userAchievements = userAchievementRepository.findAllByUserId(userId, PageRequest.of(0, 50)).content
         val priorityBadge = userAchievements.find { it.achievement.code == AchievementCode.PRIORITY_SAVER }
 
         assertThat(priorityBadge).isNotNull()
@@ -226,10 +162,59 @@ class AchievementServiceIntegrationTest {
             AssignAmountRequest(amount = BigDecimal(500.0))
         )
 
-        val userAchievements = userAchievementRepository.findAllByUserId(userId, PageRequest.of(0, 10)).content
+        val userAchievements = userAchievementRepository.findAllByUserId(userId, PageRequest.of(0, 50)).content
         val priorityBadge = userAchievements.find { it.achievement.code == AchievementCode.PRIORITY_SAVER }
 
         assertThat(priorityBadge?.isUnlocked ?: false).isFalse()
+    }
+
+    @Test
+    fun `login streak increments and unlocks LOGIN_STREAK_L1 after 3 days`() {
+        val yesterday = LocalDate.now().minusDays(1)
+        val dayBefore = LocalDate.now().minusDays(2)
+
+        // Seed yesterday and day before
+        loginStreakRepository.save(LoginStreak(userId = userId, streakDate = dayBefore))
+        loginStreakRepository.save(LoginStreak(userId = userId, streakDate = yesterday))
+
+        achievementService.handleUserLoggedIn(userId)
+
+        val userAchievements = userAchievementRepository.findAllByUserId(userId, PageRequest.of(0, 50)).content
+        val streakBadge = userAchievements.find { it.achievement.code == AchievementCode.LOGIN_STREAK_L1 }
+
+        assertThat(streakBadge).isNotNull()
+        assertThat(streakBadge!!.isUnlocked).isTrue()
+        assertThat(streakBadge.currentProgress.compareTo(BigDecimal(3.0))).isEqualTo(0)
+    }
+
+    @Test
+    fun `transaction streak increments and unlocks TRANSACTION_STREAK_L1 after 3 days`() {
+        val yesterday = LocalDate.now().minusDays(1)
+        val dayBefore = LocalDate.now().minusDays(2)
+
+        // Seed yesterday and day before
+        transactionStreakRepository.save(TransactionStreak(userId = userId, streakDate = dayBefore))
+        transactionStreakRepository.save(TransactionStreak(userId = userId, streakDate = yesterday))
+
+        achievementService.handleTransactionCreated(userId, 1)
+
+        val userAchievements = userAchievementRepository.findAllByUserId(userId, PageRequest.of(0, 50)).content
+        val streakBadge = userAchievements.find { it.achievement.code == AchievementCode.TRANSACTION_STREAK_L1 }
+
+        assertThat(streakBadge).isNotNull()
+        assertThat(streakBadge!!.isUnlocked).isTrue()
+        assertThat(streakBadge.currentProgress.compareTo(BigDecimal(3.0))).isEqualTo(0)
+    }
+
+    @Test
+    fun `distinct categories count unlocks CATEG_L1 category explorer`() {
+        achievementService.handleTransactionCreated(userId, 3)
+
+        val userAchievements = userAchievementRepository.findAllByUserId(userId, PageRequest.of(0, 50)).content
+        val categoryBadge = userAchievements.find { it.achievement.code == AchievementCode.CATEGORY_L1 }
+
+        assertThat(categoryBadge).isNotNull()
+        assertThat(categoryBadge!!.isUnlocked).isTrue()
     }
 
     private fun createAndSaveGoal(

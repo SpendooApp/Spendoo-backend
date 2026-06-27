@@ -11,11 +11,11 @@ import java.util.*
 interface UserAchievementRepository : JpaRepository<UserAchievement, UUID> {
     fun findAllByUserId(userId: UUID, pageable: Pageable): Page<UserAchievement>
 
+    // This query is memory safe and does not need pagination because there are at most 4 achievements of a specific type
     fun findAllByUserIdAndAchievementAchievementTypeAndIsUnlockedIsFalse(
         userId: UUID,
-        achievementType: AchievementType,
-        pageable: Pageable
-    ): Page<UserAchievement>
+        achievementType: AchievementType
+    ): List<UserAchievement>
 
     @Query("SELECT DISTINCT ua.userId FROM UserAchievement ua")
     fun findDistinctUserIds(pageable: Pageable): Page<UUID>
