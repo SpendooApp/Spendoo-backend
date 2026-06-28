@@ -18,6 +18,7 @@ import org.spendoo.identity.repository.UserRepository
 import org.spendoo.identity.security.JwtUtil
 import org.spendoo.identity.service.mapper.toEntity
 import org.spendoo.identity.service.mapper.toUserCreatedEvent
+import org.spendoo.events.identity.UserLoggedInEvent
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
@@ -94,6 +95,7 @@ class AuthService(
         val refreshToken = jwtUtil.generateRefreshToken(user.id)
 
         saveRefreshToken(user, refreshToken)
+        spendooEventPublisher.publish(UserLoggedInEvent(user.id))
 
         return AuthResponse(accessToken, refreshToken)
     }
@@ -120,6 +122,7 @@ class AuthService(
 
 
             saveRefreshToken(user, newRefreshToken)
+            spendooEventPublisher.publish(UserLoggedInEvent(user.id))
 
             return AuthResponse(newAccessToken, newRefreshToken)
         } else {

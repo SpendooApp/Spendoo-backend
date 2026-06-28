@@ -9,11 +9,14 @@ import org.spendoo.transactions.api.dto.response.AiExtractionResponse
 import org.spendoo.transactions.api.dto.response.BalanceSummary
 import org.spendoo.transactions.api.dto.response.EnrichedAiExtractionItem
 import org.spendoo.transactions.api.dto.response.EnrichedAiExtractionResponse
+import org.spendoo.transactions.api.dto.response.FrequencyItemsResponse
 import org.spendoo.transactions.entity.Transaction
 import org.spendoo.transactions.entity.TransactionView
 import org.spendoo.transactions.repository.CategoryRepository
 import org.spendoo.transactions.repository.TransactionRepository
 import org.spendoo.transactions.repository.TransactionViewRepository
+import org.spendoo.events.publisher.SpendooEventPublisher
+import org.spendoo.events.transactions.TransactionCreatedEvent
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.http.HttpMethod
@@ -30,7 +33,8 @@ class TransactionService(
     private val transactionRepository: TransactionRepository,
     private val categoryRepository: CategoryRepository,
     private val transactionViewRepository: TransactionViewRepository,
-    private val apiClient: ApiClient
+    private val apiClient: ApiClient,
+    private val spendooEventPublisher: SpendooEventPublisher
 ) {
 
     @Transactional
@@ -47,12 +51,16 @@ class TransactionService(
         }
 
         transactionRepository.saveAll(transactionsToSave)
+        val distinctCategoryCount = transactionRepository.countDistinctCategoriesByUserId(userId).toInt()
+        spendooEventPublisher.publish(TransactionCreatedEvent(userId, distinctCategoryCount))
     }
 
     @Transactional
     fun createIncomeTransactions(userId: UUID, request: CreateIncomeTransactionRequest) {
         val transactionsToSave = request.entries.map { it.toEntity(userId) }
         transactionRepository.saveAll(transactionsToSave)
+        val distinctCategoryCount = transactionRepository.countDistinctCategoriesByUserId(userId).toInt()
+        spendooEventPublisher.publish(TransactionCreatedEvent(userId, distinctCategoryCount))
     }
 
     @Transactional
@@ -120,6 +128,13 @@ class TransactionService(
             income = realIncome,
             expenses = -expenses
         )
+    }
+    @Transactional(readOnly = true)
+    fun getTopFrequencyItems(userId: UUID, categoryId: UUID?, pageable: Pageable): Page<FrequencyItemsResponse> {
+        if (categoryId != null) {
+            return transactionRepository.findTopSpendingItemsByCategoryId(userId, categoryId, pageable)
+        }
+        return transactionRepository.findTopSpendingItems(userId, pageable)
     }
 
 

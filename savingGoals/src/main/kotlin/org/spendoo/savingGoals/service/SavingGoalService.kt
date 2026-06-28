@@ -1,5 +1,8 @@
 package org.spendoo.savingGoals.service
 
+import org.spendoo.events.publisher.SpendooEventPublisher
+import org.spendoo.events.savings.SavingGoalCompletedEvent
+import org.spendoo.events.savings.SavingsBalanceUpdatedEvent
 import org.spendoo.savingGoals.api.dto.request.AssignAmountRequest
 import org.spendoo.savingGoals.api.dto.request.GoalCreateRequest
 import org.spendoo.savingGoals.api.dto.request.GoalUpdateRequest
@@ -25,7 +28,8 @@ import java.util.*
 class SavingGoalService(
     private val savingGoalRepository: SavingGoalRepository,
     private val savingBalanceRepository: SavingBalanceRepository,
-    private val savingGoalHistoryRepository: SavingGoalHistoryRepository
+    private val savingGoalHistoryRepository: SavingGoalHistoryRepository,
+    private val spendooEventPublisher: SpendooEventPublisher
 ) {
     @Transactional
     fun createSavingGoal(request: GoalCreateRequest, userId: UUID) {
@@ -56,12 +60,12 @@ class SavingGoalService(
         }
     }
 
-@Transactional(readOnly = true)
-fun getSavingGoalById(goalId: UUID, userId: UUID): GoalResponse {
-    val goal = savingGoalRepository.findGoalWithSavedAmount(goalId, userId)
-        ?: throw IllegalArgumentException("Saving goal not found")
-    return goal.toResponse()
-}
+    @Transactional(readOnly = true)
+    fun getSavingGoalById(goalId: UUID, userId: UUID): GoalResponse {
+        val goal = savingGoalRepository.findGoalWithSavedAmount(goalId, userId)
+            ?: throw IllegalArgumentException("Saving goal not found")
+        return goal.toResponse()
+    }
 
     @Transactional(readOnly = true)
     fun getAllGoals(userId: UUID, pageable: Pageable): Page<GoalResponse> {
@@ -90,9 +94,13 @@ fun getSavingGoalById(goalId: UUID, userId: UUID): GoalResponse {
                 amount = request.amount
             )
         )
+
+        spendooEventPublisher.publish(SavingsBalanceUpdatedEvent(userId, false))
+
         val currentAmount = savingGoalHistoryRepository.getCurrentAmountByGoalId(goalId)
         if (currentAmount >= goal.targetAmount && !goal.isCompleted) {
             savingGoalRepository.save(goal.copy(isCompleted = true))
+            spendooEventPublisher.publish(SavingGoalCompletedEvent(userId, goal.priority))
         }
 
         savingBalanceRepository.save(
@@ -108,12 +116,16 @@ fun getSavingGoalById(goalId: UUID, userId: UUID): GoalResponse {
         userId: UUID,
         amount: BigDecimal
     ) {
+        val isFirstTimeSaving = !savingBalanceRepository.existsByUserId(userId)
         savingBalanceRepository.save(
             SavingBalance(
                 userId = userId,
                 unassignedAmount = amount
             )
         )
+        if (isFirstTimeSaving && amount > BigDecimal.ZERO) {
+            spendooEventPublisher.publish(SavingsBalanceUpdatedEvent(userId, true))
+        }
     }
 
     fun getSummary(userId: UUID): GoalsSummary {
