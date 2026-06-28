@@ -11,6 +11,7 @@ import org.spendoo.transactions.service.BudgetService
 import org.spendoo.transactions.service.CategoryService
 import org.spendoo.transactions.service.ScheduledPaymentService
 import org.spendoo.transactions.service.TransactionService
+import org.spendoo.events.publisher.SpendooEventPublisher
 import org.springframework.boot.SpringBootConfiguration
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration
 import org.springframework.boot.persistence.autoconfigure.EntityScan
@@ -22,6 +23,11 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories
 @EntityScan(basePackages = ["org.spendoo.transactions.entity"])
 @EnableJpaRepositories(basePackages = ["org.spendoo.transactions.repository"])
 class TransactionsTestApplication {
+
+    @Bean
+    fun spendooEventPublisher(): SpendooEventPublisher {
+        return mockk<SpendooEventPublisher>(relaxed = true)
+    }
 
     @Bean
     fun apiClient(): ApiClient {
@@ -57,13 +63,15 @@ class TransactionsTestApplication {
         transactionRepository: TransactionRepository,
         categoryRepository: CategoryRepository,
         transactionViewRepository: TransactionViewRepository,
-        apiClient: ApiClient
+        apiClient: ApiClient,
+        spendooEventPublisher: SpendooEventPublisher
     ): TransactionService {
         return TransactionService(
             transactionRepository = transactionRepository,
             categoryRepository = categoryRepository,
             transactionViewRepository = transactionViewRepository,
-            apiClient = apiClient
+            apiClient = apiClient,
+            spendooEventPublisher = spendooEventPublisher
         )
     }
 

@@ -17,5 +17,6 @@ interface SavingBalanceRepository : JpaRepository<SavingBalance, UUID> {
 """
     )
     fun getUnassignedAmount(userId: UUID): BigDecimal
+    fun existsByUserId(userId: UUID): Boolean
 
 }

@@ -13,4 +13,4 @@ data class NotificationDetails(
 
 data class UserNotificationsEvent(
     val notifications: List<NotificationDetails>
-): SpendooEvent
+) : SpendooEvent

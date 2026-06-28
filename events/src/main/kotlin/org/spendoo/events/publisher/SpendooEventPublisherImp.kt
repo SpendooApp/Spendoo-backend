@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component
 @Component
 internal class SpendooEventPublisherImp(
     private val applicationEventPublisher: ApplicationEventPublisher
-): SpendooEventPublisher {
+) : SpendooEventPublisher {
 
     override fun publish(event: SpendooEvent) {
         applicationEventPublisher.publishEvent(event)

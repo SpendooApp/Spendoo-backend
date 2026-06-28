@@ -3,11 +3,15 @@ package org.spendoo.identity
 import io.mockk.mockk
 import org.spendoo.events.publisher.SpendooEventPublisher
 import org.spendoo.identity.repository.EmailVerificationRepository
+import org.spendoo.identity.repository.FollowCodeRepository
+import org.spendoo.identity.repository.FollowRepository
 import org.spendoo.identity.repository.RefreshTokenRepository
 import org.spendoo.identity.repository.UserRepository
 import org.spendoo.identity.security.JwtUtil
 import org.spendoo.identity.service.AuthService
 import org.spendoo.identity.service.EmailService
+import org.spendoo.identity.service.FollowCodeService
+import org.spendoo.identity.service.FollowService
 import org.spendoo.identity.service.UserService
 import org.spendoo.storage.service.ImageStorageService
 import org.springframework.beans.factory.annotation.Value
@@ -75,5 +79,31 @@ class IdentityTestApplication {
             profileImageDirectory = profileImageDirectory
         )
     }
+
+    @Bean
+    fun followCodeService(
+        userRepository: UserRepository,
+        followCodeRepository: FollowCodeRepository
+    ): FollowCodeService {
+        return FollowCodeService(
+            userRepository = userRepository,
+            followCodeRepository = followCodeRepository
+        )
+    }
+
+
+    @Bean
+    fun followService(
+        userRepository: UserRepository,
+        followCodeRepository: FollowCodeRepository,
+        followRepository: FollowRepository
+    ): FollowService {
+        return FollowService(
+            userRepository = userRepository,
+            followCodeRepository = followCodeRepository,
+            followRepository = followRepository
+        )
+    }
+
 }
 

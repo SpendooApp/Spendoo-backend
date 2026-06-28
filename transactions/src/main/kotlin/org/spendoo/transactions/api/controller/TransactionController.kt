@@ -6,12 +6,14 @@ import org.spendoo.transactions.api.dto.request.CreateIncomeTransactionRequest
 import org.spendoo.transactions.api.dto.request.TransactionUpdateRequest
 import org.spendoo.transactions.api.dto.response.BalanceSummary
 import org.spendoo.transactions.api.dto.response.EnrichedAiExtractionResponse
+import org.spendoo.transactions.api.dto.response.FrequencyItemsResponse
 import org.spendoo.transactions.api.dto.response.TransactionResponse
 import org.spendoo.transactions.api.dto.response.toResponse
 import org.spendoo.transactions.service.TransactionService
 import org.springdoc.core.annotations.ParameterObject
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
+import org.springframework.data.web.PageableDefault
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
@@ -100,6 +102,16 @@ class TransactionController(
     fun getTransactionSummary(@AuthenticationPrincipal userId: UUID): ResponseEntity<BalanceSummary> {
         val summary = transactionService.getBalanceSummary(userId)
         return ResponseEntity.ok(summary)
+    }
+
+    @GetMapping("/top-frequency-items")
+    fun getTopFrequencyItems(
+        @AuthenticationPrincipal userId: UUID,
+        categoryId: UUID? = null,
+        @PageableDefault(size = 10) pageable: Pageable
+    ): ResponseEntity<Page<FrequencyItemsResponse>> {
+        val page = transactionService.getTopFrequencyItems(userId, categoryId , pageable)
+        return ResponseEntity.ok(page)
     }
 
     @PostMapping("/voice/process", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])

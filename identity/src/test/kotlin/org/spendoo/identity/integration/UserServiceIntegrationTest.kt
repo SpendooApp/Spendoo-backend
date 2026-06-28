@@ -9,9 +9,14 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.spendoo.events.publisher.SpendooEventPublisher
 import org.spendoo.identity.IdentityTestApplication
+import org.spendoo.identity.api.dto.request.UpdateProfileRequest
 import org.spendoo.identity.entity.Gender
 import org.spendoo.identity.entity.User
 import org.spendoo.identity.exception.UserNotFoundException
+import org.spendoo.identity.repository.EmailVerificationRepository
+import org.spendoo.identity.repository.FollowCodeRepository
+import org.spendoo.identity.repository.FollowRepository
+import org.spendoo.identity.repository.RefreshTokenRepository
 import org.spendoo.identity.repository.UserRepository
 import org.spendoo.identity.service.UserService
 import org.spendoo.storage.service.ImageStorageService
@@ -34,6 +39,18 @@ class UserServiceIntegrationTest {
     private lateinit var userRepository: UserRepository
 
     @Autowired
+    private lateinit var followRepository: FollowRepository
+
+    @Autowired
+    private lateinit var followCodeRepository: FollowCodeRepository
+
+    @Autowired
+    private lateinit var refreshTokenRepository: RefreshTokenRepository
+
+    @Autowired
+    private lateinit var emailVerificationRepository: EmailVerificationRepository
+
+    @Autowired
     private lateinit var imageStorageService: ImageStorageService
 
     @Autowired
@@ -41,6 +58,10 @@ class UserServiceIntegrationTest {
 
     @BeforeEach
     fun setUp() {
+        followRepository.deleteAll()
+        followCodeRepository.deleteAll()
+        refreshTokenRepository.deleteAll()
+        emailVerificationRepository.deleteAll()
         userRepository.deleteAll()
         clearMocks(imageStorageService, answers = false, recordedCalls = true)
     }
@@ -156,5 +177,21 @@ class UserServiceIntegrationTest {
                 imageUrl = imageUrl
             )
         )
+    }
+
+    @Test
+    fun `updateProfile updates user data successfully if user exists`() {
+        val existingUser = createUser(email = "profile-update@mail.com")
+        val request = UpdateProfileRequest(
+            fullName = "Israa Updated",
+            gender = Gender.FEMALE,
+            birthDate = LocalDate.of(1998, 1, 1)
+        )
+
+        userService.updateProfile(existingUser.id, request)
+
+        val updatedUser = userRepository.findByEmail(existingUser.email)
+        assertThat(updatedUser?.fullName).isEqualTo("Israa Updated")
+        assertThat(updatedUser?.birthDate).isEqualTo(LocalDate.of(1998, 1, 1))
     }
 }
