@@ -1,14 +1,14 @@
 package org.spendoo.notifications.service
 
+import org.spendoo.events.notifications.NotificationDetails
 import org.spendoo.notifications.api.dto.response.NotificationResponse
-import org.spendoo.notifications.entity.Notification
-import org.spendoo.notifications.entity.NotificationType
+import org.spendoo.notifications.entity.toNotification
 import org.spendoo.notifications.repository.NotificationRepository
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.util.UUID
+import java.util.*
 
 @Service
 class NotificationService(
@@ -16,14 +16,15 @@ class NotificationService(
 ) {
 
     @Transactional
-    fun saveNotification(userId: UUID, title: String, message: String, type: NotificationType) {
-        val notification = Notification(
-            userId = userId,
-            title = title,
-            message = message,
-            type = type
-        )
+    fun saveNotification(notification: NotificationDetails) {
+        val notification = notification.toNotification()
         notificationRepository.save(notification)
+    }
+    
+    @Transactional
+    fun saveNotifications(notifications: List<NotificationDetails>) {
+        val notifications = notifications.map(NotificationDetails::toNotification)
+        notificationRepository.saveAll(notifications)
     }
 
     @Transactional(readOnly = true)

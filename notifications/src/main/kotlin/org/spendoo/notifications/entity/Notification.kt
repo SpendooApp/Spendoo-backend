@@ -1,8 +1,9 @@
 package org.spendoo.notifications.entity
 
 import jakarta.persistence.*
+import org.spendoo.events.notifications.NotificationDetails
 import java.time.LocalDateTime
-import java.util.UUID
+import java.util.*
 
 
 @Entity
@@ -32,3 +33,12 @@ data class Notification(
     val sentAt: LocalDateTime = LocalDateTime.now()
 
 )
+
+fun NotificationDetails.toNotification(): Notification {
+    return Notification(
+        userId = this.userId,
+        title = this.subject,
+        message = this.message,
+        type = NotificationType.fromStringOrDefault(this.type.name)
+    )
+}

@@ -3,6 +3,8 @@ package org.spendoo.notifications.integration
 import com.google.common.truth.Truth
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.spendoo.events.notifications.NotificationDetails
+import org.spendoo.events.notifications.utils.NotificationType as EventNotificationType
 import org.spendoo.notifications.NotificationsTestApplication
 import org.spendoo.notifications.entity.NotificationType
 import org.spendoo.notifications.repository.NotificationRepository
@@ -33,9 +35,15 @@ class NotificationServiceIntegrationTest {
         val userId = UUID.randomUUID()
         val title = "Achievement Unlocked!"
         val message = "You got a new badge."
-        val type = NotificationType.ACHIEVEMENT
+        val type = EventNotificationType.ACHIEVEMENT
 
-        notificationService.saveNotification(userId, title, message, type)
+        val notificationDetails = NotificationDetails(
+            userId = userId,
+            subject = title,
+            message = message,
+            type = type
+        )
+        notificationService.saveNotification(notificationDetails)
 
 
         val allNotifications = notificationRepository.findAll()
@@ -52,12 +60,36 @@ class NotificationServiceIntegrationTest {
 
         val userId = UUID.randomUUID()
 
-        notificationService.saveNotification(userId, "T1", "M1", NotificationType.SYSTEM)
-        notificationService.saveNotification(userId, "T2", "M2", NotificationType.SYSTEM)
-        notificationService.saveNotification(userId, "T3", "M3", NotificationType.SYSTEM)
+        notificationService.saveNotification(NotificationDetails(userId, "T1", "M1", EventNotificationType.SYSTEM))
+        notificationService.saveNotification(NotificationDetails(userId, "T2", "M2", EventNotificationType.SYSTEM))
+        notificationService.saveNotification(NotificationDetails(userId, "T3", "M3", EventNotificationType.SYSTEM))
 
         val unreadCount = notificationService.getUnreadCount(userId)
 
         Truth.assertThat(unreadCount).isEqualTo(3)
+    }
+
+    @Test
+    fun `should save multiple notifications to database`() {
+        val userId = UUID.randomUUID()
+        val notifications = listOf(
+            NotificationDetails(userId, "Title 1", "Msg 1", EventNotificationType.SYSTEM),
+            NotificationDetails(userId, "Title 2", "Msg 2", EventNotificationType.ACHIEVEMENT)
+        )
+
+        notificationService.saveNotifications(notifications)
+
+        val allNotifications = notificationRepository.findAll()
+        Truth.assertThat(allNotifications).hasSize(2)
+
+        val notification1 = allNotifications.first { it.title == "Title 1" }
+        Truth.assertThat(notification1.userId).isEqualTo(userId)
+        Truth.assertThat(notification1.message).isEqualTo("Msg 1")
+        Truth.assertThat(notification1.type).isEqualTo(NotificationType.SYSTEM)
+
+        val notification2 = allNotifications.first { it.title == "Title 2" }
+        Truth.assertThat(notification2.userId).isEqualTo(userId)
+        Truth.assertThat(notification2.message).isEqualTo("Msg 2")
+        Truth.assertThat(notification2.type).isEqualTo(NotificationType.ACHIEVEMENT)
     }
 }

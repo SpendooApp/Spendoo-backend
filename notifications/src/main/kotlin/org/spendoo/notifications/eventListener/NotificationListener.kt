@@ -18,14 +18,7 @@ class NotificationListener(
     @EventListener
     fun handleUserNotifications(event: UserNotificationsEvent) {
         try {
-            event.notifications.forEach { detail ->
-                notificationService.saveNotification(
-                    userId = detail.userId,
-                    title = detail.subject,
-                    message = detail.message,
-                    type = org.spendoo.notifications.entity.NotificationType.valueOf(detail.type.name)
-                )
-            }
+            notificationService.saveNotifications(event.notifications)
             log.info("Successfully saved notifications to database.")
         } catch (e: Exception) {
             log.error("Failed to save notifications to database", e)
