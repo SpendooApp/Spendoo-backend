@@ -126,4 +126,7 @@ interface TransactionRepository : JpaRepository<Transaction, UUID>, JpaSpecifica
     fun findByIdAndUserId(id: UUID, userId: UUID): Transaction?
 
     fun deleteByIdAndUserId(id: UUID, userId: UUID): Int
+
+    @Query("SELECT COUNT(DISTINCT t.category.id) FROM Transaction t WHERE t.userId = :userId AND t.category.id IS NOT NULL")
+    fun countDistinctCategoriesByUserId(userId: UUID): Long
 }

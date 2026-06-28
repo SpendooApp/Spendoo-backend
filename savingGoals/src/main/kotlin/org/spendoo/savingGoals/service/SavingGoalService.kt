@@ -1,5 +1,8 @@
 package org.spendoo.savingGoals.service
 
+import org.spendoo.events.publisher.SpendooEventPublisher
+import org.spendoo.events.savings.SavingGoalCompletedEvent
+import org.spendoo.events.savings.SavingsBalanceUpdatedEvent
 import org.spendoo.savingGoals.api.dto.request.AssignAmountRequest
 import org.spendoo.savingGoals.api.dto.request.GoalCreateRequest
 import org.spendoo.savingGoals.api.dto.request.GoalUpdateRequest
@@ -26,7 +29,7 @@ class SavingGoalService(
     private val savingGoalRepository: SavingGoalRepository,
     private val savingBalanceRepository: SavingBalanceRepository,
     private val savingGoalHistoryRepository: SavingGoalHistoryRepository,
-    private val achievementService: AchievementService
+    private val spendooEventPublisher: SpendooEventPublisher
 ) {
     @Transactional
     fun createSavingGoal(request: GoalCreateRequest, userId: UUID) {
@@ -92,19 +95,12 @@ class SavingGoalService(
             )
         )
 
-        achievementService.checkSpendooKingBadge(userId)
+        spendooEventPublisher.publish(SavingsBalanceUpdatedEvent(userId, false))
 
         val currentAmount = savingGoalHistoryRepository.getCurrentAmountByGoalId(goalId)
         if (currentAmount >= goal.targetAmount && !goal.isCompleted) {
             savingGoalRepository.save(goal.copy(isCompleted = true))
-
-            // Check general goal completion achievements (High Five, Double Five, Finisher)
-            achievementService.checkCompletedGoalAchievements(userId)
-
-            // Check Priority Saver Badge (if the completed goal's priority is greater than 3)
-            if (goal.priority > 3) {
-                achievementService.checkPrioritySaverBadge(userId)
-            }
+            spendooEventPublisher.publish(SavingGoalCompletedEvent(userId, goal.priority))
         }
 
         savingBalanceRepository.save(
@@ -128,7 +124,7 @@ class SavingGoalService(
             )
         )
         if (isFirstTimeSaving && amount > BigDecimal.ZERO) {
-            achievementService.checkFirstStepBadge(userId)
+            spendooEventPublisher.publish(SavingsBalanceUpdatedEvent(userId, true))
         }
     }
 

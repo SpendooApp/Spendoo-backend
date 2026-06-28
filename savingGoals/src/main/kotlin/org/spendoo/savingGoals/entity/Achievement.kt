@@ -11,6 +11,10 @@ data class Achievement(
     @Column(columnDefinition = "uuid", updatable = false, nullable = false)
     val id: UUID = UUID.randomUUID(),
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, unique = true, updatable = false)
+    val code: AchievementCode,
+
     @Column(nullable = false)
     val targetValue: BigDecimal,
 
@@ -33,3 +37,4 @@ data class Achievement(
     @Column(nullable = false)
     val descriptionAr: String
 )
+
