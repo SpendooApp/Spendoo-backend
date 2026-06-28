@@ -61,7 +61,7 @@ class AchievementServiceIntegrationTest {
         savingBalanceRepository.deleteAll()
         achievementRepository.deleteAll()
 
-        achievementService.createDefaultAchievementsForUser(userId)
+        achievementService.ensureUserAchievementsCreated(userId)
     }
 
     @Test

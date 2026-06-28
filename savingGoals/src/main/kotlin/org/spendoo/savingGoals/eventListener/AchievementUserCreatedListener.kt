@@ -15,6 +15,6 @@ class AchievementUserCreatedListener(
     @EventListener
     @Transactional
     fun handleUserCreatedEvent(user: UserCreatedEvent) {
-        achievementService.createDefaultAchievementsForUser(user.id)
+        achievementService.ensureUserAchievementsCreated(user.id)
     }
 }

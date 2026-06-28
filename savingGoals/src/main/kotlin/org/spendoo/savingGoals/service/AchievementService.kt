@@ -62,11 +62,6 @@ class AchievementService(
     }
 
     @Transactional
-    fun createDefaultAchievementsForUser(userId: UUID) {
-        ensureUserAchievementsCreated(userId)
-    }
-
-    @Transactional
     fun syncMissingAchievementsForAllUsers() {
         seedDefaultAchievementsIfEmpty()
 
