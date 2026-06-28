@@ -1,4 +1,4 @@
-package org.spendoo.notifications
+package org.spendoo.notifications.eventListener
 
 import org.slf4j.LoggerFactory
 import org.spendoo.client.ApiClient
