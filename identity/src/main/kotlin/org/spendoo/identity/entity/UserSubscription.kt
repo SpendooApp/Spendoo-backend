@@ -1,0 +1,24 @@
+package org.spendoo.identity.entity
+
+import jakarta.persistence.*
+import java.util.UUID
+
+@Entity
+@Table(name = "user_subscriptions", schema = "identity" )
+data class UserSubscription(
+    @Id
+    @Column(columnDefinition = "uuid", updatable = false, nullable = false)
+    val id: UUID = UUID.randomUUID(),
+
+    @Column(columnDefinition = "uuid", nullable = false)
+    val userId: UUID = UUID.randomUUID(),
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    var billingCycle: BillingCycle,
+
+    @OneToOne(fetch = FetchType.EAGER)
+    @JoinColumn(nullable = false)
+    var subscriptionPlan: SubscriptionPlan
+
+)
