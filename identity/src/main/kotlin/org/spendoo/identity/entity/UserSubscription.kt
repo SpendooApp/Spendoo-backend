@@ -17,7 +17,7 @@ data class UserSubscription(
     @Column
     var billingCycle: BillingCycle?,
 
-    @OneToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(nullable = false)
     var subscriptionPlan: SubscriptionPlan
 

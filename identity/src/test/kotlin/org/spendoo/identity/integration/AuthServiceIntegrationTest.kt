@@ -11,6 +11,7 @@ import org.spendoo.identity.IdentityTestApplication
 import org.spendoo.identity.api.dto.request.*
 import org.spendoo.identity.entity.EmailVerification
 import org.spendoo.identity.entity.Gender
+import org.spendoo.identity.entity.PlanCode
 import org.spendoo.identity.entity.RefreshToken
 import org.spendoo.identity.entity.User
 import org.spendoo.identity.exception.InvalidCredentialsException
@@ -19,6 +20,7 @@ import org.spendoo.identity.exception.UnauthorizedException
 import org.spendoo.identity.exception.UserAlreadyExistsException
 import org.spendoo.identity.repository.EmailVerificationRepository
 import org.spendoo.identity.repository.RefreshTokenRepository
+import org.spendoo.identity.repository.SubscriptionPlanRepository
 import org.spendoo.identity.repository.UserRepository
 import org.spendoo.identity.security.JwtUtil
 import org.spendoo.identity.service.AuthService
@@ -29,6 +31,7 @@ import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.test.context.ActiveProfiles
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.util.UUID
 
 @SpringBootTest(classes = [IdentityTestApplication::class])
 @ActiveProfiles("test")
@@ -45,6 +48,9 @@ class AuthServiceIntegrationTest {
 
     @Autowired
     private lateinit var emailVerificationRepository: EmailVerificationRepository
+
+    @Autowired
+    private lateinit var subscriptionPlanRepository: SubscriptionPlanRepository
 
     @Autowired
     private lateinit var passwordEncoder: PasswordEncoder
@@ -66,6 +72,19 @@ class AuthServiceIntegrationTest {
         every { emailService.generateOtp() } returns "12345"
         every { jwtUtil.generateAccessToken(any()) } returns "access-token"
         every { jwtUtil.generateRefreshToken(any()) } returns "refresh-token"
+        subscriptionPlanRepository.save(
+            org.spendoo.identity.entity.SubscriptionPlan(
+                id = UUID.fromString("11111111-1111-1111-1111-111111111111"),
+                code = PlanCode.FREE,
+                titleEn = "Free",
+                titleAr = "مجاني",
+                descriptionEn = "Standard expense tracking essentials",
+                descriptionAr = "أساسيات تتبع المصروفات العادية",
+                priceMonthly = java.math.BigDecimal.ZERO,
+                priceYearly = java.math.BigDecimal.ZERO,
+                isMostPopular = true
+            )
+        )
     }
 
     @Test
