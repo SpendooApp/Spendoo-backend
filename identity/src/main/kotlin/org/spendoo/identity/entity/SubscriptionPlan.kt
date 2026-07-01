@@ -36,7 +36,7 @@ data class SubscriptionPlan(
     @Column(nullable = false)
     val isMostPopular: Boolean = false,
 
-    @ElementCollection(fetch = FetchType.LAZY)
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(
         name = "subscription_plan_benefits_en",
         joinColumns = [JoinColumn(name = "id")],
@@ -45,7 +45,7 @@ data class SubscriptionPlan(
     @Column(nullable = false)
     val benefitsEn: List<String> = emptyList(),
 
-    @ElementCollection(fetch = FetchType.LAZY)
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(
         name = "subscription_plan_benefits_ar",
         joinColumns = [JoinColumn(name = "id")],

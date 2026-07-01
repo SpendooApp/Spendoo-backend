@@ -10,12 +10,12 @@ data class UserSubscription(
     @Column(columnDefinition = "uuid", updatable = false, nullable = false)
     val id: UUID = UUID.randomUUID(),
 
-    @Column(columnDefinition = "uuid", nullable = false)
+    @Column(columnDefinition = "uuid", nullable = false, unique = true)
     val userId: UUID = UUID.randomUUID(),
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    var billingCycle: BillingCycle,
+    @Column
+    var billingCycle: BillingCycle?,
 
     @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(nullable = false)
