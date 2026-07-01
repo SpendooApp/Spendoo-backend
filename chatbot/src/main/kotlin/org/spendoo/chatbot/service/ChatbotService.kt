@@ -21,7 +21,7 @@ class ChatbotService(
 ) {
 
     @Transactional
-    fun sendMessage(userId: UUID, message: ChatMessageRequestDto) {
+    fun sendMessage(userId: UUID, message: ChatMessageRequestDto): ChatMessageResponseDto {
 
         val session = chatSessionRepository.findByUserId(userId)
             ?: chatSessionRepository.save(AiChatSession(userId = userId, summary = ""))
@@ -41,13 +41,20 @@ class ChatbotService(
             sender = ChatSender.BOT,
             content = botReply
         )
-        chatMessageRepository.save(botMessage)
+        val savedBotMessage = chatMessageRepository.save(botMessage)
 
         val updatedSession = session.copy(
             summary = updatedSummary,
             updatedAt = LocalDateTime.now()
         )
         chatSessionRepository.save(updatedSession)
+
+        return ChatMessageResponseDto(
+            id = savedBotMessage.id,
+            sender = savedBotMessage.sender,
+            content = savedBotMessage.content,
+            timestamp = savedBotMessage.timestamp
+        )
     }
 
     @Transactional(readOnly = true)

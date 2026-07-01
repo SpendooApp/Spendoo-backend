@@ -26,9 +26,9 @@ class ChatbotController(
     fun sendMessage(
         @AuthenticationPrincipal userId: UUID,
         @Valid @RequestBody request: ChatMessageRequestDto
-    ): ResponseEntity<Unit> {
-        chatbotService.sendMessage(userId, request)
-        return ResponseEntity.ok().build()
+    ): ResponseEntity<ChatMessageResponseDto> {
+        val botResponse = chatbotService.sendMessage(userId, request)
+        return ResponseEntity.ok(botResponse)
     }
 
     @GetMapping("/history")
