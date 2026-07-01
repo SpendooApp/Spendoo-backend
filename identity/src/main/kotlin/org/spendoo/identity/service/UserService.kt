@@ -2,14 +2,18 @@ package org.spendoo.identity.service
 
 import org.spendoo.events.publisher.SpendooEventPublisher
 import org.spendoo.identity.api.dto.request.UpdateProfileRequest
+import org.spendoo.identity.api.dto.response.ProfileResponse
 import org.spendoo.identity.entity.User
 import org.spendoo.identity.exception.UserNotFoundException
 import org.spendoo.identity.repository.UserRepository
+import org.spendoo.identity.repository.UserSubscriptionRepository
+import org.spendoo.identity.service.mapper.toProfileResponse
 import org.spendoo.identity.service.mapper.toUserUpdatedEvent
 import org.spendoo.storage.service.ImageStorageService
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.multipart.MultipartFile
 import java.util.*
 
@@ -18,6 +22,7 @@ class UserService(
     private val userRepository: UserRepository,
     private val imageStorageService: ImageStorageService,
     private val eventPublisher: SpendooEventPublisher,
+    private val userSubscriptionRepository: UserSubscriptionRepository,
     @param:Value("\${identity.resources.profile-image-directory}") private val profileImageDirectory: String
 ) {
     fun existById(userId: UUID): Boolean = userRepository.existsById(userId)
@@ -25,6 +30,16 @@ class UserService(
     fun findById(userId: UUID): User {
         return userRepository.findByIdOrNull(userId)
             ?: throw UserNotFoundException("User with id: $userId not found")
+    }
+
+    @Transactional(readOnly = true)
+    fun getUserProfile(userId: UUID, imageBaseUrl: String): ProfileResponse {
+        val user = findById(userId)
+
+        val subscription = userSubscriptionRepository.findByUserId(userId)
+        val activePlanCode = subscription?.subscriptionPlan?.titleEn ?: "Free"
+
+        return user.toProfileResponse(imageBaseUrl, activePlanCode)
     }
 
     fun updateUserImage(

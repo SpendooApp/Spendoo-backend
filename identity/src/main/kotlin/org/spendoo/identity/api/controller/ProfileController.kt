@@ -5,7 +5,6 @@ import org.spendoo.identity.api.dto.request.UpdateProfileRequest
 import org.spendoo.identity.api.dto.response.ProfileResponse
 import org.spendoo.identity.api.dto.response.UpdateImageResponse
 import org.spendoo.identity.service.UserService
-import org.spendoo.identity.service.mapper.toProfileResponse
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
@@ -24,7 +23,7 @@ class ProfileController(
 
     @GetMapping
     fun getUserProfile(@AuthenticationPrincipal userId: UUID): ResponseEntity<ProfileResponse> {
-        val response = userService.findById(userId).toProfileResponse(imagesBaseUrl)
+        val response = userService.getUserProfile(userId, imagesBaseUrl)
         return ResponseEntity.ok(response)
     }
 

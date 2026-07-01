@@ -5,5 +5,6 @@ data class ProfileResponse(
     val fullName: String,
     val birthDate: String,
     val gender: String,
-    val imageUrl: String?
+    val imageUrl: String?,
+    val currentPlan : String
 )
