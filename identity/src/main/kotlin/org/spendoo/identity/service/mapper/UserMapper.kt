@@ -5,7 +5,6 @@ import org.spendoo.events.identity.UserUpdatedEvent
 import org.spendoo.identity.api.dto.request.RegisterRequest
 import org.spendoo.identity.api.dto.response.ProfileResponse
 import org.spendoo.identity.entity.Gender
-import org.spendoo.identity.entity.PlanCode
 import org.spendoo.identity.entity.User
 import java.time.LocalDateTime
 import java.util.*

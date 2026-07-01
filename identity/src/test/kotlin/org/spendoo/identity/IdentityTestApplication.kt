@@ -6,7 +6,9 @@ import org.spendoo.identity.repository.EmailVerificationRepository
 import org.spendoo.identity.repository.FollowCodeRepository
 import org.spendoo.identity.repository.FollowRepository
 import org.spendoo.identity.repository.RefreshTokenRepository
+import org.spendoo.identity.repository.SubscriptionPlanRepository
 import org.spendoo.identity.repository.UserRepository
+import org.spendoo.identity.repository.UserSubscriptionRepository
 import org.spendoo.identity.security.JwtUtil
 import org.spendoo.identity.service.AuthService
 import org.spendoo.identity.service.EmailService
@@ -49,6 +51,8 @@ class IdentityTestApplication {
         userRepository: UserRepository,
         refreshTokenRepository: RefreshTokenRepository,
         emailVerificationRepository: EmailVerificationRepository,
+        subscriptionPlanRepository: SubscriptionPlanRepository,
+        userSubscriptionRepository: UserSubscriptionRepository,
         emailService: EmailService,
         passwordEncoder: PasswordEncoder,
         jwtUtil: JwtUtil,
@@ -61,19 +65,23 @@ class IdentityTestApplication {
             emailService = emailService,
             passwordEncoder = passwordEncoder,
             jwtUtil = jwtUtil,
-            spendooEventPublisher = spendooEventPublisher
+            spendooEventPublisher = spendooEventPublisher,
+            subscriptionPlanRepository = subscriptionPlanRepository,
+            userSubscriptionRepository = userSubscriptionRepository,
         )
     }
 
     @Bean
     fun userService(
         userRepository: UserRepository,
+        userSubscriptionRepository: UserSubscriptionRepository,
         imageStorageService: ImageStorageService,
         spendooEventPublisher: SpendooEventPublisher,
         @Value("\${identity.resources.profile-image-directory}") profileImageDirectory: String
     ): UserService {
         return UserService(
             userRepository = userRepository,
+            userSubscriptionRepository = userSubscriptionRepository,
             imageStorageService = imageStorageService,
             eventPublisher = spendooEventPublisher,
             profileImageDirectory = profileImageDirectory
