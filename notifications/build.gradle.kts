@@ -21,8 +21,9 @@ dependencies {
 
     runtimeOnly("org.postgresql:postgresql")
 
+    implementation("com.google.firebase:firebase-admin:9.9.0")
+
     implementation(projects.events)
-    implementation(projects.identity)
     implementation(projects.httpClient)
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
