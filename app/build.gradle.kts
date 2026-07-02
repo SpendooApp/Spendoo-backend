@@ -18,6 +18,7 @@ dependencies {
 	implementation(projects.savingGoals)
 	implementation(projects.statistics)
 	implementation(projects.i18n)
+	implementation(projects.chatbot)
 	implementation("org.springframework.boot:spring-boot-starter-web")
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 	runtimeOnly("org.postgresql:postgresql")
