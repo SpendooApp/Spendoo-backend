@@ -23,7 +23,7 @@ class SubscriptionPlanSeeder(
                 descriptionAr = "أساسيات تتبع المصروفات العادية",
                 priceMonthly = BigDecimal.ZERO,
                 priceYearly = BigDecimal.ZERO,
-                isMostPopular = true,
+                isMostPopular = false,
                 benefitsEn = listOf(
                     "Manual transactions: Unlimited",
                     "Receipt scanning (OCR): 5/month",
@@ -55,7 +55,7 @@ class SubscriptionPlanSeeder(
                 descriptionAr = "الأساسيات للحفاظ على استقرارك المالي",
                 priceMonthly = BigDecimal(49.00),
                 priceYearly = BigDecimal(469.00),
-                isMostPopular = false,
+                isMostPopular = true,
                 benefitsEn = listOf(
                     "Manual transactions: Unlimited",
                     "Receipt scanning (OCR): 30/month",

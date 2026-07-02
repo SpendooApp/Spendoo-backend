@@ -3,6 +3,7 @@ package org.spendoo.identity.service
 import org.spendoo.events.publisher.SpendooEventPublisher
 import org.spendoo.identity.api.dto.request.UpdateProfileRequest
 import org.spendoo.identity.api.dto.response.ProfileResponse
+import org.spendoo.identity.entity.PlanCode
 import org.spendoo.identity.entity.User
 import org.spendoo.identity.exception.UserNotFoundException
 import org.spendoo.identity.repository.UserRepository
@@ -33,13 +34,18 @@ class UserService(
     }
 
     @Transactional(readOnly = true)
-    fun getUserProfile(userId: UUID, imageBaseUrl: String): ProfileResponse {
+    fun getUserProfile(userId: UUID, imageBaseUrl: String, languageCode:String): ProfileResponse {
         val user = findById(userId)
-
         val subscription = userSubscriptionRepository.findByUserId(userId)
-        val activePlanCode = subscription?.subscriptionPlan?.titleEn ?: "Free"
 
-        return user.toProfileResponse(imageBaseUrl, activePlanCode)
+        val useArabic = languageCode.lowercase().startsWith("ar")
+        val planTitle = if (useArabic) {
+            subscription?.subscriptionPlan?.titleAr ?: "مجاني"
+        } else {
+            subscription?.subscriptionPlan?.titleEn ?: "Free"
+        }
+        val planCode = subscription?.subscriptionPlan?.code ?:PlanCode.FREE
+        return user.toProfileResponse(imageBaseUrl, planTitle, planCode)
     }
 
     fun updateUserImage(

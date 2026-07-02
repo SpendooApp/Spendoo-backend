@@ -15,10 +15,10 @@ data class UserSubscription(
 
     @Enumerated(EnumType.STRING)
     @Column
-    var billingCycle: BillingCycle?,
+    val billingCycle: BillingCycle?,
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(nullable = false)
-    var subscriptionPlan: SubscriptionPlan
+    val subscriptionPlan: SubscriptionPlan
 
 )

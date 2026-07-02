@@ -52,9 +52,11 @@ class SubscriptionService(
                 billingCycle = billingCycle
             )
 
-        userSubscription.subscriptionPlan = targetPlan
-        userSubscription.billingCycle = billingCycle
+        val newUserSubscription = userSubscription.copy(
+            subscriptionPlan = targetPlan,
+            billingCycle  = billingCycle
+        )
 
-        userSubscriptionRepository.save(userSubscription)
+        userSubscriptionRepository.save(newUserSubscription )
     }
 }

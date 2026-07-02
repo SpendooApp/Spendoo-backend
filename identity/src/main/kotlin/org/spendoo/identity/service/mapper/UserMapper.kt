@@ -5,6 +5,7 @@ import org.spendoo.events.identity.UserUpdatedEvent
 import org.spendoo.identity.api.dto.request.RegisterRequest
 import org.spendoo.identity.api.dto.response.ProfileResponse
 import org.spendoo.identity.entity.Gender
+import org.spendoo.identity.entity.PlanCode
 import org.spendoo.identity.entity.User
 import java.time.LocalDateTime
 import java.util.*
@@ -47,7 +48,7 @@ fun User.toUserUpdatedEvent(): UserUpdatedEvent {
     )
 }
 
-fun User.toProfileResponse(imageBaseUrl: String, currentPlan: String): ProfileResponse {
+fun User.toProfileResponse(imageBaseUrl: String, currentPlan: String, planCode: PlanCode): ProfileResponse {
     val resolvedImageUrl = if (imageUrl.isNullOrBlank()) {
         null
     } else {
@@ -59,7 +60,8 @@ fun User.toProfileResponse(imageBaseUrl: String, currentPlan: String): ProfileRe
         birthDate = birthDate.toString(),
         gender = gender.name,
         imageUrl = resolvedImageUrl,
-        currentPlan = currentPlan
+        currentPlan = currentPlan,
+        planCode = planCode
     )
 }
 

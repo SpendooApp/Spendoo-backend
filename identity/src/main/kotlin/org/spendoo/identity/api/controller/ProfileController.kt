@@ -22,8 +22,10 @@ class ProfileController(
     private val imagesBaseUrl: String = "$cdnEndpoint/$profileImageDirectory"
 
     @GetMapping
-    fun getUserProfile(@AuthenticationPrincipal userId: UUID): ResponseEntity<ProfileResponse> {
-        val response = userService.getUserProfile(userId, imagesBaseUrl)
+    fun getUserProfile(
+        @AuthenticationPrincipal userId: UUID,
+        @RequestHeader(name = "Accept-Language", defaultValue = "en") languageCode: String): ResponseEntity<ProfileResponse> {
+        val response = userService.getUserProfile(userId, imagesBaseUrl,languageCode)
         return ResponseEntity.ok(response)
     }
 
