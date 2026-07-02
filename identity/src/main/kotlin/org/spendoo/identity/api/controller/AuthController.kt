@@ -9,10 +9,7 @@ import org.spendoo.identity.service.AuthService
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 import java.util.*
 
 
@@ -61,6 +58,15 @@ class AuthController (
         return ResponseEntity.ok(mapOf("message" to "Logged out successfully"))
     }
 
+    @Tag(name = "Authentication")
+    @PatchMapping("/device-token")
+    fun updateDeviceToken(
+        @AuthenticationPrincipal userId: UUID,
+        @Valid @RequestBody request: UpdateDeviceTokenRequest
+    ): ResponseEntity<Unit> {
+        authService.updateDeviceToken(userId, request.refreshToken, request.deviceToken)
+        return ResponseEntity.ok().build()
+    }
 
     @Tag(name = "Password Management", description = "Endpoints related to password reset and OTP verification")
     @PostMapping("/forgot-password")

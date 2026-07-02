@@ -2,10 +2,10 @@ package org.spendoo.identity.api.dto.request
 
 import jakarta.validation.constraints.NotBlank
 
-data class RefreshTokenRequest(
-
+data class UpdateDeviceTokenRequest(
     @field:NotBlank(message = "Refresh token is required")
     val refreshToken: String,
-    
-    val deviceToken: String? = null
+
+    @field:NotBlank(message = "Device token is required")
+    val deviceToken: String
 )

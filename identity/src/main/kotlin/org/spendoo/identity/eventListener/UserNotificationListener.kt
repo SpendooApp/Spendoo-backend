@@ -1,9 +1,14 @@
 package org.spendoo.identity.eventListener
 
+import jakarta.transaction.Transactional
 import org.slf4j.LoggerFactory
+import org.spendoo.events.identity.DeviceTokenUnregisteredEvent
 import org.spendoo.events.notifications.EmailEvent
+import org.spendoo.events.notifications.PushNotificationEvent
 import org.spendoo.events.notifications.UserNotificationsEvent
+import org.spendoo.events.notifications.utils.NotificationMedium
 import org.spendoo.events.publisher.SpendooEventPublisher
+import org.spendoo.identity.repository.RefreshTokenRepository
 import org.spendoo.identity.service.UserService
 import org.springframework.context.event.EventListener
 import org.springframework.scheduling.annotation.Async
@@ -12,6 +17,7 @@ import org.springframework.stereotype.Component
 @Component
 class UserNotificationListener(
     private val userService: UserService,
+    private val refreshTokenRepository: RefreshTokenRepository,
     private val publisher: SpendooEventPublisher
 ) {
     private val log = LoggerFactory.getLogger(UserNotificationListener::class.java)
@@ -26,24 +32,62 @@ class UserNotificationListener(
 
             event.notifications.forEach { notification ->
 
-                val userEmail = emailsMap[notification.userId.toString()]
+                val sendEmail = notification.medium == NotificationMedium.EMAIL || notification.medium == NotificationMedium.BOTH
+                val sendPush = notification.medium == NotificationMedium.PUSH || notification.medium == NotificationMedium.BOTH
 
-                if(userEmail != null) {
-                    publisher.publish(
-                        EmailEvent(
-                            to = userEmail,
-                            subject = notification.subject,
-                            text = notification.message
+                if (sendEmail) {
+                    val userEmail = emailsMap[notification.userId.toString()]
+                    if(userEmail != null) {
+                        publisher.publish(
+                            EmailEvent(
+                                to = userEmail,
+                                subject = notification.subject,
+                                text = notification.message
+                            )
                         )
-                    )
+                    } else {
+                        log.warn("Email not found for user ID: ${notification.userId}")
+                    }
                 }
-                else {
-                    log.warn("Email not found for user ID: ${notification.userId}")
+                
+                if (sendPush) {
+                    val refreshTokens = refreshTokenRepository.findAllByUserId(notification.userId)
+                    val deviceTokens = refreshTokens.mapNotNull { it.deviceToken }.distinct()
+
+                    if (deviceTokens.isNotEmpty()) {
+                        publisher.publish(
+                            PushNotificationEvent(
+                                userId = notification.userId,
+                                tokens = deviceTokens,
+                                title = notification.subject,
+                                body = notification.message,
+                                type = notification.type
+                            )
+                        )
+                    } else {
+                        log.warn("Device tokens not found for user ID: ${notification.userId}")
+                    }
                 }
 
             }
         }catch (e: Exception) {
             log.error("Error processing bulk notifications in Identity module", e)
+        }
+    }
+
+    @Async
+    @EventListener
+    @Transactional
+    fun handleDeviceTokenUnregistered(event: DeviceTokenUnregisteredEvent) {
+        try {
+            val tokens = refreshTokenRepository.findAllByDeviceToken(event.token)
+            if (tokens.isNotEmpty()) {
+                val updatedTokens = tokens.map { it.copy(deviceToken = null) }
+                refreshTokenRepository.saveAll(updatedTokens)
+                log.info("Successfully cleared unregistered device token: ${event.token} from ${updatedTokens.size} sessions")
+            }
+        } catch (e: Exception) {
+            log.error("Error clearing unregistered device token: ${event.token}", e)
         }
     }
 }
