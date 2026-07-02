@@ -82,7 +82,7 @@ class AuthServiceIntegrationTest {
                 descriptionAr = "أساسيات تتبع المصروفات العادية",
                 priceMonthly = java.math.BigDecimal.ZERO,
                 priceYearly = java.math.BigDecimal.ZERO,
-                isMostPopular = true
+                isMostPopular = false
             )
         )
     }

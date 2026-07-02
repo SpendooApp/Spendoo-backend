@@ -14,6 +14,7 @@ import org.spendoo.identity.service.AuthService
 import org.spendoo.identity.service.EmailService
 import org.spendoo.identity.service.FollowCodeService
 import org.spendoo.identity.service.FollowService
+import org.spendoo.identity.service.SubscriptionService
 import org.spendoo.identity.service.UserService
 import org.spendoo.storage.service.ImageStorageService
 import org.springframework.beans.factory.annotation.Value
@@ -110,6 +111,17 @@ class IdentityTestApplication {
             userRepository = userRepository,
             followCodeRepository = followCodeRepository,
             followRepository = followRepository
+        )
+    }
+
+    @Bean
+    fun subscriptionService(
+        subscriptionPlanRepository: SubscriptionPlanRepository,
+        userSubscriptionRepository: UserSubscriptionRepository
+    ): SubscriptionService {
+        return SubscriptionService(
+            subscriptionPlanRepository = subscriptionPlanRepository,
+            userSubscriptionRepository = userSubscriptionRepository
         )
     }
 
