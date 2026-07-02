@@ -41,3 +41,4 @@ out/
 
 .env
 local.properties
+**/spendoo-firebase-adminsdk.json

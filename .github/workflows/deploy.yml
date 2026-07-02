@@ -12,6 +12,11 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v3
 
+      - name: Setup Firebase Credentials
+        run: |
+          mkdir -p app/src/main/resources
+          echo "${{ secrets.FIREBASE_CREDENTIALS_BASE64 }}" | base64 -d > app/src/main/resources/spendoo-firebase-adminsdk.json
+
       - name: Build Docker image
         run: docker build -t josephsameh/spendoo-backend:latest .
 

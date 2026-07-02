@@ -2,7 +2,6 @@ package org.spendoo.statistics.api.controller
 
 import org.spendoo.statistics.api.dto.response.CombinedStatsResponse
 import org.spendoo.statistics.model.Granularity
-import org.spendoo.statistics.model.Language
 import org.spendoo.statistics.model.ReportDataType
 import org.spendoo.statistics.model.Theme
 import org.spendoo.statistics.service.StatisticsService
@@ -40,7 +39,7 @@ class StatisticsController(
         @RequestParam("end_date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) endDate: LocalDateTime,
         @RequestParam(defaultValue = "FULL") reportDataType: ReportDataType,
         @RequestHeader(name = "X-App-Theme", defaultValue = "LIGHT") theme: Theme,
-        @RequestHeader(name = "Accept-Language", defaultValue = "EN") lang: Language
+        @RequestHeader(name = "Accept-Language", defaultValue = "en") lang: String
     ): ResponseEntity<ByteArray> {
         val pdfBytes = statisticsService.getStatisticsPdf(userId, startDate, endDate, reportDataType, theme, lang)
         val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm")
@@ -75,7 +74,7 @@ class StatisticsController(
         @RequestParam("end_date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) endDate: LocalDateTime,
         @RequestParam(defaultValue = "FULL") reportDataType: ReportDataType,
         @RequestHeader(name = "X-App-Theme", defaultValue = "LIGHT") theme: Theme,
-        @RequestHeader(name = "Accept-Language", defaultValue = "EN") lang: Language
+        @RequestHeader(name = "Accept-Language", defaultValue = "en") lang: String
     ): ResponseEntity<ByteArray> {
         val pdfBytes = statisticsService.getUserStatisticsPdf(
             userId,

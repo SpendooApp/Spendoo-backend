@@ -11,5 +11,7 @@ data class VerifyOtpRequest(
 
     @field:NotBlank(message = "OTP is required")
     @field:Size(min = 5, max = 5, message = "OTP must be exactly 5 characters")
-    val otp: String
+    val otp: String,
+
+    val deviceToken: String? = null
 )

@@ -16,6 +16,9 @@ data class RefreshToken(
     @Column(nullable = false)
     val expiryDate: LocalDateTime,
 
+    @Column(nullable = true)
+    val deviceToken: String? = null,
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     val user: User

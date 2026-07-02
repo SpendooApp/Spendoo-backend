@@ -92,7 +92,7 @@ class AuthService(
 
         val accessToken = jwtUtil.generateAccessToken(verifiedUser.id)
         val refreshToken = jwtUtil.generateRefreshToken(verifiedUser.id)
-        saveRefreshToken(verifiedUser, refreshToken)
+        saveRefreshToken(verifiedUser, refreshToken, request.deviceToken)
 
         return AuthResponse(accessToken, refreshToken)
     }
@@ -111,7 +111,7 @@ class AuthService(
         val accessToken = jwtUtil.generateAccessToken(user.id)
         val refreshToken = jwtUtil.generateRefreshToken(user.id)
 
-        saveRefreshToken(user, refreshToken)
+        saveRefreshToken(user, refreshToken, request.deviceToken)
         spendooEventPublisher.publish(UserLoggedInEvent(user.id))
 
         return AuthResponse(accessToken, refreshToken)
@@ -124,6 +124,7 @@ class AuthService(
             ?: throw UnauthorizedException("Invalid refresh token")
 
         val user = refreshTokenEntity.user
+        val oldDeviceToken = refreshTokenEntity.deviceToken
 
         refreshTokenRepository.delete(refreshTokenEntity)
 
@@ -137,8 +138,8 @@ class AuthService(
             val newAccessToken = jwtUtil.generateAccessToken(user.id)
             val newRefreshToken = jwtUtil.generateRefreshToken(user.id)
 
-
-            saveRefreshToken(user, newRefreshToken)
+            val finalDeviceToken = request.deviceToken ?: oldDeviceToken
+            saveRefreshToken(user, newRefreshToken, finalDeviceToken)
             spendooEventPublisher.publish(UserLoggedInEvent(user.id))
 
             return AuthResponse(newAccessToken, newRefreshToken)
@@ -147,12 +148,20 @@ class AuthService(
         }
     }
 
-    private fun saveRefreshToken(user: User, token: String) {
+    private fun saveRefreshToken(user: User, token: String, deviceToken: String? = null) {
         val expiryDate = LocalDateTime.now().plusDays(14)
 
         refreshTokenRepository.save(
-            RefreshToken(token = token, expiryDate = expiryDate, user = user)
+            RefreshToken(token = token, expiryDate = expiryDate, user = user, deviceToken = deviceToken)
         )
+    }
+
+    fun updateDeviceToken(userId: UUID, refreshToken: String, deviceToken: String) {
+        val tokenEntity = refreshTokenRepository.findByUserIdAndToken(userId, refreshToken)
+            ?: throw UnauthorizedException("Invalid refresh token")
+        
+        val updatedEntity = tokenEntity.copy(deviceToken = deviceToken)
+        refreshTokenRepository.save(updatedEntity)
     }
 
     fun logout(userId: UUID, request: RefreshTokenRequest) {

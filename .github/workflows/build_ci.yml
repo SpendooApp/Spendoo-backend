@@ -18,6 +18,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Setup Firebase Credentials
+        env:
+          FIREBASE_CREDENTIALS_BASE64: ${{ secrets.FIREBASE_CREDENTIALS_BASE64 }}
+        run: |
+          mkdir -p app/src/main/resources
+          if [ -n "$FIREBASE_CREDENTIALS_BASE64" ]; then
+            echo "$FIREBASE_CREDENTIALS_BASE64" | base64 -d > app/src/main/resources/spendoo-firebase-adminsdk.json
+          fi
       - uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
@@ -41,6 +49,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Setup Firebase Credentials
+        env:
+          FIREBASE_CREDENTIALS_BASE64: ${{ secrets.FIREBASE_CREDENTIALS_BASE64 }}
+        run: |
+          mkdir -p app/src/main/resources
+          if [ -n "$FIREBASE_CREDENTIALS_BASE64" ]; then
+            echo "$FIREBASE_CREDENTIALS_BASE64" | base64 -d > app/src/main/resources/spendoo-firebase-adminsdk.json
+          fi
       - uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
