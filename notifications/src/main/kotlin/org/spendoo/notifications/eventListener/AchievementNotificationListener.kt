@@ -1,4 +1,4 @@
-package org.spendoo.notifications
+package org.spendoo.notifications.eventListener
 
 import org.spendoo.events.achievements.AchievementEarnedEvent
 import org.spendoo.events.notifications.NotificationDetails

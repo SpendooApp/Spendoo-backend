@@ -19,6 +19,10 @@ import org.spendoo.identity.security.JwtUtil
 import org.spendoo.identity.service.mapper.toEntity
 import org.spendoo.identity.service.mapper.toUserCreatedEvent
 import org.spendoo.events.identity.UserLoggedInEvent
+import org.spendoo.identity.entity.PlanCode
+import org.spendoo.identity.entity.UserSubscription
+import org.spendoo.identity.repository.SubscriptionPlanRepository
+import org.spendoo.identity.repository.UserSubscriptionRepository
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
@@ -31,6 +35,8 @@ class AuthService(
     private val userRepository: UserRepository,
     private val refreshTokenRepository: RefreshTokenRepository,
     private val otpRepository: EmailVerificationRepository,
+    private val subscriptionPlanRepository: SubscriptionPlanRepository,
+    private val userSubscriptionRepository: UserSubscriptionRepository,
     private val emailService: EmailService,
     private val passwordEncoder: PasswordEncoder,
     private val jwtUtil: JwtUtil,
@@ -50,6 +56,17 @@ class AuthService(
 
         val finalUserToSave = userToSave.copy(email = lowerCaseEmail)
         val savedUser = userRepository.save(finalUserToSave)
+
+        val freePlan = subscriptionPlanRepository.findByCode(PlanCode.FREE)
+            ?: throw EntityNotFoundException("FREE subscription plan not found")
+
+        userSubscriptionRepository.save(
+            UserSubscription(
+                userId = savedUser.id,
+                subscriptionPlan = freePlan,
+                billingCycle = null
+            )
+        )
 
         val otpCode = emailService.generateOtp()
         val verificationToken = EmailVerification(otp = otpCode, user = savedUser)
