@@ -5,7 +5,6 @@ import org.spendoo.i18n.I18nService
 import org.spendoo.statistics.api.dto.response.CombinedStatsResponse
 import org.spendoo.statistics.api.dto.response.FollowStatusDto
 import org.spendoo.statistics.model.Granularity
-import org.spendoo.statistics.model.Language
 import org.spendoo.statistics.model.ReportDataType
 import org.spendoo.statistics.model.Theme
 import org.spendoo.statistics.util.PdfGenerator
@@ -55,7 +54,7 @@ class StatisticsService(
         endDate: LocalDateTime,
         reportDataType: ReportDataType,
         theme: Theme,
-        lang: Language
+        lang: String
     ): ByteArray {
         val goalsSummary = apiClient.call(Map::class.java) {
             path = "/api/v1/goals/goals-summary"
@@ -103,7 +102,7 @@ class StatisticsService(
         endDate: LocalDateTime,
         reportDataType: ReportDataType,
         theme: Theme,
-        lang: Language
+        lang: String
     ): ByteArray {
 
         validateFollowPermission(currentUserId, targetUserId)

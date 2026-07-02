@@ -5,7 +5,6 @@ import com.openhtmltopdf.bidi.support.ICUBidiSplitter
 import com.openhtmltopdf.outputdevice.helper.BaseRendererBuilder.TextDirection
 import com.openhtmltopdf.pdfboxout.PdfRendererBuilder
 import org.spendoo.i18n.I18nService
-import org.spendoo.statistics.model.Language
 import org.spendoo.statistics.model.ReportDataType
 import org.spendoo.statistics.model.Theme
 import org.spendoo.transactions.entity.TransactionType
@@ -13,7 +12,6 @@ import org.spendoo.transactions.repository.TransactionViewRepository
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import java.io.ByteArrayOutputStream
-import java.io.File
 import java.math.BigDecimal
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -27,19 +25,19 @@ object PdfGenerator {
         endDate: LocalDateTime,
         reportDataType: ReportDataType,
         theme: Theme,
-        lang: Language,
+        lang: String,
         i18nService: I18nService,
         transactionViewRepository: TransactionViewRepository,
         totalSaved: BigDecimal,
     ): ByteArray {
         val themeClass = if (theme == Theme.DARK) "dark-theme" else ""
-        val directionClass = if (lang == Language.AR) "rtl" else ""
-        val dirAttr = if (lang == Language.AR) "rtl" else "ltr"
-        val locale = lang.locale
+        val directionClass = if (lang.lowercase().startsWith("ar")) "rtl" else ""
+        val dirAttr = if (lang.lowercase().startsWith("ar")) "rtl" else "ltr"
+        val locale = if (lang.lowercase().startsWith("ar")) Locale.forLanguageTag("ar") else Locale.ENGLISH
 
         val pageBgColor = if (theme == Theme.DARK) "#0F172A" else "#F8FAFC"
         val pageColor = if (theme == Theme.DARK) "#F1F5F9" else "#1E293B"
-        val fontFamily = if (lang == Language.AR) "Amiri" else "Roboto"
+        val fontFamily = if (lang.lowercase().startsWith("ar")) "Amiri" else "Roboto"
 
         val formatter = DateTimeFormatter.ofPattern("MMM dd yyyy", locale)
         val periodStr = "${startDate.format(formatter)} - ${endDate.format(formatter)}"
@@ -57,7 +55,7 @@ object PdfGenerator {
         val dateHeader = i18nService.getMessage("date", locale, "Date")
         val noteHeader = i18nService.getMessage("note", locale, "Note")
 
-        val headerRowHtml = if (lang == Language.AR) {
+        val headerRowHtml = if (lang.lowercase().startsWith("ar")) {
             """
                 <tr>
                     <th>$noteHeader</th>
@@ -113,7 +111,7 @@ object PdfGenerator {
                 val dateStr = t.transactionDate.format(DateTimeFormatter.ofPattern("yyyy/MM/dd h:mm a", locale))
                 val noteStr = t.note ?: ""
 
-                val rowHtml = if (lang == Language.AR) {
+                val rowHtml = if (lang.lowercase().startsWith("ar")) {
                     """
                         <tr>
                             <td>$noteStr</td>
@@ -219,7 +217,7 @@ object PdfGenerator {
         builder.useFastMode()
         builder.useUnicodeBidiSplitter(ICUBidiSplitter.ICUBidiSplitterFactory())
         builder.useUnicodeBidiReorderer(ICUBidiReorderer())
-        if (lang == Language.AR) {
+        if (lang.lowercase().startsWith("ar")) {
             builder.defaultTextDirection(TextDirection.RTL)
         }
         

@@ -11,7 +11,9 @@ import org.spendoo.statistics.api.dto.response.BudgetStatusResponse
 import org.spendoo.statistics.api.dto.response.CombinedStatsResponse
 import org.spendoo.statistics.api.dto.response.FinancialStatsResponse
 import org.spendoo.statistics.api.dto.response.TopCategoriesResponse
-import org.spendoo.statistics.model.*
+import org.spendoo.statistics.model.Granularity
+import org.spendoo.statistics.model.ReportDataType
+import org.spendoo.statistics.model.Theme
 import org.spendoo.statistics.service.StatisticsService
 import org.spendoo.transactions.entity.Category
 import org.spendoo.transactions.entity.CategoryIcon
@@ -75,7 +77,7 @@ class StatisticsServiceIntegrationTest {
         val endDate = LocalDateTime.of(2026, 7, 1, 0, 0)
 
         val mockResponse = CombinedStatsResponse(
-            financialStats = FinancialStatsResponse(emptyList(), 0, BigDecimal.ZERO),
+            financialStats = FinancialStatsResponse(emptyList(), 0, BigDecimal.ZERO, false),
             budgetStatus = BudgetStatusResponse(emptyList(), BigDecimal.ZERO),
             topCategories = TopCategoriesResponse(BigDecimal.ZERO, emptyList())
         )
@@ -119,7 +121,7 @@ class StatisticsServiceIntegrationTest {
             endDate = referenceDate,
             reportDataType = ReportDataType.FULL,
             theme = Theme.LIGHT,
-            lang = Language.EN
+            lang = "en"
         )
 
         assertThat(pdfBytes).isNotEmpty()

@@ -21,7 +21,7 @@ class StatisticsControllerIntegrationTest {
         
         val userId = UUID.randomUUID()
         val mockResponse = CombinedStatsResponse(
-            financialStats = FinancialStatsResponse(emptyList(), 0, BigDecimal.ZERO),
+            financialStats = FinancialStatsResponse(emptyList(), 0, BigDecimal.ZERO, false),
             budgetStatus = BudgetStatusResponse(emptyList(), BigDecimal.ZERO),
             topCategories = TopCategoriesResponse(BigDecimal.ZERO, emptyList())
         )

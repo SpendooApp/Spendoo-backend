@@ -19,12 +19,18 @@ allprojects {
 	version = "0.0.1-SNAPSHOT"
 
 	repositories {
+		google()
 		mavenCentral()
 	}
 }
 
 // Enforce a single JVM/toolchain configuration for all modules
 subprojects {
+	repositories {
+		google()
+		mavenCentral()
+	}
+
 	// Configure java toolchain only if the Java plugin (or a plugin that adds the java extension) is applied
 	plugins.withType<JavaPlugin> {
 		java {
@@ -38,6 +44,17 @@ subprojects {
 	plugins.withId("org.jetbrains.kotlin.jvm") {
 		kotlin {
 			jvmToolchain(javaVersion)
+		}
+	}
+
+	plugins.withType<JavaPlugin> {
+		dependencies {
+			constraints {
+				implementation("com.google.guava:guava:33.6.0-jre")
+				implementation("com.google.protobuf:protobuf-java:4.29.3")
+				implementation("io.grpc:grpc-netty-shaded:1.76.0")
+				implementation("io.netty:netty-codec-http:4.2.15.Final")
+			}
 		}
 	}
 }
@@ -73,5 +90,7 @@ subprojects {
 	}
 }
 repositories {
+	google()
 	mavenCentral()
 }
+

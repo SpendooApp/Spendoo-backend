@@ -8,5 +8,7 @@ data class FinancialStatsResponse(
     @field:JsonAlias("highest_spending_bucket_index")
     val highestSpendingBucketIndex: Int,
     @field:JsonAlias("highest_value")
-    val highestValue: BigDecimal
+    val highestValue: BigDecimal,
+    @field:JsonAlias("predict")
+    val isPredicted: Boolean
 )

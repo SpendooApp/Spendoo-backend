@@ -9,5 +9,9 @@ data class StatsBucketDto(
     val income: BigDecimal,
     val budget: BigDecimal,
     @field:JsonAlias("start_date")
-    val startDate: LocalDateTime
+    val startDate: LocalDateTime,
+    @field:JsonAlias("predicted")
+    val isPredicted: Boolean,
+    @field:JsonAlias("status")
+    val status: BudgetStatus? = null
 )
