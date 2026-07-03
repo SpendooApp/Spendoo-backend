@@ -61,7 +61,8 @@ class UserNotificationListener(
                                 tokens = deviceTokens,
                                 title = notification.subject,
                                 body = notification.message,
-                                type = notification.type
+                                type = notification.type,
+                                dataPayload = notification.dataPayload
                             )
                         )
                     } else {
@@ -70,7 +71,7 @@ class UserNotificationListener(
                 }
 
             }
-        }catch (e: Exception) {
+        } catch (e: Exception) {
             log.error("Error processing bulk notifications in Identity module", e)
         }
     }

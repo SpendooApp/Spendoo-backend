@@ -10,7 +10,8 @@ data class NotificationDetails(
     val subject: String,
     val message: String,
     val type: NotificationType,
-    val medium: NotificationMedium = NotificationMedium.EMAIL
+    val medium: NotificationMedium = NotificationMedium.EMAIL,
+    val dataPayload: Map<String, String> = emptyMap()
 )
 
 data class UserNotificationsEvent(
