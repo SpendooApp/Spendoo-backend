@@ -21,7 +21,6 @@ dependencies {
     compileOnly("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.2")
     runtimeOnly("org.postgresql:postgresql")
     implementation(projects.events)
-    implementation(projects.identity)
     implementation(projects.httpClient)
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
 

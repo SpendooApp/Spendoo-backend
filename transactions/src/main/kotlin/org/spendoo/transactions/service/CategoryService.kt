@@ -1,5 +1,6 @@
 package org.spendoo.transactions.service
 
+import org.spendoo.client.ApiClient
 import org.spendoo.transactions.api.dto.request.CategoryCreateRequest
 import org.spendoo.transactions.api.dto.request.CategoryUpdateRequest
 import org.spendoo.transactions.api.dto.request.toEntity
@@ -9,14 +10,18 @@ import org.spendoo.transactions.api.dto.response.toResponse
 import org.spendoo.transactions.entity.Category
 import org.spendoo.transactions.entity.CategoryIcon
 import org.spendoo.transactions.entity.LeftOverOptions
+import org.spendoo.transactions.entity.PlanCode
 import org.spendoo.transactions.repository.CategoryRepository
 import org.spendoo.transactions.repository.TransactionRepository
 import org.spendoo.transactions.service.model.CategoriesSummary
 import org.spendoo.transactions.service.model.CategoryParams
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
+import org.springframework.http.HttpMethod
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.web.server.ResponseStatusException
 import java.time.LocalDateTime
 import java.util.*
 
@@ -24,12 +29,33 @@ import java.util.*
 class CategoryService(
     private val categoryRepository: CategoryRepository,
     private val transactionRepository: TransactionRepository,
-    private val budgetService: BudgetService
+    private val budgetService: BudgetService,
+    private val apiClient: ApiClient
 ) {
 
     @Transactional
     fun create(request: CategoryCreateRequest, userId: UUID) {
         val category = request.toEntity(userId)
+        val planCode = getCurrentPlanCode(userId)
+        val currentCount = categoryRepository.countByUserIdAndIsDeletedFalse(userId)
+        when (planCode) {
+            PlanCode.FREE -> {
+                if (currentCount >= 50) {
+                    throw ResponseStatusException(
+                        HttpStatus.PAYMENT_REQUIRED
+                    )
+                }
+            }
+            PlanCode.BASIC -> {
+                if (currentCount >= 150) {
+                    throw ResponseStatusException(
+                        HttpStatus.PAYMENT_REQUIRED
+                    )
+                }
+            }
+            PlanCode.PRO -> { }
+        }
+
         val savedCategory = categoryRepository.save(category)
         budgetService.createBudget(request.budget, savedCategory)
     }
@@ -131,6 +157,16 @@ class CategoryService(
 
     fun getTopSpendingCategories(userId: UUID, pageable: Pageable): Page<CategorySpendingDto> {
         return transactionRepository.findTopSpendingCategories(userId, pageable)
+    }
+
+    fun getCurrentPlanCode(userId: UUID): PlanCode {
+        val response = apiClient.call(PlanCode::class.java) {
+            path = "/api/v1/subscriptions/current"
+            method = HttpMethod.GET
+            addToken = true
+            this.userId = userId
+        }
+        return response ?: PlanCode.FREE
     }
 
 }
