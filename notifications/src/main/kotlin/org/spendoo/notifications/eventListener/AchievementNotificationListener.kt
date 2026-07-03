@@ -3,6 +3,7 @@ package org.spendoo.notifications.eventListener
 import org.spendoo.events.achievements.AchievementEarnedEvent
 import org.spendoo.events.notifications.NotificationDetails
 import org.spendoo.events.notifications.UserNotificationsEvent
+import org.spendoo.events.notifications.utils.NotificationMedium
 import org.spendoo.events.notifications.utils.NotificationType
 import org.spendoo.events.publisher.SpendooEventPublisher
 import org.springframework.context.event.EventListener
@@ -27,7 +28,8 @@ class AchievementNotificationListener(
             userId = event.userId,
             subject = "🏆 Badge Earned: ${event.titleEn}! ",
             message = customizedMessage,
-            type = NotificationType.ACHIEVEMENT
+            type = NotificationType.ACHIEVEMENT,
+            medium = NotificationMedium.PUSH
         )
 
         eventPublisher.publish(

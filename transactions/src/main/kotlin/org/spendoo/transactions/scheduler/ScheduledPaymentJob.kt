@@ -4,6 +4,7 @@ import org.slf4j.LoggerFactory
 import org.spendoo.events.notifications.UserNotificationsEvent
 import org.spendoo.events.publisher.SpendooEventPublisher
 import org.spendoo.events.notifications.NotificationDetails
+import org.spendoo.events.notifications.utils.NotificationMedium
 import org.spendoo.events.notifications.utils.NotificationType
 import org.spendoo.transactions.repository.ScheduledPaymentRepository
 import org.spendoo.transactions.service.ScheduledPaymentService
@@ -54,7 +55,8 @@ class ScheduledPaymentJob (
                         Thanks,
                         Spendoo Team
                     """.trimIndent(),
-                    type = NotificationType.PAYMENT_REMINDER
+                    type = NotificationType.PAYMENT_REMINDER,
+                    medium = NotificationMedium.BOTH
                 )
             }
             publisher.publish(UserNotificationsEvent(notifications = detailsList))
