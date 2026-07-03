@@ -12,7 +12,7 @@ data class UserChatbotUsage(
     val id: UUID = UUID.randomUUID(),
 
     @Column(nullable = false, unique = true)
-    val userId: UUID,
+    val userId: UUID = UUID.randomUUID(),
 
     @Column(nullable = false)
     val messageCount: Int = 0,

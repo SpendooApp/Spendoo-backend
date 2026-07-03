@@ -14,7 +14,7 @@ data class UserAIUsage(
     val id: UUID = UUID.randomUUID(),
 
     @Column(nullable = false, unique = true)
-    val userId: UUID,
+    val userId: UUID = UUID.randomUUID(),
 
     @Column(nullable = false)
     val ocrCount: Int = 0,
