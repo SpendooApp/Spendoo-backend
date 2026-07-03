@@ -3,6 +3,7 @@ package org.spendoo.identity.api.controller
 import jakarta.validation.Valid
 import org.spendoo.identity.api.dto.request.SubscribePlanRequest
 import org.spendoo.identity.api.dto.response.SubscriptionPlanResponse
+import org.spendoo.identity.entity.PlanCode
 import org.spendoo.identity.service.SubscriptionService
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
@@ -30,5 +31,13 @@ class SubscriptionController(
     ): ResponseEntity<Unit> {
         subscriptionService.assignPlan(userId, request)
         return ResponseEntity.ok().build()
+    }
+
+    @GetMapping("/current")
+    fun getCurrentPlan(
+        @AuthenticationPrincipal userId: UUID,
+    ): ResponseEntity<PlanCode> {
+        val currentPlan = subscriptionService.getCurrentPlan(userId)
+        return ResponseEntity.ok(currentPlan)
     }
 }

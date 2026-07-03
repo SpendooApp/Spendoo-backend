@@ -59,4 +59,15 @@ class SubscriptionService(
 
         userSubscriptionRepository.save(newUserSubscription )
     }
+
+    @Transactional(readOnly = true)
+    fun getCurrentPlan(userId: UUID): PlanCode {
+
+        val activePlan = userSubscriptionRepository.findByUserId(userId)?.subscriptionPlan
+            ?: subscriptionPlanRepository.findByCode(PlanCode.FREE)
+            ?: throw IllegalStateException("FREE subscription plan missing from database")
+
+        return activePlan.code
+    }
+
 }
