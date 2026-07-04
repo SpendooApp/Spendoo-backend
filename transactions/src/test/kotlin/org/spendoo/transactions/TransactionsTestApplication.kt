@@ -12,6 +12,8 @@ import org.spendoo.transactions.service.CategoryService
 import org.spendoo.transactions.service.ScheduledPaymentService
 import org.spendoo.transactions.service.TransactionService
 import org.spendoo.events.publisher.SpendooEventPublisher
+import org.spendoo.transactions.repository.ProposedActionRepository
+import org.spendoo.transactions.service.SmartBudgetService
 import org.springframework.boot.SpringBootConfiguration
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration
 import org.springframework.boot.persistence.autoconfigure.EntityScan
@@ -64,14 +66,33 @@ class TransactionsTestApplication {
         categoryRepository: CategoryRepository,
         transactionViewRepository: TransactionViewRepository,
         apiClient: ApiClient,
-        spendooEventPublisher: SpendooEventPublisher
+        spendooEventPublisher: SpendooEventPublisher,
+        smartBudgetService: SmartBudgetService
     ): TransactionService {
         return TransactionService(
             transactionRepository = transactionRepository,
             categoryRepository = categoryRepository,
             transactionViewRepository = transactionViewRepository,
             apiClient = apiClient,
-            spendooEventPublisher = spendooEventPublisher
+            spendooEventPublisher = spendooEventPublisher,
+            smartBudgetService = smartBudgetService
+        )
+    }
+
+    @Bean
+    fun smartBudgetService(
+        proposedActionRepository: ProposedActionRepository,
+        categoryRepository: CategoryRepository,
+        budgetRepository: BudgetRepository,
+        apiClient: ApiClient,
+        publisher: SpendooEventPublisher
+    ): SmartBudgetService {
+        return SmartBudgetService(
+            proposedActionRepository = proposedActionRepository,
+            budgetRepository = budgetRepository,
+            categoryRepository = categoryRepository,
+            apiClient = apiClient,
+            publisher = publisher,
         )
     }
 
