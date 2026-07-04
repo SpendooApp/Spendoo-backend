@@ -38,7 +38,7 @@ class TransactionService(
     private val userAIUsageRepository: UserAIUsageRepository,
     private val apiClient: ApiClient,
     private val spendooEventPublisher: SpendooEventPublisher,
-    private val smartBudgetService: SmartBudgetService
+    private val smartBudgetService: SmartBudgetService,
     private val categoryService: CategoryService
 ) {
 
