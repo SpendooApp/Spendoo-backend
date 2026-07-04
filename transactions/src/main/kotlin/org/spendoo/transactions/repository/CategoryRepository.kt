@@ -139,4 +139,6 @@ interface CategoryRepository : JpaRepository<Category, UUID> {
     """
     )
     fun getCategoriesSummaryForUser(userId: UUID): CategoriesSummary
+
+    fun countByUserIdAndIsDeletedFalse(userId: UUID): Long
 }

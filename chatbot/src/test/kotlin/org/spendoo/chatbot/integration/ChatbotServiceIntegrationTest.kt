@@ -1,6 +1,9 @@
-package org.spendoo.chatbot.org.spendoo.chatbot.integration
+package org.spendoo.chatbot.integration
 
 import com.google.common.truth.Truth.assertThat
+import com.ninjasquad.springmockk.MockkBean
+import io.mockk.clearMocks
+import io.mockk.every
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.spendoo.chatbot.ChatbotTestApplication
@@ -8,9 +11,12 @@ import org.spendoo.chatbot.api.dto.request.ChatMessageRequestDto
 import org.spendoo.chatbot.entity.AiChatMessage
 import org.spendoo.chatbot.entity.AiChatSession
 import org.spendoo.chatbot.entity.ChatSender
+import org.spendoo.chatbot.entity.PlanCode
 import org.spendoo.chatbot.repository.AiChatMessageRepository
 import org.spendoo.chatbot.repository.AiChatSessionRepository
+import org.spendoo.chatbot.repository.UserChatbotUsageRepository
 import org.spendoo.chatbot.service.ChatbotService
+import org.spendoo.client.ApiClient
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.data.domain.PageRequest
@@ -31,10 +37,20 @@ class ChatbotServiceIntegrationTest {
     @Autowired
     private lateinit var chatMessageRepository: AiChatMessageRepository
 
+    @Autowired
+    private lateinit var userChatbotUsageRepository: UserChatbotUsageRepository
+
+    @MockkBean(relaxed = true)
+    private lateinit var apiClient: ApiClient
+
     @BeforeEach
     fun setUp() {
         chatMessageRepository.deleteAll()
         chatSessionRepository.deleteAll()
+        userChatbotUsageRepository.deleteAll()
+        clearMocks(apiClient)
+        every { apiClient.call(any<Class<PlanCode>>(), any()) } returns PlanCode.FREE
+
     }
 
     @Test

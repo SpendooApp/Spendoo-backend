@@ -59,4 +59,9 @@ class SubscriptionService(
 
         userSubscriptionRepository.save(newUserSubscription )
     }
+
+    @Transactional(readOnly = true)
+    fun getCurrentPlan(userId: UUID) =
+        userSubscriptionRepository.findByUserId(userId)?.subscriptionPlan?.code ?: PlanCode.FREE
+
 }
