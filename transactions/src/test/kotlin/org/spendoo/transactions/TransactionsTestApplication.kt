@@ -70,7 +70,7 @@ class TransactionsTestApplication {
         transactionViewRepository: TransactionViewRepository,
         apiClient: ApiClient,
         spendooEventPublisher: SpendooEventPublisher,
-        smartBudgetService: SmartBudgetService
+        smartBudgetService: SmartBudgetService,
         categoryService: CategoryService
     ): TransactionService {
         return TransactionService(
