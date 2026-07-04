@@ -8,6 +8,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.spendoo.chatbot.ChatbotTestApplication
 import org.spendoo.chatbot.api.dto.request.ChatMessageRequestDto
+import org.spendoo.chatbot.api.dto.response.AiChatResponse
 import org.spendoo.chatbot.entity.AiChatMessage
 import org.spendoo.chatbot.entity.AiChatSession
 import org.spendoo.chatbot.entity.ChatSender
@@ -50,6 +51,11 @@ class ChatbotServiceIntegrationTest {
         userChatbotUsageRepository.deleteAll()
         clearMocks(apiClient)
         every { apiClient.call(any<Class<PlanCode>>(), any()) } returns PlanCode.FREE
+
+        every { apiClient.call(eq(AiChatResponse::class.java), any()) } returns AiChatResponse(
+            response = "This is a mocked bot reply",
+            chatSummary = "how to save money? user asked about transportation."
+        )
 
     }
 
