@@ -34,7 +34,8 @@ class TransactionService(
     private val categoryRepository: CategoryRepository,
     private val transactionViewRepository: TransactionViewRepository,
     private val apiClient: ApiClient,
-    private val spendooEventPublisher: SpendooEventPublisher
+    private val spendooEventPublisher: SpendooEventPublisher,
+    private val smartBudgetService: SmartBudgetService
 ) {
 
     @Transactional
@@ -53,6 +54,10 @@ class TransactionService(
         transactionRepository.saveAll(transactionsToSave)
         val distinctCategoryCount = transactionRepository.countDistinctCategoriesByUserId(userId).toInt()
         spendooEventPublisher.publish(TransactionCreatedEvent(userId, distinctCategoryCount))
+
+        requestedCategoryIds.forEach { categoryId ->
+            smartBudgetService.checkAndForecastBudget(userId, categoryId)
+        }
     }
 
     @Transactional
@@ -84,6 +89,10 @@ class TransactionService(
         val updatedTransaction = updateRequest.toEntity(transactionId, userId, category)
 
         transactionRepository.save(updatedTransaction)
+
+        updateRequest.categoryId?.let { categoryId ->
+            smartBudgetService.checkAndForecastBudget(userId, categoryId)
+        }
     }
 
     @Transactional(readOnly = true)
