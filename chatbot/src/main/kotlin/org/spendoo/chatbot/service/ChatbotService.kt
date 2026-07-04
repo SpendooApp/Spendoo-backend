@@ -1,6 +1,7 @@
 package org.spendoo.chatbot.service
 
 import org.spendoo.chatbot.api.dto.request.ChatMessageRequestDto
+import org.spendoo.chatbot.api.dto.response.AiChatResponse
 import org.spendoo.chatbot.api.dto.response.ChatMessageResponseDto
 import org.spendoo.chatbot.entity.AiChatMessage
 import org.spendoo.chatbot.entity.AiChatSession
@@ -44,8 +45,21 @@ class ChatbotService(
         )
         chatMessageRepository.save(userMessage)
 
-        val botReply = "ex for bot message!"
-        val updatedSummary = "Updated summary after user said: ${message.content}"
+        val aiRequest = mapOf(
+            "userId" to userId.toString(),
+            "message" to message.content,
+            "chatSummary" to session.summary
+        )
+
+        val aiResponse = apiClient.call(AiChatResponse::class.java) {
+            callAIService = true
+            path = "/api/v1/chatbot/"
+            method = HttpMethod.POST
+            body = aiRequest
+        } ?: throw IllegalStateException("Failed to get response from AI chatbot")
+
+        val botReply = aiResponse.response
+        val updatedSummary = aiResponse.chatSummary
 
         val botMessage = AiChatMessage(
             chatSession = session,
