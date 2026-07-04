@@ -8,6 +8,7 @@ import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
+import org.springframework.web.server.ResponseStatusException
 
 
 @RestControllerAdvice
@@ -46,6 +47,18 @@ class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error)
     }
 
+    @ExceptionHandler(ResponseStatusException::class)
+    fun handleResponseStatusException(ex: ResponseStatusException): ResponseEntity<ErrorResponse> {
+        if (ex.statusCode == HttpStatus.PAYMENT_REQUIRED) {
+            val error = ErrorResponse(
+                message = ex.reason ?: "Payment required",
+                status = HttpStatus.PAYMENT_REQUIRED.value()
+            )
+            return ResponseEntity.status(HttpStatus.PAYMENT_REQUIRED).body(error)
+        }
+
+        return handleGenericException(ex)
+    }
     @ExceptionHandler(Exception::class)
     fun handleGenericException(ex: Exception): ResponseEntity<ErrorResponse> {
         logger.error("Unexpected error occurred", ex)

@@ -158,4 +158,6 @@ interface CategoryRepository : JpaRepository<Category, UUID> {
         @Param("priority") priority: Int,
         @Param("requiredAmount") requiredAmount: BigDecimal
     ): Category?
+  
+    fun countByUserIdAndIsDeletedFalse(userId: UUID): Long
 }

@@ -1,9 +1,13 @@
 package org.spendoo.transactions.integration
 
 import com.google.common.truth.Truth.assertThat
+import com.ninjasquad.springmockk.MockkBean
+import io.mockk.clearMocks
+import io.mockk.every
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import org.spendoo.client.ApiClient
 import org.spendoo.transactions.TransactionsTestApplication
 import org.spendoo.transactions.api.dto.request.BudgetCreateRequest
 import org.spendoo.transactions.api.dto.request.CategoryCreateRequest
@@ -39,12 +43,18 @@ class CategoryServiceIntegrationTest {
 
     private lateinit var existingUserId: UUID
 
+    @MockkBean(relaxed = true)
+    private lateinit var apiClient: ApiClient
+
     @BeforeEach
     fun setUp() {
         transactionRepository.deleteAll()
         budgetRepository.deleteAll()
         categoryRepository.deleteAll()
         existingUserId = UUID.randomUUID()
+        clearMocks(apiClient)
+
+        every { apiClient.call(any<Class<PlanCode>>(), any()) } returns PlanCode.FREE
     }
 
     @Test
