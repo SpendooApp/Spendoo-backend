@@ -70,7 +70,6 @@ class TransactionsTestApplication {
         transactionViewRepository: TransactionViewRepository,
         apiClient: ApiClient,
         spendooEventPublisher: SpendooEventPublisher,
-        smartBudgetService: SmartBudgetService,
         categoryService: CategoryService
     ): TransactionService {
         return TransactionService(
@@ -80,27 +79,10 @@ class TransactionsTestApplication {
             transactionViewRepository = transactionViewRepository,
             apiClient = apiClient,
             spendooEventPublisher = spendooEventPublisher,
-            smartBudgetService = smartBudgetService,
             categoryService = categoryService
         )
     }
 
-    @Bean
-    fun smartBudgetService(
-        proposedActionRepository: ProposedActionRepository,
-        categoryRepository: CategoryRepository,
-        budgetRepository: BudgetRepository,
-        apiClient: ApiClient,
-        publisher: SpendooEventPublisher
-    ): SmartBudgetService {
-        return SmartBudgetService(
-            proposedActionRepository = proposedActionRepository,
-            budgetRepository = budgetRepository,
-            categoryRepository = categoryRepository,
-            apiClient = apiClient,
-            publisher = publisher,
-        )
-    }
 
     @Bean
     fun scheduledPaymentService(

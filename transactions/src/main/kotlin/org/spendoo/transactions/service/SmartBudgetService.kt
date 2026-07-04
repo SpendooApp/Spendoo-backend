@@ -7,6 +7,7 @@ import org.spendoo.events.notifications.UserNotificationsEvent
 import org.spendoo.events.notifications.utils.NotificationMedium
 import org.spendoo.events.notifications.utils.NotificationType
 import org.spendoo.events.publisher.SpendooEventPublisher
+import org.spendoo.events.transactions.ExpenseSavedEvent
 import org.spendoo.transactions.api.dto.response.AiForecastResponse
 import org.spendoo.transactions.entity.ActionType
 import org.spendoo.transactions.entity.Category
@@ -14,6 +15,7 @@ import org.spendoo.transactions.entity.ProposedAction
 import org.spendoo.transactions.repository.BudgetRepository
 import org.spendoo.transactions.repository.CategoryRepository
 import org.spendoo.transactions.repository.ProposedActionRepository
+import org.springframework.context.event.EventListener
 import org.springframework.data.domain.PageRequest
 import org.springframework.http.HttpMethod
 import org.springframework.scheduling.annotation.Async
@@ -33,6 +35,11 @@ class SmartBudgetService(
     private val log = LoggerFactory.getLogger(javaClass)
 
     @Async
+    @EventListener
+    fun onExpenseSaved(event: ExpenseSavedEvent) {
+        checkAndForecastBudget(event.userId, event.categoryId)
+    }
+
     fun checkAndForecastBudget(userId: UUID, categoryId: UUID) {
         try {
             val category = categoryRepository.findById(categoryId).orElseThrow {

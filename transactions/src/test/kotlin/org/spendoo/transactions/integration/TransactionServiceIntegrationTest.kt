@@ -37,9 +37,6 @@ class TransactionServiceIntegrationTest {
     private lateinit var scheduledPaymentRepository: ScheduledPaymentRepository
 
     @Autowired
-    private lateinit var smartBudgetService: SmartBudgetService
-
-    @Autowired
     private lateinit var budgetRepository: BudgetRepository
 
     @Autowired
