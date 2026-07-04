@@ -1,24 +1,20 @@
 package org.spendoo.transactions.service
 
 import org.spendoo.client.ApiClient
+import org.spendoo.events.publisher.SpendooEventPublisher
+import org.spendoo.events.transactions.TransactionCreatedEvent
 import org.spendoo.transactions.api.dto.request.CreateExpenseTransactionRequest
 import org.spendoo.transactions.api.dto.request.CreateIncomeTransactionRequest
 import org.spendoo.transactions.api.dto.request.TransactionUpdateRequest
 import org.spendoo.transactions.api.dto.request.toEntity
-import org.spendoo.transactions.api.dto.response.AiExtractionResponse
-import org.spendoo.transactions.api.dto.response.BalanceSummary
-import org.spendoo.transactions.api.dto.response.EnrichedAiExtractionItem
-import org.spendoo.transactions.api.dto.response.EnrichedAiExtractionResponse
-import org.spendoo.transactions.api.dto.response.FrequencyItemsResponse
+import org.spendoo.transactions.api.dto.response.*
+import org.spendoo.transactions.entity.PlanCode
 import org.spendoo.transactions.entity.Transaction
 import org.spendoo.transactions.entity.TransactionView
 import org.spendoo.transactions.entity.UserAIUsage
 import org.spendoo.transactions.repository.CategoryRepository
 import org.spendoo.transactions.repository.TransactionRepository
 import org.spendoo.transactions.repository.TransactionViewRepository
-import org.spendoo.events.publisher.SpendooEventPublisher
-import org.spendoo.events.transactions.TransactionCreatedEvent
-import org.spendoo.transactions.entity.PlanCode
 import org.spendoo.transactions.repository.UserAIUsageRepository
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
@@ -211,32 +207,26 @@ class TransactionService(
     }
 
     private fun validateUsage(userId: UUID, isOcr: Boolean) {
-    val currentPlan = categoryService.getCurrentPlanCode(userId)
-    var usage = userAIUsageRepository.findByUserId(userId) ?: UserAIUsage(userId = userId)
+        val currentPlan = categoryService.getCurrentPlanCode(userId)
+        var usage = userAIUsageRepository.findByUserId(userId) ?: UserAIUsage(userId = userId)
 
-    if (LocalDate.now().isAfter(usage.resetDate)) {
-        usage = usage.copy(ocrCount = 0, voiceCount = 0, resetDate = LocalDate.now().plusMonths(1))
-        userAIUsageRepository.save(usage)
-    }
-
-    val currentCount = if (isOcr) usage.ocrCount else usage.voiceCount
-
-    when (currentPlan) {
-        PlanCode.FREE -> {
-            val limit = if (isOcr) 5 else 10
-            if (currentCount >= limit) {
-                throw ResponseStatusException(HttpStatus.PAYMENT_REQUIRED)
-            }
+        if (LocalDate.now().isAfter(usage.resetDate)) {
+            usage = usage.copy(ocrCount = 0, voiceCount = 0, resetDate = LocalDate.now().plusMonths(1))
+            userAIUsageRepository.save(usage)
         }
-        PlanCode.BASIC -> {
-            val limit = if (isOcr) 30 else 50
-            if (currentCount >= limit) {
-                throw ResponseStatusException(HttpStatus.PAYMENT_REQUIRED)
-            }
+
+        val currentCount = if (isOcr) usage.ocrCount else usage.voiceCount
+
+        val limit = when (currentPlan) {
+            PlanCode.FREE -> if (isOcr) 5 else 10
+            PlanCode.BASIC -> if (isOcr) 30 else 50
+            PlanCode.PRO -> Int.MAX_VALUE
         }
-        PlanCode.PRO -> { }
+
+        if (currentCount >= limit) {
+            throw ResponseStatusException(HttpStatus.PAYMENT_REQUIRED)
+        }
     }
-}
 
     private fun incrementUsage(userId: UUID, isOcr: Boolean) {
 

@@ -38,22 +38,13 @@ class CategoryService(
         val category = request.toEntity(userId)
         val planCode = getCurrentPlanCode(userId)
         val currentCount = categoryRepository.countByUserIdAndIsDeletedFalse(userId)
-        when (planCode) {
-            PlanCode.FREE -> {
-                if (currentCount >= 50) {
-                    throw ResponseStatusException(
-                        HttpStatus.PAYMENT_REQUIRED
-                    )
-                }
-            }
-            PlanCode.BASIC -> {
-                if (currentCount >= 150) {
-                    throw ResponseStatusException(
-                        HttpStatus.PAYMENT_REQUIRED
-                    )
-                }
-            }
-            PlanCode.PRO -> { }
+        val limit = when (planCode) {
+            PlanCode.FREE -> 50
+            PlanCode.BASIC -> 150
+            PlanCode.PRO -> Int.MAX_VALUE
+        }
+        if (currentCount >= limit) {
+            throw ResponseStatusException(HttpStatus.PAYMENT_REQUIRED)
         }
 
         val savedCategory = categoryRepository.save(category)
