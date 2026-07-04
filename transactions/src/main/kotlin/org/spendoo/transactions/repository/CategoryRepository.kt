@@ -156,8 +156,9 @@ interface CategoryRepository : JpaRepository<Category, UUID> {
     fun findFirstByUserIdAndPriorityLessThanAndLeftoverGreaterThanOrderByPriorityAsc(
         @Param("userId") userId: UUID,
         @Param("priority") priority: Int,
-        @Param("requiredAmount") requiredAmount: BigDecimal
-    ): Category?
+        @Param("requiredAmount") requiredAmount: BigDecimal,
+        pageable: Pageable
+    ): List<Category>
   
     fun countByUserIdAndIsDeletedFalse(userId: UUID): Long
 }

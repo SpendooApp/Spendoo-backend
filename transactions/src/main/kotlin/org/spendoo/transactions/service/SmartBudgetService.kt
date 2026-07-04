@@ -7,13 +7,16 @@ import org.spendoo.events.notifications.UserNotificationsEvent
 import org.spendoo.events.notifications.utils.NotificationMedium
 import org.spendoo.events.notifications.utils.NotificationType
 import org.spendoo.events.publisher.SpendooEventPublisher
+import org.spendoo.transactions.api.dto.response.AiForecastResponse
 import org.spendoo.transactions.entity.ActionType
 import org.spendoo.transactions.entity.Category
 import org.spendoo.transactions.entity.ProposedAction
 import org.spendoo.transactions.repository.BudgetRepository
 import org.spendoo.transactions.repository.CategoryRepository
 import org.spendoo.transactions.repository.ProposedActionRepository
+import org.springframework.data.domain.PageRequest
 import org.springframework.http.HttpMethod
+import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
@@ -29,6 +32,7 @@ class SmartBudgetService(
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
+    @Async
     fun checkAndForecastBudget(userId: UUID, categoryId: UUID) {
         try {
             val category = categoryRepository.findById(categoryId).orElseThrow {
@@ -59,32 +63,24 @@ class SmartBudgetService(
                 "end_date" to endDate.toString()
             )
 
-            val response = apiClient.call(Map::class.java) {
+            val response = apiClient.call(AiForecastResponse::class.java) {
                 callAIService = true
                 path = "/forecasting/predict"
                 method = HttpMethod.POST
                 body = requestBody
             } ?: throw IllegalStateException("Failed to get prediction from AI service")
 
-            val canPredict = response["predict"] as? Boolean ?: false
-            if (!canPredict) {
+            if (!response.predict) {
                 log.info("AI could not make a reliable prediction. Aborting forecast check for user $userId.")
                 return
             }
 
-            val buckets = response["buckets"] as? List<Map<String, Any>> ?: emptyList()
+            for (bucket in response.buckets) {
+                if (bucket.spending > bucket.budget) {
+                    val overspentAmount = bucket.spending - bucket.budget
 
-            for (bucket in buckets) {
-                val isPredicted = bucket["predicted"] as? Boolean ?: false
-                val spend = BigDecimal(bucket["spending"].toString())
-                val budgetAmount = BigDecimal(bucket["budget"].toString())
-                val bucketDate = bucket["start_date"].toString()
-
-                if (spend > budgetAmount) {
-                    val overspentAmount = spend - budgetAmount
-
-                    if (isPredicted) {
-                        sendWarningNotification(userId, category, bucketDate)
+                    if (bucket.predicted) {
+                        sendWarningNotification(userId, category, bucket.startDate)
                     } else {
                         suggestSmartAction(userId, category, overspentAmount)
                     }
@@ -110,8 +106,9 @@ class SmartBudgetService(
 
     private fun suggestSmartAction(userId: UUID, currentCategory: Category, requiredAmount: BigDecimal) {
         val alternativeCategory = categoryRepository.findFirstByUserIdAndPriorityLessThanAndLeftoverGreaterThanOrderByPriorityAsc(
-            userId, currentCategory.priority, requiredAmount
-        )
+            userId, currentCategory.priority, requiredAmount,
+            pageable = PageRequest.of(0, 1)
+        ).firstOrNull()
 
         if (alternativeCategory != null) {
             val actionDataMap = mapOf(
