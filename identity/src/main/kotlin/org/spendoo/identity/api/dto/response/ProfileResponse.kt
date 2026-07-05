@@ -11,4 +11,5 @@ data class ProfileResponse(
     val imageUrl: String?,
     val currentPlan: String,
     val planCode: PlanCode,
+    val followCode: String?
 )

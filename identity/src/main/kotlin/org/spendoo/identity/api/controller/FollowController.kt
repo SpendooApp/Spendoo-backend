@@ -3,6 +3,7 @@ package org.spendoo.identity.api.controller
 import org.spendoo.identity.api.dto.response.FollowStatusResponse
 import org.spendoo.identity.api.dto.response.UserSearchResponse
 import org.spendoo.identity.service.FollowService
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.http.ResponseEntity
@@ -21,12 +22,16 @@ import java.util.UUID
 @RestController
 @RequestMapping("/api/v1/identity/follows")
 class FollowController(
-    private val followService: FollowService
-
+    private val followService: FollowService,
+    @Value("\${storage.spendoo.cdn-endpoint}") cdnEndpoint: String,
+    @Value("\${identity.resources.profile-image-directory}") profileImageDirectory: String,
 ) {
+
+    private val imagesBaseUrl: String = "$cdnEndpoint/$profileImageDirectory"
+
     @GetMapping("/search")
     fun searchUserByCode(@RequestParam code: String): ResponseEntity<UserSearchResponse> {
-        return ResponseEntity.ok(followService.searchUserByCode(code))
+        return ResponseEntity.ok(followService.searchUserByCode(code,imagesBaseUrl))
     }
 
     @PostMapping("/request/{followeeId}")
@@ -53,7 +58,7 @@ class FollowController(
         @AuthenticationPrincipal userId: UUID,
         pageable: Pageable
     ): ResponseEntity<Page<UserSearchResponse>> {
-        return ResponseEntity.ok(followService.getFollowing(userId, pageable))
+        return ResponseEntity.ok(followService.getFollowing(userId,imagesBaseUrl ,pageable))
     }
 
     @GetMapping("/followers")
@@ -61,7 +66,7 @@ class FollowController(
         @AuthenticationPrincipal userId: UUID,
         pageable: Pageable
     ): ResponseEntity<Page<UserSearchResponse>> {
-        return ResponseEntity.ok(followService.getFollowers(userId, pageable))
+        return ResponseEntity.ok(followService.getFollowers(userId,imagesBaseUrl ,pageable))
     }
 
     @GetMapping("/requests")
@@ -69,7 +74,7 @@ class FollowController(
         @AuthenticationPrincipal userId: UUID,
         pageable: Pageable
     ): ResponseEntity<Page<UserSearchResponse>> {
-        return ResponseEntity.ok(followService.getPendingRequests(userId, pageable))
+        return ResponseEntity.ok(followService.getPendingRequests(userId,imagesBaseUrl ,pageable))
     }
 
     @DeleteMapping("/{followeeId}/unfollow")
