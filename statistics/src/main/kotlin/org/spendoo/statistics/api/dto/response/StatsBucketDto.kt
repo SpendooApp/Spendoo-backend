@@ -11,7 +11,7 @@ data class StatsBucketDto(
     @field:JsonAlias("start_date")
     val startDate: LocalDateTime,
     @field:JsonAlias("predicted")
-    val isPredicted: Boolean,
+    val isPredicted: Boolean? = null,
     @field:JsonAlias("status")
     val status: BudgetStatus? = null
 )

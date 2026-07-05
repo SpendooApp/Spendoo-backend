@@ -10,5 +10,5 @@ data class FinancialStatsResponse(
     @field:JsonAlias("highest_value")
     val highestValue: BigDecimal,
     @field:JsonAlias("predict")
-    val isPredicted: Boolean
+    val isPredicted: Boolean? = null
 )

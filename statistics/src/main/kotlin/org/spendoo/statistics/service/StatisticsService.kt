@@ -41,7 +41,7 @@ class StatisticsService(
 
         return apiClient.call(CombinedStatsResponse::class.java) {
             callAIService = true
-            path = "/api/v1/forecasting/predict-combined"
+            path = "/api/v1/statistics/combined"
             method = HttpMethod.POST
             body = requestBody
         } ?: throw IllegalStateException("Failed to call AI service statistics")
