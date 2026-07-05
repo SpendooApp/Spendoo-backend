@@ -217,6 +217,17 @@ class AchievementServiceIntegrationTest {
         assertThat(categoryBadge!!.isUnlocked).isTrue()
     }
 
+    @Test
+    fun `getAllAchievements lazily seeds default achievements and creates user achievements when none exist`() {
+        val newUserId = UUID.randomUUID()
+
+        val resultPage = achievementService.getAllAchievements(newUserId, PageRequest.of(0, 50), "en")
+
+        assertThat(resultPage.content).isNotEmpty()
+        val userAchievements = userAchievementRepository.findAllByUserId(newUserId, PageRequest.of(0, 50)).content
+        assertThat(userAchievements).isNotEmpty()
+    }
+
     private fun createAndSaveGoal(
         targetAmount: BigDecimal = BigDecimal(1000.0),
         goalName: String = "Mobile",

@@ -202,8 +202,9 @@ class AchievementService(
         }
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     fun getAllAchievements(userId: UUID, pageable: Pageable, languageCode: String): Page<AchievementResponse> {
+        ensureUserAchievementsCreated(userId)
         val achievementPage = userAchievementRepository.findAllByUserId(userId, pageable)
         return achievementPage.map { it.toResponse(languageCode) }
     }
