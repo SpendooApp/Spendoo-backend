@@ -57,6 +57,7 @@ fun User.toProfileResponse(imageBaseUrl: String, currentPlan: String, planCode: 
     return ProfileResponse(
         id = id.toString(),
         fullName = fullName,
+        email = email,
         birthDate = birthDate.toString(),
         gender = gender.name,
         imageUrl = resolvedImageUrl,
