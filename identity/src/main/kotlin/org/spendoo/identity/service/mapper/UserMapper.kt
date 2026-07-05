@@ -48,7 +48,7 @@ fun User.toUserUpdatedEvent(): UserUpdatedEvent {
     )
 }
 
-fun User.toProfileResponse(imageBaseUrl: String, currentPlan: String, planCode: PlanCode,followCode: String?): ProfileResponse {
+fun User.toProfileResponse(imageBaseUrl: String, currentPlan: String, planCode: PlanCode,followCode: String): ProfileResponse {
     val resolvedImageUrl = if (imageUrl.isNullOrBlank()) {
         null
     } else {

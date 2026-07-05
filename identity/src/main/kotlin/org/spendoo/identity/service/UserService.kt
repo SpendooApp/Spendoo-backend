@@ -26,6 +26,7 @@ class UserService(
     private val eventPublisher: SpendooEventPublisher,
     private val userSubscriptionRepository: UserSubscriptionRepository,
     private val followCodeRepository: FollowCodeRepository,
+    private val followCodeService: FollowCodeService,
     @param:Value("\${identity.resources.profile-image-directory}") private val profileImageDirectory: String
 ) {
     fun existById(userId: UUID): Boolean = userRepository.existsById(userId)
@@ -35,12 +36,13 @@ class UserService(
             ?: throw UserNotFoundException("User with id: $userId not found")
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     fun getUserProfile(userId: UUID, imageBaseUrl: String, languageCode:String): ProfileResponse {
         val user = findById(userId)
         val subscription = userSubscriptionRepository.findByUserId(userId)
 
         val followCodeEntity = followCodeRepository.findByUserId(userId)
+        val activeFollowCode = followCodeEntity?.code ?: followCodeService.generateCode(userId).code
 
         val useArabic = languageCode.lowercase().startsWith("ar")
         val planTitle = if (useArabic) {
@@ -49,7 +51,7 @@ class UserService(
             subscription?.subscriptionPlan?.titleEn ?: "Free"
         }
         val planCode = subscription?.subscriptionPlan?.code ?:PlanCode.FREE
-        return user.toProfileResponse(imageBaseUrl, planTitle, planCode, followCodeEntity?.code)
+        return user.toProfileResponse(imageBaseUrl, planTitle, planCode, activeFollowCode)
     }
 
     fun updateUserImage(
