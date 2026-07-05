@@ -2,6 +2,7 @@ package org.spendoo.transactions.service
 
 import org.spendoo.client.ApiClient
 import org.spendoo.events.publisher.SpendooEventPublisher
+import org.spendoo.events.transactions.ExpenseSavedEvent
 import org.spendoo.events.transactions.TransactionCreatedEvent
 import org.spendoo.transactions.api.dto.request.CreateExpenseTransactionRequest
 import org.spendoo.transactions.api.dto.request.CreateIncomeTransactionRequest
@@ -37,8 +38,8 @@ class TransactionService(
     private val transactionViewRepository: TransactionViewRepository,
     private val userAIUsageRepository: UserAIUsageRepository,
     private val apiClient: ApiClient,
-    private val categoryService: CategoryService,
-    private val spendooEventPublisher: SpendooEventPublisher
+    private val spendooEventPublisher: SpendooEventPublisher,
+    private val categoryService: CategoryService
 ) {
 
     @Transactional
@@ -57,6 +58,10 @@ class TransactionService(
         transactionRepository.saveAll(transactionsToSave)
         val distinctCategoryCount = transactionRepository.countDistinctCategoriesByUserId(userId).toInt()
         spendooEventPublisher.publish(TransactionCreatedEvent(userId, distinctCategoryCount))
+
+        requestedCategoryIds.forEach { categoryId ->
+            spendooEventPublisher.publish(ExpenseSavedEvent(userId, categoryId))
+        }
     }
 
     @Transactional
@@ -88,6 +93,10 @@ class TransactionService(
         val updatedTransaction = updateRequest.toEntity(transactionId, userId, category)
 
         transactionRepository.save(updatedTransaction)
+
+        updateRequest.categoryId?.let { categoryId ->
+            spendooEventPublisher.publish(ExpenseSavedEvent(userId, categoryId))
+        }
     }
 
     @Transactional(readOnly = true)

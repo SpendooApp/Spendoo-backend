@@ -2,8 +2,9 @@ package org.spendoo.events.notifications
 
 import org.spendoo.events.SpendooEvent
 import org.spendoo.events.notifications.utils.NotificationType
-import java.util.UUID
+import java.util.*
 
+//note: to save the notification in the database use UserNotificationsEvent instead
 data class PushNotificationEvent(
     val userId: UUID,
     val tokens: List<String>,

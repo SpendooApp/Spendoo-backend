@@ -22,7 +22,7 @@ class FollowService(
 ) {
 
     @Transactional(readOnly = true)
-    fun searchUserByCode(code: String): UserSearchResponse {
+    fun searchUserByCode(code: String, imageBaseUrl: String): UserSearchResponse {
         val followCode = followCodeRepository.findByCode(code)
             ?: throw RuntimeException("Code not found or invalid")
 
@@ -31,7 +31,7 @@ class FollowService(
         return UserSearchResponse(
             userId = user.id,
             fullName = user.fullName,
-            imageUrl = user.imageUrl
+            imageUrl = user.imageUrl?.let { "$imageBaseUrl/$it" }
         )
     }
 
@@ -74,27 +74,35 @@ class FollowService(
     }
 
     @Transactional(readOnly = true)
-    fun getFollowing(userId: UUID, pageable: Pageable): Page<UserSearchResponse> {
+    fun getFollowing(userId: UUID,imageBaseUrl: String ,pageable: Pageable): Page<UserSearchResponse> {
         val follows = followRepository.findByFollowerIdAndStatus(userId, FollowStatus.ACCEPTED, pageable)
 
         return follows.map {
-            UserSearchResponse(it.followee.id, it.followee.fullName, it.followee.imageUrl)
+            UserSearchResponse(
+                userId = it.followee.id,
+                fullName = it.followee.fullName,
+                imageUrl = it.followee.imageUrl?.let { img -> "$imageBaseUrl/$img" }
+            )
         }
     }
 
     @Transactional(readOnly = true)
-    fun getFollowers(userId: UUID, pageable: Pageable): Page<UserSearchResponse> {
+    fun getFollowers(userId: UUID,imageBaseUrl: String ,pageable: Pageable): Page<UserSearchResponse> {
 
         val follows = followRepository.findByFolloweeIdAndStatus(userId, FollowStatus.ACCEPTED, pageable)
 
 
         return follows.map {
-            UserSearchResponse(it.follower.id, it.follower.fullName, it.follower.imageUrl)
+            UserSearchResponse(
+                userId = it.follower.id,
+                fullName = it.follower.fullName,
+                imageUrl = it.follower.imageUrl?.let { img -> "$imageBaseUrl/$img" }
+            )
         }
     }
 
     @Transactional(readOnly = true)
-    fun getPendingRequests(userId: UUID, pageable: Pageable): Page<UserSearchResponse> {
+    fun getPendingRequests(userId: UUID,imageBaseUrl: String ,pageable: Pageable): Page<UserSearchResponse> {
 
         val requests = followRepository.findByFolloweeIdAndStatus(userId, FollowStatus.PENDING, pageable)
 
@@ -102,7 +110,7 @@ class FollowService(
             UserSearchResponse(
                 userId = it.follower.id,
                 fullName = it.follower.fullName,
-                imageUrl = it.follower.imageUrl,
+                imageUrl = it.follower.imageUrl?.let { img -> "$imageBaseUrl/$img" },
             )
         }
     }

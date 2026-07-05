@@ -12,6 +12,8 @@ import org.spendoo.transactions.service.CategoryService
 import org.spendoo.transactions.service.ScheduledPaymentService
 import org.spendoo.transactions.service.TransactionService
 import org.spendoo.events.publisher.SpendooEventPublisher
+import org.spendoo.transactions.repository.ProposedActionRepository
+import org.spendoo.transactions.service.SmartBudgetService
 import org.spendoo.transactions.repository.UserAIUsageRepository
 import org.springframework.boot.SpringBootConfiguration
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration
@@ -67,8 +69,8 @@ class TransactionsTestApplication {
         userAIUsageRepository: UserAIUsageRepository,
         transactionViewRepository: TransactionViewRepository,
         apiClient: ApiClient,
-        categoryService: CategoryService,
-        spendooEventPublisher: SpendooEventPublisher
+        spendooEventPublisher: SpendooEventPublisher,
+        categoryService: CategoryService
     ): TransactionService {
         return TransactionService(
             transactionRepository = transactionRepository,
@@ -78,9 +80,9 @@ class TransactionsTestApplication {
             apiClient = apiClient,
             spendooEventPublisher = spendooEventPublisher,
             categoryService = categoryService
-
         )
     }
+
 
     @Bean
     fun scheduledPaymentService(

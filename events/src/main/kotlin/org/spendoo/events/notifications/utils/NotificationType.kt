@@ -6,5 +6,6 @@ enum class NotificationType {
     GOAL,
     USER_FOLLOW,
     PAYMENT_REMINDER,
-    SYSTEM
+    SYSTEM,
+    ALERT
 }

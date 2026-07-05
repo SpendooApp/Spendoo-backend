@@ -12,6 +12,7 @@ import org.spendoo.transactions.repository.BudgetRepository
 import org.spendoo.transactions.repository.CategoryRepository
 import org.spendoo.transactions.repository.ScheduledPaymentRepository
 import org.spendoo.transactions.repository.TransactionRepository
+import org.spendoo.transactions.service.SmartBudgetService
 import org.spendoo.transactions.service.TransactionService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest

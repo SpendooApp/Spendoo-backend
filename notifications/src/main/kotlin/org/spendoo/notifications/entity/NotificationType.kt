@@ -5,6 +5,7 @@ enum class NotificationType {
     GOAL,
     USER_FOLLOW,
     PAYMENT_REMINDER,
+    ALERT,
     SYSTEM;
 
     companion object {

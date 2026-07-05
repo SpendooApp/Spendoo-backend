@@ -78,6 +78,8 @@ class IdentityTestApplication {
         userSubscriptionRepository: UserSubscriptionRepository,
         imageStorageService: ImageStorageService,
         spendooEventPublisher: SpendooEventPublisher,
+        followCodeRepository: FollowCodeRepository,
+        followCodeService: FollowCodeService,
         @Value("\${identity.resources.profile-image-directory}") profileImageDirectory: String
     ): UserService {
         return UserService(
@@ -85,7 +87,10 @@ class IdentityTestApplication {
             userSubscriptionRepository = userSubscriptionRepository,
             imageStorageService = imageStorageService,
             eventPublisher = spendooEventPublisher,
-            profileImageDirectory = profileImageDirectory
+            profileImageDirectory = profileImageDirectory,
+            followCodeRepository = followCodeRepository,
+            followCodeService = followCodeService
+
         )
     }
 

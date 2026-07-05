@@ -48,7 +48,7 @@ fun User.toUserUpdatedEvent(): UserUpdatedEvent {
     )
 }
 
-fun User.toProfileResponse(imageBaseUrl: String, currentPlan: String, planCode: PlanCode): ProfileResponse {
+fun User.toProfileResponse(imageBaseUrl: String, currentPlan: String, planCode: PlanCode,followCode: String): ProfileResponse {
     val resolvedImageUrl = if (imageUrl.isNullOrBlank()) {
         null
     } else {
@@ -57,11 +57,13 @@ fun User.toProfileResponse(imageBaseUrl: String, currentPlan: String, planCode: 
     return ProfileResponse(
         id = id.toString(),
         fullName = fullName,
+        email = email,
         birthDate = birthDate.toString(),
         gender = gender.name,
         imageUrl = resolvedImageUrl,
         currentPlan = currentPlan,
-        planCode = planCode
+        planCode = planCode,
+        followCode = followCode
     )
 }
 

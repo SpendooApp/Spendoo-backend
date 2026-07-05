@@ -66,7 +66,7 @@ class BudgetService(
 
             val spentAmount = calculateSpentAmount(category.userId, category.id)
 
-            val leftover = expiredBudget.amount - spentAmount
+            val leftover = expiredBudget.amount + spentAmount
 
             budgetRepository.save(
                 expiredBudget.copy(isActive = false)

@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
+import org.springframework.data.repository.query.Param
 import java.math.BigDecimal
 import java.util.*
 
@@ -140,5 +141,24 @@ interface CategoryRepository : JpaRepository<Category, UUID> {
     )
     fun getCategoriesSummaryForUser(userId: UUID): CategoriesSummary
 
+    @Query("""
+        SELECT c FROM Category c 
+        WHERE c.userId = :userId 
+        AND c.priority < :priority 
+        AND EXISTS (
+            SELECT 1 FROM Budget b 
+            WHERE b.category.id = c.id 
+            AND b.isActive = true 
+            AND (b.amount - COALESCE((SELECT ABS(SUM(t.amount)) FROM Transaction t WHERE t.category.id = c.id AND t.amount < 0), 0)) >= :requiredAmount
+        )
+        ORDER BY c.priority ASC
+    """)
+    fun findFirstByUserIdAndPriorityLessThanAndLeftoverGreaterThanOrderByPriorityAsc(
+        @Param("userId") userId: UUID,
+        @Param("priority") priority: Int,
+        @Param("requiredAmount") requiredAmount: BigDecimal,
+        pageable: Pageable
+    ): List<Category>
+  
     fun countByUserIdAndIsDeletedFalse(userId: UUID): Long
 }
