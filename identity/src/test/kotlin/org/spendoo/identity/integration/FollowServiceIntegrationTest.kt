@@ -49,7 +49,7 @@ class FollowServiceIntegrationTest {
         val user = createUser("search@mail.com", "Target User")
         followCodeRepository.save(FollowCode(user = user, code = "VALID12345"))
 
-        val response = followService.searchUserByCode("VALID12345")
+        val response = followService.searchUserByCode("VALID12345","http://test.com")
 
         assertThat(response.userId).isEqualTo(user.id)
         assertThat(response.fullName).isEqualTo("Target User")
@@ -58,7 +58,7 @@ class FollowServiceIntegrationTest {
     @Test
     fun `searchUserByCode throws Exception if code is invalid`() {
         val thrownException = assertThrows<RuntimeException> {
-            followService.searchUserByCode("INVALID000")
+            followService.searchUserByCode("INVALID000", "http://test.com")
         }
         assertThat(thrownException).hasMessageThat().contains("Code not found or invalid")
     }
@@ -115,7 +115,7 @@ class FollowServiceIntegrationTest {
         val followee = createUser("followee@mail.com", "Target")
         createFollowRelation(user, followee, FollowStatus.ACCEPTED)
 
-        val result = followService.getFollowing(user.id, PageRequest.of(0, 10))
+        val result = followService.getFollowing(user.id, "http://test.com",PageRequest.of(0, 10))
 
         assertThat(result.content).hasSize(1)
         assertThat(result.content[0].userId).isEqualTo(followee.id)
@@ -127,7 +127,7 @@ class FollowServiceIntegrationTest {
         val follower = createUser("follower@mail.com", "Follower")
         createFollowRelation(follower, targetUser, FollowStatus.ACCEPTED)
 
-        val result = followService.getFollowers(targetUser.id, PageRequest.of(0, 10))
+        val result = followService.getFollowers(targetUser.id, "http://test.com",PageRequest.of(0, 10))
 
         assertThat(result.content).hasSize(1)
         assertThat(result.content[0].userId).isEqualTo(follower.id)
