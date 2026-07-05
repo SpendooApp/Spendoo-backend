@@ -5,7 +5,6 @@ import org.springframework.boot.persistence.autoconfigure.EntityScan
 import org.springframework.boot.runApplication
 import org.springframework.context.annotation.ComponentScan
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories
-import org.springframework.data.web.config.EnableSpringDataWebSupport
 import org.springframework.scheduling.annotation.EnableAsync
 import org.springframework.scheduling.annotation.EnableScheduling
 
@@ -15,7 +14,6 @@ import org.springframework.scheduling.annotation.EnableScheduling
 @EntityScan(basePackages = ["org.spendoo"])
 @EnableScheduling
 @EnableAsync
-@EnableSpringDataWebSupport(pageSerializationMode = EnableSpringDataWebSupport.PageSerializationMode.VIA_DTO)
 class SpendooApplication
 
 fun main(args: Array<String>) {
