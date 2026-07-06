@@ -12,14 +12,19 @@ import java.math.BigDecimal
 import java.time.LocalDateTime
 import java.util.*
 
+import org.spendoo.client.ApiClient
+import org.spendoo.transactions.entity.PlanCode
+
 class StatisticsControllerIntegrationTest {
 
     @Test
     fun `controller calls service and returns response`() {
         val statisticsService = mockk<StatisticsService>()
-        val controller = StatisticsController(statisticsService)
+        val apiClient = mockk<ApiClient>()
+        val controller = StatisticsController(statisticsService, apiClient)
         
         val userId = UUID.randomUUID()
+        every { apiClient.call<PlanCode>(PlanCode::class.java, any()) } returns PlanCode.PRO
         val mockResponse = CombinedStatsResponse(
             financialStats = FinancialStatsResponse(emptyList(), 0, BigDecimal.ZERO, false),
             budgetStatus = BudgetStatusResponse(emptyList(), BigDecimal.ZERO),

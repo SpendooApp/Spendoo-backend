@@ -110,12 +110,14 @@ class IdentityTestApplication {
     fun followService(
         userRepository: UserRepository,
         followCodeRepository: FollowCodeRepository,
-        followRepository: FollowRepository
+        followRepository: FollowRepository,
+        spendooEventPublisher: SpendooEventPublisher
     ): FollowService {
         return FollowService(
             userRepository = userRepository,
             followCodeRepository = followCodeRepository,
-            followRepository = followRepository
+            followRepository = followRepository,
+            eventPublisher = spendooEventPublisher
         )
     }
 

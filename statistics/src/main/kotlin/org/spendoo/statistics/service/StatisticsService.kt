@@ -119,7 +119,7 @@ class StatisticsService(
             addToken = true
         }
 
-        val isFollowing = response?.isFollowing ?: false
+        val isFollowing = response?.following ?: false
 
         if (!isFollowing) {
             throw ResponseStatusException(

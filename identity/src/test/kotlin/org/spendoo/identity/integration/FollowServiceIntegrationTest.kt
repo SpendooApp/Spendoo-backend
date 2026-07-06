@@ -153,7 +153,7 @@ class FollowServiceIntegrationTest {
 
         val response = followService.checkFollowStatus(follower.id, followee.id)
 
-        assertThat(response.isFollowing).isTrue()
+        assertThat(response.following).isTrue()
     }
 
     @Test
@@ -164,7 +164,7 @@ class FollowServiceIntegrationTest {
 
         val response = followService.checkFollowStatus(follower.id, followee.id)
 
-        assertThat(response.isFollowing).isFalse()
+        assertThat(response.following).isFalse()
     }
 
     @Test
@@ -173,7 +173,7 @@ class FollowServiceIntegrationTest {
 
         val response = followService.checkFollowStatus(user.id, user.id)
 
-        assertThat(response.isFollowing).isTrue()
+        assertThat(response.following).isTrue()
     }
 
     private fun createUser(email: String, fullName: String): User {

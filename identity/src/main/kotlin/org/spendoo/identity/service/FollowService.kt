@@ -1,5 +1,10 @@
 package org.spendoo.identity.service
 
+import org.spendoo.events.notifications.NotificationDetails
+import org.spendoo.events.notifications.UserNotificationsEvent
+import org.spendoo.events.notifications.utils.NotificationMedium
+import org.spendoo.events.notifications.utils.NotificationType
+import org.spendoo.events.publisher.SpendooEventPublisher
 import org.spendoo.identity.api.dto.response.FollowStatusResponse
 import org.spendoo.identity.api.dto.response.UserSearchResponse
 import org.spendoo.identity.entity.Follow
@@ -18,7 +23,8 @@ import java.util.UUID
 class FollowService(
     private val followRepository: FollowRepository,
     private val followCodeRepository: FollowCodeRepository,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val eventPublisher: SpendooEventPublisher
 ) {
 
     @Transactional(readOnly = true)
@@ -53,6 +59,20 @@ class FollowService(
             createdAt = LocalDateTime.now()
         )
         followRepository.save(followRequest)
+
+        val notificationDetail = NotificationDetails(
+            userId = followeeId,
+            subject = "New Follow Request",
+            message = "${follower.fullName} sent you a follow request.",
+            type = NotificationType.USER_FOLLOW,
+            medium = NotificationMedium.PUSH
+        )
+
+        eventPublisher.publish(
+            UserNotificationsEvent(
+                notifications = listOf(notificationDetail)
+            )
+        )
     }
 
     @Transactional
@@ -68,6 +88,20 @@ class FollowService(
         if (isApproved) {
             val updatedRequest = followRequest.copy(status = FollowStatus.ACCEPTED)
             followRepository.save(updatedRequest)
+
+            val notificationDetail = NotificationDetails(
+                userId = followerId,
+                subject = "Follow Request Accepted",
+                message = "${followRequest.followee.fullName} accepted your follow request.",
+                type = NotificationType.USER_FOLLOW,
+                medium = NotificationMedium.PUSH
+            )
+
+            eventPublisher.publish(
+                UserNotificationsEvent(
+                    notifications = listOf(notificationDetail)
+                )
+            )
         } else {
             followRepository.delete(followRequest)
         }
@@ -128,12 +162,12 @@ class FollowService(
     fun checkFollowStatus(followerId: UUID, followeeId: UUID): FollowStatusResponse {
 
         if (followerId == followeeId)
-            return FollowStatusResponse(isFollowing = true)
+            return FollowStatusResponse(following = true)
 
         val follow = followRepository.findByFollowerIdAndFolloweeId(followerId, followeeId)
 
         val isFollowing = follow != null && follow.status == FollowStatus.ACCEPTED
 
-        return FollowStatusResponse(isFollowing = isFollowing)
+        return FollowStatusResponse(following = isFollowing)
     }
 }
