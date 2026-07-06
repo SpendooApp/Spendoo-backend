@@ -2,7 +2,7 @@ package org.spendoo.transactions.entity
 
 import jakarta.persistence.*
 import java.math.BigDecimal
-import java.time.LocalDateTime
+import java.time.Instant
 import java.util.UUID
 
 @Entity
@@ -22,13 +22,13 @@ data class ScheduledPayment(
     val amount: BigDecimal,
 
     @Column(nullable = false)
-    val startDate: LocalDateTime,
+    val startDate: Instant,
 
     @Column(nullable = false)
-    val nextDueDate: LocalDateTime,
+    val nextDueDate: Instant,
 
     @Column(nullable = false)
-    val nextReminderDate: LocalDateTime,
+    val nextReminderDate: Instant,
 
     @Column(nullable = false)
     val isNotified: Boolean = false,

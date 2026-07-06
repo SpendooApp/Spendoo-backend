@@ -28,7 +28,7 @@ import org.springframework.web.multipart.MultipartFile
 import org.springframework.web.server.ResponseStatusException
 import java.math.BigDecimal
 import java.time.LocalDate
-import java.time.LocalDateTime
+import java.time.Instant
 import java.util.*
 
 @Service
@@ -108,8 +108,8 @@ class TransactionService(
     @Transactional(readOnly = true)
     fun getTransactionsByDateRange(
         userId: UUID,
-        startDate: LocalDateTime,
-        endDate: LocalDateTime,
+        startDate: Instant,
+        endDate: Instant,
         pageable: Pageable
     ): Page<Transaction> {
         return transactionRepository.findAllByUserIdAndTransactionDateBetween(userId, startDate, endDate, pageable)

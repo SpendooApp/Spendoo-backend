@@ -15,7 +15,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.server.ResponseStatusException
 import java.math.BigDecimal
-import java.time.LocalDateTime
+import java.time.Instant
 import java.util.*
 
 @Service
@@ -29,8 +29,8 @@ class StatisticsService(
     fun getStatistics(
         userId: UUID,
         granularity: Granularity,
-        startDate: LocalDateTime,
-        endDate: LocalDateTime
+        startDate: Instant,
+        endDate: Instant
     ): CombinedStatsResponse {
         val requestBody = mapOf(
             "user_id" to userId.toString(),
@@ -50,8 +50,8 @@ class StatisticsService(
     @Transactional(readOnly = true)
     fun getStatisticsPdf(
         userId: UUID,
-        startDate: LocalDateTime,
-        endDate: LocalDateTime,
+        startDate: Instant,
+        endDate: Instant,
         reportDataType: ReportDataType,
         theme: Theme,
         lang: String
@@ -86,8 +86,8 @@ class StatisticsService(
         currentUserId: UUID,
         targetUserId: UUID,
         granularity: Granularity,
-        startDate: LocalDateTime,
-        endDate: LocalDateTime
+        startDate: Instant,
+        endDate: Instant
     ): CombinedStatsResponse {
         validateFollowPermission(currentUserId, targetUserId)
 
@@ -98,8 +98,8 @@ class StatisticsService(
     fun getUserStatisticsPdf(
         currentUserId: UUID,
         targetUserId: UUID,
-        startDate: LocalDateTime,
-        endDate: LocalDateTime,
+        startDate: Instant,
+        endDate: Instant,
         reportDataType: ReportDataType,
         theme: Theme,
         lang: String

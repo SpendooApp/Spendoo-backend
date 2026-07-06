@@ -2,7 +2,7 @@ package org.spendoo.savingGoals.service.model
 
 import org.spendoo.savingGoals.entity.GoalIcon
 import java.math.BigDecimal
-import java.time.LocalDateTime
+import java.time.Instant
 import java.util.*
 
 class GoalParams(
@@ -14,7 +14,7 @@ class GoalParams(
 
     val goalIcon: GoalIcon,
 
-    val deadline: LocalDateTime,
+    val deadline: Instant,
 
     val currentAmount: BigDecimal?,
 

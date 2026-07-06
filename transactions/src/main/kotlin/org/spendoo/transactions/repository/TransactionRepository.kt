@@ -10,7 +10,7 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import java.math.BigDecimal
-import java.time.LocalDateTime
+import java.time.Instant
 import java.util.*
 
 interface TransactionRepository : JpaRepository<Transaction, UUID>, JpaSpecificationExecutor<Transaction> {
@@ -19,8 +19,8 @@ interface TransactionRepository : JpaRepository<Transaction, UUID>, JpaSpecifica
 
     fun findAllByUserIdAndTransactionDateBetween(
         userId: UUID,
-        startDate: LocalDateTime,
-        endDate: LocalDateTime,
+        startDate: Instant,
+        endDate: Instant,
         pageable: Pageable
     ): Page<Transaction>
 
@@ -103,8 +103,8 @@ interface TransactionRepository : JpaRepository<Transaction, UUID>, JpaSpecifica
     )
     fun sumExpensesByUserIdAndDateRange(
         @Param("userId") userId: UUID,
-        @Param("startDate") startDate: LocalDateTime,
-        @Param("endDate") endDate: LocalDateTime
+        @Param("startDate") startDate: Instant,
+        @Param("endDate") endDate: Instant
     ): BigDecimal
 
     @Query(
@@ -119,8 +119,8 @@ interface TransactionRepository : JpaRepository<Transaction, UUID>, JpaSpecifica
     )
     fun sumIncomeByUserIdAndDateRange(
         @Param("userId") userId: UUID,
-        @Param("startDate") startDate: LocalDateTime,
-        @Param("endDate") endDate: LocalDateTime
+        @Param("startDate") startDate: Instant,
+        @Param("endDate") endDate: Instant
     ): BigDecimal
 
     fun findByIdAndUserId(id: UUID, userId: UUID): Transaction?

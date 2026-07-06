@@ -8,7 +8,7 @@ import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
-import java.time.LocalDateTime
+import java.time.Instant
 
 @Component
 class BudgetExpirationScheduler(
@@ -19,7 +19,7 @@ class BudgetExpirationScheduler(
     @Scheduled(cron = "0 0 0 * * *")
     @Transactional
     fun runDailyBudgetRollOver() {
-        val now = LocalDateTime.now()
+        val now = Instant.now()
         val batchRequest = PageRequest.of(0, BATCH_SIZE)
 
         while (true) {

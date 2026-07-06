@@ -22,7 +22,8 @@ import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
-import java.util.UUID
+import java.time.ZoneOffset
+import java.util.*
 
 @Service
 class SmartBudgetService(
@@ -50,10 +51,10 @@ class SmartBudgetService(
                 ?: return
 
             val startDate = when {
-                activeBudget.period <= 7 -> activeBudget.startDate.minusWeeks(2)
-                activeBudget.period <= 31 -> activeBudget.startDate.minusMonths(2)
-                else -> activeBudget.startDate.minusMonths(6)
-            }.withHour(0).withMinute(0)
+                activeBudget.period <= 7 -> activeBudget.startDate.atZone(ZoneOffset.UTC).minusWeeks(2)
+                activeBudget.period <= 31 -> activeBudget.startDate.atZone(ZoneOffset.UTC).minusMonths(2)
+                else -> activeBudget.startDate.atZone(ZoneOffset.UTC).minusMonths(6)
+            }.withHour(0).withMinute(0).toInstant()
 
             val endDate = activeBudget.endDate
 
@@ -72,14 +73,13 @@ class SmartBudgetService(
 
             val response = apiClient.call(AiForecastResponse::class.java) {
                 callAIService = true
-                path = "/forecasting/predict"
+                path = "api/v1/forecasting/predict"
                 method = HttpMethod.POST
                 body = requestBody
             } ?: throw IllegalStateException("Failed to get prediction from AI service")
 
             if (!response.predict) {
-                log.info("AI could not make a reliable prediction. Aborting forecast check for user $userId.")
-                return
+                log.info("AI could not make a reliable prediction for user $userId. Proceeding to check history for overspending.")
             }
 
             for (bucket in response.buckets) {

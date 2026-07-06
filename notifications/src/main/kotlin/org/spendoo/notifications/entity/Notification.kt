@@ -2,7 +2,7 @@ package org.spendoo.notifications.entity
 
 import jakarta.persistence.*
 import org.spendoo.events.notifications.NotificationDetails
-import java.time.LocalDateTime
+import java.time.Instant
 import java.util.*
 
 
@@ -30,7 +30,7 @@ data class Notification(
     val isRead: Boolean = false,
 
     @Column(nullable = false)
-    val sentAt: LocalDateTime = LocalDateTime.now()
+    val sentAt: Instant = Instant.now()
 
 )
 

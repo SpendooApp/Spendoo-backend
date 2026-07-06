@@ -2,7 +2,7 @@ package org.spendoo.identity.repository
 
 import org.spendoo.identity.entity.RefreshToken
 import org.springframework.data.jpa.repository.JpaRepository
-import java.time.LocalDateTime
+import java.time.Instant
 import java.util.*
 
 interface RefreshTokenRepository : JpaRepository<RefreshToken, Long> {
@@ -10,5 +10,5 @@ interface RefreshTokenRepository : JpaRepository<RefreshToken, Long> {
     fun findByUserIdAndToken(userId: UUID, token: String): RefreshToken?
     fun findAllByUserId(userId: UUID): List<RefreshToken>
     fun findAllByDeviceToken(deviceToken: String): List<RefreshToken>
-    fun deleteAllByExpiryDateBefore(date: LocalDateTime)
+    fun deleteAllByExpiryDateBefore(date: Instant)
 }

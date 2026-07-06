@@ -7,7 +7,7 @@ import jakarta.validation.constraints.Size
 import org.spendoo.transactions.entity.Category
 import org.spendoo.transactions.entity.Transaction
 import java.math.BigDecimal
-import java.time.LocalDateTime
+import java.time.Instant
 import java.util.*
 
 data class TransactionUpdateRequest(
@@ -16,7 +16,7 @@ data class TransactionUpdateRequest(
     val title: String,
 
     @field:PastOrPresent(message = "Date cannot be in the future")
-    val transactionDate: LocalDateTime,
+    val transactionDate: Instant,
 
     @field:Size(max = 500, message = "Note cannot exceed 500 characters")
     val note: String?,

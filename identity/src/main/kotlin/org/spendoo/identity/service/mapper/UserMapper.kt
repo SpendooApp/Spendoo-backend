@@ -7,7 +7,7 @@ import org.spendoo.identity.api.dto.response.ProfileResponse
 import org.spendoo.identity.entity.Gender
 import org.spendoo.identity.entity.PlanCode
 import org.spendoo.identity.entity.User
-import java.time.LocalDateTime
+import java.time.Instant
 import java.util.*
 import org.spendoo.events.identity.utils.Gender as EventGender
 
@@ -19,7 +19,7 @@ fun RegisterRequest.toEntity(hashedPassword: String, id: UUID = UUID.randomUUID(
         passwordHash = hashedPassword,
         gender = this.gender,
         birthDate = this.birthDate,
-        createdAt = LocalDateTime.now(),
+        createdAt = Instant.now(),
         emailVerifications = emptyList(),
         refreshTokens = emptyList(),
         isVerified = false

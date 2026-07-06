@@ -19,7 +19,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.data.domain.PageRequest
 import org.springframework.test.context.ActiveProfiles
 import java.time.LocalDate
-import java.time.LocalDateTime
+import java.time.Instant
 
 @SpringBootTest(classes = [IdentityTestApplication::class])
 @ActiveProfiles("test")
@@ -185,7 +185,7 @@ class FollowServiceIntegrationTest {
                 gender = Gender.FEMALE,
                 birthDate = LocalDate.of(1998, 1, 1),
                 isVerified = true,
-                createdAt = LocalDateTime.now()
+                createdAt = Instant.now()
             )
         )
     }
@@ -196,7 +196,7 @@ class FollowServiceIntegrationTest {
                 follower = follower,
                 followee = followee,
                 status = status,
-                createdAt = LocalDateTime.now()
+                createdAt = Instant.now()
             )
         )
     }

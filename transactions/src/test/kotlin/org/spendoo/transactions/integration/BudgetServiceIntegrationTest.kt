@@ -18,7 +18,8 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ActiveProfiles
 import java.math.BigDecimal
-import java.time.LocalDateTime
+import java.time.Instant
+import java.time.ZoneOffset
 import java.util.*
 
 @SpringBootTest(classes = [TransactionsTestApplication::class])
@@ -52,7 +53,7 @@ class BudgetServiceIntegrationTest {
     fun `createBudget returns saved budget if request is valid`() {
         val savedCategory = createCategory()
         val budgetCreateRequest =
-            BudgetCreateRequest(amount = 1000.0, period = 30, startDate = LocalDateTime.now().minusDays(2))
+            BudgetCreateRequest(amount = 1000.0, period = 30, startDate = Instant.now().atZone(ZoneOffset.UTC).minusDays((2).toLong()).toInstant())
 
         val createdBudget = budgetService.createBudget(budgetCreateRequest, savedCategory)
 
@@ -65,7 +66,7 @@ class BudgetServiceIntegrationTest {
     @Test
     fun `updateBudget returns new budget if no active budget exists`() {
         val savedCategory = createCategory()
-        val budgetCreateRequest = BudgetCreateRequest(amount = 300.0, period = 7, startDate = LocalDateTime.now())
+        val budgetCreateRequest = BudgetCreateRequest(amount = 300.0, period = 7, startDate = Instant.now())
 
         val updatedBudget = budgetService.updateBudget(budgetCreateRequest, savedCategory)
 
@@ -82,13 +83,13 @@ class BudgetServiceIntegrationTest {
                 amount = BigDecimal.valueOf(120.0),
                 carryOver = BigDecimal.ZERO,
                 period = 30,
-                startDate = LocalDateTime.now().minusDays(2),
-                endDate = LocalDateTime.now().plusDays(28),
+                startDate = Instant.now().atZone(ZoneOffset.UTC).minusDays((2).toLong()).toInstant(),
+                endDate = Instant.now().atZone(ZoneOffset.UTC).plusDays((28).toLong()).toInstant(),
                 isActive = true,
                 category = savedCategory
             )
         )
-        val budgetCreateRequest = BudgetCreateRequest(amount = 250.0, period = 15, startDate = LocalDateTime.now())
+        val budgetCreateRequest = BudgetCreateRequest(amount = 250.0, period = 15, startDate = Instant.now())
 
         val updatedBudget = budgetService.updateBudget(budgetCreateRequest, savedCategory)
 
@@ -115,8 +116,8 @@ class BudgetServiceIntegrationTest {
                 amount = BigDecimal.valueOf(500.0),
                 carryOver = BigDecimal.ZERO,
                 period = 30,
-                startDate = LocalDateTime.now().minusDays(40),
-                endDate = LocalDateTime.now().minusDays(10),
+                startDate = Instant.now().atZone(ZoneOffset.UTC).minusDays((40).toLong()).toInstant(),
+                endDate = Instant.now().atZone(ZoneOffset.UTC).minusDays((10).toLong()).toInstant(),
                 isActive = true,
                 category = savedCategory
             )
@@ -137,8 +138,8 @@ class BudgetServiceIntegrationTest {
                 amount = BigDecimal.valueOf(450.0),
                 carryOver = BigDecimal.ZERO,
                 period = 30,
-                startDate = LocalDateTime.now().minusDays(40),
-                endDate = LocalDateTime.now().minusDays(10),
+                startDate = Instant.now().atZone(ZoneOffset.UTC).minusDays((40).toLong()).toInstant(),
+                endDate = Instant.now().atZone(ZoneOffset.UTC).minusDays((10).toLong()).toInstant(),
                 isActive = true,
                 category = savedCategory
             )
@@ -157,8 +158,8 @@ class BudgetServiceIntegrationTest {
                 amount = BigDecimal.valueOf(350.0),
                 carryOver = BigDecimal.ZERO,
                 period = 30,
-                startDate = LocalDateTime.now().minusDays(40),
-                endDate = LocalDateTime.now().minusDays(10),
+                startDate = Instant.now().atZone(ZoneOffset.UTC).minusDays((40).toLong()).toInstant(),
+                endDate = Instant.now().atZone(ZoneOffset.UTC).minusDays((10).toLong()).toInstant(),
                 isActive = true,
                 category = savedCategory
             )
@@ -191,7 +192,7 @@ class BudgetServiceIntegrationTest {
                 title = "Target expense A",
                 amount = BigDecimal.valueOf(-120.0),
                 note = null,
-                transactionDate = LocalDateTime.now(),
+                transactionDate = Instant.now(),
                 category = targetCategory
             )
         )
@@ -201,7 +202,7 @@ class BudgetServiceIntegrationTest {
                 title = "Target expense B",
                 amount = BigDecimal.valueOf(-30.0),
                 note = null,
-                transactionDate = LocalDateTime.now(),
+                transactionDate = Instant.now(),
                 category = targetCategory
             )
         )
@@ -211,7 +212,7 @@ class BudgetServiceIntegrationTest {
                 title = "Target income ignored",
                 amount = BigDecimal.valueOf(999.0),
                 note = null,
-                transactionDate = LocalDateTime.now(),
+                transactionDate = Instant.now(),
                 category = targetCategory
             )
         )
@@ -221,7 +222,7 @@ class BudgetServiceIntegrationTest {
                 title = "Other category ignored",
                 amount = BigDecimal.valueOf(-400.0),
                 note = null,
-                transactionDate = LocalDateTime.now(),
+                transactionDate = Instant.now(),
                 category = anotherCategory
             )
         )
@@ -231,7 +232,7 @@ class BudgetServiceIntegrationTest {
                 title = "Other user ignored",
                 amount = BigDecimal.valueOf(-700.0),
                 note = null,
-                transactionDate = LocalDateTime.now(),
+                transactionDate = Instant.now(),
                 category = otherUserCategory
             )
         )
@@ -252,7 +253,7 @@ class BudgetServiceIntegrationTest {
                 title = "Other category expense",
                 amount = BigDecimal.valueOf(-80.0),
                 note = null,
-                transactionDate = LocalDateTime.now(),
+                transactionDate = Instant.now(),
                 category = anotherCategory
             )
         )
@@ -270,8 +271,8 @@ class BudgetServiceIntegrationTest {
                 amount = BigDecimal.valueOf(200.0),
                 carryOver = BigDecimal.ZERO,
                 period = 30,
-                startDate = LocalDateTime.now().minusDays(3),
-                endDate = LocalDateTime.now().plusDays(27),
+                startDate = Instant.now().atZone(ZoneOffset.UTC).minusDays((3).toLong()).toInstant(),
+                endDate = Instant.now().atZone(ZoneOffset.UTC).plusDays((27).toLong()).toInstant(),
                 isActive = true,
                 category = savedCategory
             )

@@ -12,7 +12,8 @@ import org.springframework.http.*
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
 import java.time.Duration
-import java.time.LocalDateTime
+import java.time.Instant
+import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.util.*
 
@@ -27,8 +28,8 @@ class StatisticsController(
     fun getStatistics(
         @AuthenticationPrincipal userId: UUID,
         @RequestParam granularity: Granularity,
-        @RequestParam("start_date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) startDate: LocalDateTime,
-        @RequestParam("end_date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) endDate: LocalDateTime
+        @RequestParam("start_date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) startDate: Instant,
+        @RequestParam("end_date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) endDate: Instant
     ): ResponseEntity<CombinedStatsResponse> {
         responseEntityBodyBuilder(userId, granularity)?.let { return it.build() }
         val stats = statisticsService.getStatistics(userId, granularity, startDate, endDate)
@@ -38,18 +39,18 @@ class StatisticsController(
     @GetMapping("/pdf")
     fun getStatisticsPdf(
         @AuthenticationPrincipal userId: UUID,
-        @RequestParam("start_date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) startDate: LocalDateTime,
-        @RequestParam("end_date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) endDate: LocalDateTime,
+        @RequestParam("start_date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) startDate: Instant,
+        @RequestParam("end_date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) endDate: Instant,
         @RequestParam(defaultValue = "FULL") reportDataType: ReportDataType,
         @RequestHeader(name = "X-App-Theme", defaultValue = "LIGHT") theme: Theme,
         @RequestHeader(name = "Accept-Language", defaultValue = "en") lang: String
     ): ResponseEntity<ByteArray> {
         responseEntityBodyBuilder(userId, timeRangeToGranularity(startDate, endDate))?.let { return it.build() }
         val pdfBytes = statisticsService.getStatisticsPdf(userId, startDate, endDate, reportDataType, theme, lang)
-        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm")
-        val timestamp = LocalDateTime.now().format(formatter)
-        val startStr = startDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-        val endStr = endDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm").withZone(ZoneOffset.UTC)
+        val timestamp = formatter.format(Instant.now())
+        val startStr = DateTimeFormatter.ofPattern("yyyy-MM-dd").withZone(ZoneOffset.UTC).format(startDate)
+        val endStr = DateTimeFormatter.ofPattern("yyyy-MM-dd").withZone(ZoneOffset.UTC).format(endDate)
         val filename = "statistics_report_${reportDataType.name}_${startStr}_to_${endStr}_$timestamp.pdf"
 
         return ResponseEntity.ok()
@@ -63,8 +64,8 @@ class StatisticsController(
         @AuthenticationPrincipal userId: UUID,
         @PathVariable targetUserId: UUID,
         @RequestParam granularity: Granularity,
-        @RequestParam("start_date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) startDate: LocalDateTime,
-        @RequestParam("end_date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) endDate: LocalDateTime
+        @RequestParam("start_date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) startDate: Instant,
+        @RequestParam("end_date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) endDate: Instant
     ): ResponseEntity<CombinedStatsResponse> {
         responseEntityBodyBuilder(targetUserId, granularity)?.let { return it.build() }
         val stats = statisticsService.getUserStatistics(userId, targetUserId, granularity, startDate, endDate)
@@ -75,8 +76,8 @@ class StatisticsController(
     fun getUserStatisticsPdf(
         @AuthenticationPrincipal userId: UUID,
         @PathVariable targetUserId: UUID,
-        @RequestParam("start_date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) startDate: LocalDateTime,
-        @RequestParam("end_date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) endDate: LocalDateTime,
+        @RequestParam("start_date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) startDate: Instant,
+        @RequestParam("end_date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) endDate: Instant,
         @RequestParam(defaultValue = "FULL") reportDataType: ReportDataType,
         @RequestHeader(name = "X-App-Theme", defaultValue = "LIGHT") theme: Theme,
         @RequestHeader(name = "Accept-Language", defaultValue = "en") lang: String
@@ -91,10 +92,10 @@ class StatisticsController(
             theme,
             lang
         )
-        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm")
-        val timestamp = LocalDateTime.now().format(formatter)
-        val startStr = startDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-        val endStr = endDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm").withZone(ZoneOffset.UTC)
+        val timestamp = formatter.format(Instant.now())
+        val startStr = DateTimeFormatter.ofPattern("yyyy-MM-dd").withZone(ZoneOffset.UTC).format(startDate)
+        val endStr = DateTimeFormatter.ofPattern("yyyy-MM-dd").withZone(ZoneOffset.UTC).format(endDate)
         val filename = "statistics_report_${reportDataType.name}_${startStr}_to_${endStr}_$timestamp.pdf"
 
         return ResponseEntity.ok()
@@ -142,7 +143,7 @@ class StatisticsController(
         }
     }
 
-    private fun timeRangeToGranularity(startDate: LocalDateTime, endDate: LocalDateTime): Granularity {
+    private fun timeRangeToGranularity(startDate: Instant, endDate: Instant): Granularity {
         val duration = Duration.between(startDate, endDate)
         return when {
             duration.toDays() <= 7 -> Granularity.DAY

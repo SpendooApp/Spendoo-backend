@@ -2,7 +2,7 @@ package org.spendoo.transactions.entity
 
 import jakarta.persistence.*
 import java.math.BigDecimal
-import java.time.LocalDateTime
+import java.time.Instant
 import java.util.*
 
 @Entity
@@ -26,7 +26,7 @@ data class Transaction(
     val note: String?,
 
     @Column(nullable = false)
-    val transactionDate: LocalDateTime,
+    val transactionDate: Instant,
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(nullable = true)

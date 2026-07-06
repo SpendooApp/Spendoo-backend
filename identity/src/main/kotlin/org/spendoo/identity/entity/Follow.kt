@@ -1,7 +1,7 @@
 package org.spendoo.identity.entity
 
 import jakarta.persistence.*
-import java.time.LocalDateTime
+import java.time.Instant
 import java.util.UUID
 
 @Entity
@@ -25,7 +25,7 @@ data class Follow(
     val status: FollowStatus,
 
     @Column(nullable = false, updatable = false)
-    val createdAt: LocalDateTime,
+    val createdAt: Instant,
 
 
     @ManyToOne(fetch = FetchType.LAZY)

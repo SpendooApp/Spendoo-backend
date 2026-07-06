@@ -3,7 +3,7 @@ package org.spendoo.transactions.service.model
 import org.spendoo.transactions.entity.CategoryIcon
 import org.spendoo.transactions.entity.LeftOverOptions
 import java.math.BigDecimal
-import java.time.LocalDateTime
+import java.time.Instant
 import java.util.*
 
 class CategoryParams(
@@ -25,9 +25,9 @@ class CategoryParams(
 
     val period: Int?,
 
-    val startDate: LocalDateTime?,
+    val startDate: Instant?,
 
-    val endDate: LocalDateTime?,
+    val endDate: Instant?,
 
     val spentAmount: BigDecimal?
 )

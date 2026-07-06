@@ -1,8 +1,9 @@
 package org.spendoo.identity.entity
 
 import jakarta.persistence.*
-import java.time.LocalDateTime
-import java.util.UUID
+import java.time.Instant
+import java.time.temporal.ChronoUnit
+import java.util.*
 
 @Entity
 @Table(name = "email_verification", schema = "identity")
@@ -15,7 +16,7 @@ data class EmailVerification(
     val otp: String,
 
     @Column(nullable = false)
-    val sentAt: LocalDateTime = LocalDateTime.now(),
+    val sentAt: Instant = Instant.now(),
 
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -23,6 +24,6 @@ data class EmailVerification(
     val user: User
 ) {
     fun isExpired(): Boolean {
-        return sentAt.plusMinutes(15).isBefore(LocalDateTime.now())
+        return sentAt.plus(15, ChronoUnit.MINUTES).isBefore(Instant.now())
     }
 }

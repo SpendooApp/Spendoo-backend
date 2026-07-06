@@ -6,11 +6,7 @@ import org.junit.jupiter.api.assertThrows
 import org.spendoo.transactions.TransactionsTestApplication
 import org.spendoo.transactions.api.dto.request.PaymentRequest
 import org.spendoo.transactions.api.dto.request.alignNextDueDate
-import org.spendoo.transactions.entity.Category
-import org.spendoo.transactions.entity.CategoryIcon
-import org.spendoo.transactions.entity.LeftOverOptions
-import org.spendoo.transactions.entity.ReminderUnit
-import org.spendoo.transactions.entity.ScheduledPayment
+import org.spendoo.transactions.entity.*
 import org.spendoo.transactions.repository.CategoryRepository
 import org.spendoo.transactions.repository.ScheduledPaymentRepository
 import org.spendoo.transactions.repository.TransactionRepository
@@ -20,7 +16,8 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.data.domain.PageRequest
 import org.springframework.test.context.ActiveProfiles
 import java.math.BigDecimal
-import java.time.LocalDateTime
+import java.time.Instant
+import java.time.ZoneOffset
 import java.time.temporal.ChronoUnit
 import java.util.*
 
@@ -61,7 +58,7 @@ class ScheduledPaymentServiceIntegrationTest {
             amount = BigDecimal.valueOf(250.0),
             categoryId = existingCategory.id,
             frequency = 30,
-            startDate = LocalDateTime.now(),
+            startDate = Instant.now(),
             reminderPeriod = 1,
             reminderUnit = ReminderUnit.DAY
         )
@@ -76,7 +73,7 @@ class ScheduledPaymentServiceIntegrationTest {
 
     @Test
     fun `updatePayment updates fields and shifts dates if startDate changed`() {
-        val oldStartDate = LocalDateTime.now().truncatedTo(ChronoUnit.MILLIS).minusDays(5)
+        val oldStartDate = Instant.now().truncatedTo(ChronoUnit.MILLIS).atZone(ZoneOffset.UTC).minusDays((5).toLong()).toInstant()
         val existingPayment = createScheduledPayment(
             title = "Old Sub",
             amount = BigDecimal.valueOf(100.0),
@@ -85,7 +82,7 @@ class ScheduledPaymentServiceIntegrationTest {
             isNotified = true
         )
 
-        val newStartDate = LocalDateTime.now().truncatedTo(ChronoUnit.MILLIS)
+        val newStartDate = Instant.now().truncatedTo(ChronoUnit.MILLIS)
         val request = PaymentRequest(
             title = "New Sub",
             amount = BigDecimal.valueOf(150.0),
@@ -103,7 +100,7 @@ class ScheduledPaymentServiceIntegrationTest {
         assertThat(updatedPayment.amount.compareTo(BigDecimal.valueOf(150.0))).isEqualTo(0)
 
         val expectedNextDueDate = request.frequency.alignNextDueDate(request.startDate)
-        val expectedReminderDate = expectedNextDueDate.minusDays(2)
+        val expectedReminderDate = expectedNextDueDate.atZone(ZoneOffset.UTC).minusDays((2).toLong()).toInstant()
 
         assertThat(updatedPayment.nextDueDate).isEqualTo(expectedNextDueDate)
         assertThat(updatedPayment.nextReminderDate).isEqualTo(expectedReminderDate)
@@ -113,11 +110,11 @@ class ScheduledPaymentServiceIntegrationTest {
 
     @Test
     fun `payScheduledItem creates expense transaction and shifts payment cycle`() {
-        val oldNextDueDate = LocalDateTime.now().truncatedTo(ChronoUnit.MILLIS).plusDays(2)
+        val oldNextDueDate = Instant.now().truncatedTo(ChronoUnit.MILLIS).atZone(ZoneOffset.UTC).plusDays((2).toLong()).toInstant()
         val existingPayment = createScheduledPayment(
             title = "Gym Membership",
             amount = BigDecimal.valueOf(500.0),
-            startDate = LocalDateTime.now().truncatedTo(ChronoUnit.MILLIS).minusMonths(1),
+            startDate = Instant.now().truncatedTo(ChronoUnit.MILLIS).atZone(ZoneOffset.UTC).minusMonths((1).toLong()).toInstant(),
             nextDueDate = oldNextDueDate,
             frequency = 30,
             isNotified = true
@@ -129,8 +126,8 @@ class ScheduledPaymentServiceIntegrationTest {
 
         assertThat(updatedPayment.startDate).isEqualTo(oldNextDueDate)
 
-        val expectedNewDueDate = oldNextDueDate.plusDays(30)
-        val expectedNewReminderDate = expectedNewDueDate.minusDays(1)
+        val expectedNewDueDate = oldNextDueDate.atZone(ZoneOffset.UTC).plusDays((30).toLong()).toInstant()
+        val expectedNewReminderDate = expectedNewDueDate.atZone(ZoneOffset.UTC).minusDays((1).toLong()).toInstant()
 
         assertThat(updatedPayment.nextDueDate).isEqualTo(expectedNewDueDate)
         assertThat(updatedPayment.nextReminderDate).isEqualTo(expectedNewReminderDate)
@@ -146,11 +143,11 @@ class ScheduledPaymentServiceIntegrationTest {
 
     @Test
     fun `skipPayment shifts payment cycle without creating expense transaction`() {
-        val oldNextDueDate = LocalDateTime.now().truncatedTo(ChronoUnit.MILLIS).plusDays(5)
+        val oldNextDueDate = Instant.now().truncatedTo(ChronoUnit.MILLIS).atZone(ZoneOffset.UTC).plusDays((5).toLong()).toInstant()
         val existingPayment = createScheduledPayment(
             title = "Netflix",
             amount = BigDecimal.valueOf(150.0),
-            startDate = LocalDateTime.now().truncatedTo(ChronoUnit.MILLIS).minusMonths(1),
+            startDate = Instant.now().truncatedTo(ChronoUnit.MILLIS).atZone(ZoneOffset.UTC).minusMonths((1).toLong()).toInstant(),
             nextDueDate = oldNextDueDate,
             frequency = 30,
             isNotified = true
@@ -161,8 +158,8 @@ class ScheduledPaymentServiceIntegrationTest {
         val updatedPayment = paymentRepository.findById(existingPayment.id).orElseThrow()
         assertThat(updatedPayment.startDate).isEqualTo(oldNextDueDate)
 
-        val expectedNewDueDate = oldNextDueDate.plusDays(30)
-        val expectedNewReminderDate = expectedNewDueDate.minusDays(1)
+        val expectedNewDueDate = oldNextDueDate.atZone(ZoneOffset.UTC).plusDays((30).toLong()).toInstant()
+        val expectedNewReminderDate = expectedNewDueDate.atZone(ZoneOffset.UTC).minusDays((1).toLong()).toInstant()
 
         assertThat(updatedPayment.nextDueDate).isEqualTo(expectedNewDueDate)
         assertThat(updatedPayment.nextReminderDate).isEqualTo(expectedNewReminderDate)
@@ -202,7 +199,7 @@ class ScheduledPaymentServiceIntegrationTest {
             scheduledPaymentService.updatePayment(
                 hackerUserId,
                 existingPayment.id,
-                PaymentRequest("Hacked", BigDecimal.ZERO, existingCategory.id, LocalDateTime.now(), 7, 1, ReminderUnit.DAY)
+                PaymentRequest("Hacked", BigDecimal.ZERO, existingCategory.id, Instant.now(), 7, 1, ReminderUnit.DAY)
             )
         }
 
@@ -226,9 +223,9 @@ class ScheduledPaymentServiceIntegrationTest {
     private fun createScheduledPayment(
         title: String,
         amount: BigDecimal = BigDecimal.valueOf(100.0),
-        startDate: LocalDateTime = LocalDateTime.now().truncatedTo(ChronoUnit.MILLIS),
-        nextDueDate: LocalDateTime = LocalDateTime.now().truncatedTo(ChronoUnit.MILLIS).plusDays(30),
-        nextReminderDate: LocalDateTime = LocalDateTime.now().truncatedTo(ChronoUnit.MILLIS).plusDays(29),
+        startDate: Instant = Instant.now().truncatedTo(ChronoUnit.MILLIS),
+        nextDueDate: Instant = Instant.now().truncatedTo(ChronoUnit.MILLIS).atZone(ZoneOffset.UTC).plusDays((30).toLong()).toInstant(),
+        nextReminderDate: Instant = Instant.now().truncatedTo(ChronoUnit.MILLIS).atZone(ZoneOffset.UTC).plusDays((29).toLong()).toInstant(),
         frequency: Int = 30,
         isNotified: Boolean = false
     ): ScheduledPayment {

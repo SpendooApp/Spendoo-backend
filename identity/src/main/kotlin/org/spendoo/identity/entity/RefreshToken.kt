@@ -1,7 +1,7 @@
 package org.spendoo.identity.entity
 
 import jakarta.persistence.*
-import java.time.LocalDateTime
+import java.time.Instant
 
 @Entity
 @Table(name = "refresh_token", schema = "identity")
@@ -14,7 +14,7 @@ data class RefreshToken(
     val token: String,
 
     @Column(nullable = false)
-    val expiryDate: LocalDateTime,
+    val expiryDate: Instant,
 
     @Column(nullable = true)
     val deviceToken: String? = null,

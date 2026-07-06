@@ -12,7 +12,7 @@ import org.springframework.data.domain.PageRequest
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
-import java.time.LocalDateTime
+import java.time.Instant
 
 @Component
 class ScheduledPaymentJob (
@@ -27,12 +27,12 @@ class ScheduledPaymentJob (
     @Scheduled(cron = "0 0 * * * *")
     @Transactional
     fun processScheduledTasks(){
-        val now = LocalDateTime.now()
+        val now = Instant.now()
         processReminders(now)
         processAutoPayments(now)
     }
 
-    private fun processReminders(now: LocalDateTime) {
+    private fun processReminders(now: Instant) {
         val batchRequest = PageRequest.of(0, BATCH_SIZE)
 
         while (true) {
@@ -71,7 +71,7 @@ class ScheduledPaymentJob (
     }
 
 
-    private fun processAutoPayments(now: LocalDateTime) {
+    private fun processAutoPayments(now: Instant) {
         val batchRequest = PageRequest.of(0, BATCH_SIZE)
 
         while (true) {

@@ -21,7 +21,7 @@ import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.multipart.MultipartFile
-import java.time.LocalDateTime
+import java.time.Instant
 import java.util.*
 
 @RestController
@@ -79,8 +79,8 @@ class TransactionController(
 
     @GetMapping("/range")
     fun getTransactionsByDateRange(
-        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) startDate: LocalDateTime,
-        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) endDate: LocalDateTime,
+        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) startDate: Instant,
+        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) endDate: Instant,
         @AuthenticationPrincipal userId: UUID,
         @ParameterObject pageable: Pageable
     ): ResponseEntity<Page<TransactionResponse>> {

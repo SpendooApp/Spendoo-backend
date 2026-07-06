@@ -26,7 +26,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ActiveProfiles
 import java.math.BigDecimal
-import java.time.LocalDateTime
+import java.time.ZoneOffset
 import java.util.*
 
 @SpringBootTest(classes = [StatisticsTestApplication::class])
@@ -73,8 +73,8 @@ class StatisticsServiceIntegrationTest {
     @Test
     fun `getStatistics calls AI service combined endpoint`() {
         val granularity = Granularity.MONTH
-        val startDate = LocalDateTime.of(2026, 6, 1, 0, 0)
-        val endDate = LocalDateTime.of(2026, 7, 1, 0, 0)
+        val startDate = java.time.LocalDateTime.of(2026, 6, 1, 0, 0).atZone(ZoneOffset.UTC).toInstant()
+        val endDate = java.time.LocalDateTime.of(2026, 7, 1, 0, 0).atZone(ZoneOffset.UTC).toInstant()
 
         val mockResponse = CombinedStatsResponse(
             financialStats = FinancialStatsResponse(emptyList(), 0, BigDecimal.ZERO, false),
@@ -97,7 +97,7 @@ class StatisticsServiceIntegrationTest {
 
     @Test
     fun `getStatisticsPdf returns valid pdf bytes`() {
-        val referenceDate = LocalDateTime.of(2026, 6, 11, 12, 0, 0)
+        val referenceDate = java.time.LocalDateTime.of(2026, 6, 11, 12, 0, 0).atZone(ZoneOffset.UTC).toInstant()
 
         every {
             apiClient.call(Map::class.java, any())
@@ -110,14 +110,14 @@ class StatisticsServiceIntegrationTest {
                 title = "Dinner",
                 amount = BigDecimal("-35.00"),
                 note = "snack",
-                transactionDate = referenceDate.minusDays(2),
+                transactionDate = referenceDate.atZone(ZoneOffset.UTC).minusDays((2).toLong()).toInstant(),
                 category = foodCategory
             )
         )
 
         val pdfBytes = statisticsService.getStatisticsPdf(
             userId = userId,
-            startDate = referenceDate.minusDays(10),
+            startDate = referenceDate.atZone(ZoneOffset.UTC).minusDays((10).toLong()).toInstant(),
             endDate = referenceDate,
             reportDataType = ReportDataType.FULL,
             theme = Theme.LIGHT,
