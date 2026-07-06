@@ -15,7 +15,7 @@ import org.springframework.data.domain.PageRequest
 import org.springframework.test.context.ActiveProfiles
 import java.math.BigDecimal
 import java.time.LocalDate
-import java.time.LocalDateTime
+import java.time.Instant
 import java.util.*
 
 @SpringBootTest(classes = [SavingGoalsTestApplication::class])
@@ -239,7 +239,7 @@ class AchievementServiceIntegrationTest {
                 userId = userId,
                 goalName = goalName,
                 targetAmount = targetAmount,
-                deadline = LocalDateTime.now().plusMonths(3),
+                deadline = Instant.now().atZone(java.time.ZoneOffset.UTC).plusMonths(3).toInstant(),
                 goalIcon = GoalIcon.MOBILE,
                 priority = priority,
                 isCompleted = false

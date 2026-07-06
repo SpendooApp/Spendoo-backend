@@ -6,7 +6,7 @@ import jakarta.validation.constraints.Positive
 import org.spendoo.savingGoals.entity.GoalIcon
 import org.spendoo.savingGoals.entity.SavingGoal
 import java.math.BigDecimal
-import java.time.LocalDateTime
+import java.time.Instant
 import java.util.*
 
 data class GoalCreateRequest(
@@ -17,7 +17,7 @@ data class GoalCreateRequest(
     val targetAmount: BigDecimal,
 
     @field:Future(message = "Deadline must be a future date")
-    val deadline: LocalDateTime,
+    val deadline: Instant,
 
     val goalIcon: GoalIcon,
 

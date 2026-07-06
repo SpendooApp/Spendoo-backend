@@ -3,17 +3,20 @@ package org.spendoo.statistics.integration
 import io.mockk.every
 import io.mockk.mockk
 import org.junit.jupiter.api.Test
+import org.spendoo.client.ApiClient
 import org.spendoo.statistics.api.controller.StatisticsController
-import org.spendoo.statistics.api.dto.response.*
+import org.spendoo.statistics.api.dto.response.BudgetStatusResponse
+import org.spendoo.statistics.api.dto.response.CombinedStatsResponse
+import org.spendoo.statistics.api.dto.response.FinancialStatsResponse
+import org.spendoo.statistics.api.dto.response.TopCategoriesResponse
 import org.spendoo.statistics.model.Granularity
 import org.spendoo.statistics.service.StatisticsService
+import org.spendoo.transactions.entity.PlanCode
 import org.springframework.http.HttpStatus
 import java.math.BigDecimal
-import java.time.LocalDateTime
+import java.time.Instant
+import java.time.ZoneOffset
 import java.util.*
-
-import org.spendoo.client.ApiClient
-import org.spendoo.transactions.entity.PlanCode
 
 class StatisticsControllerIntegrationTest {
 
@@ -43,8 +46,8 @@ class StatisticsControllerIntegrationTest {
         val response = controller.getStatistics(
             userId = userId,
             granularity = Granularity.MONTH,
-            startDate = LocalDateTime.now(),
-            endDate = LocalDateTime.now().plusDays(1)
+            startDate = Instant.now(),
+            endDate = Instant.now().atZone(ZoneOffset.UTC).plusDays((1).toLong()).toInstant()
         )
         
         org.junit.jupiter.api.Assertions.assertEquals(HttpStatus.OK, response.statusCode)

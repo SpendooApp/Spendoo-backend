@@ -2,7 +2,7 @@ package org.spendoo.savingGoals.entity
 
 import jakarta.persistence.*
 import java.math.BigDecimal
-import java.time.LocalDateTime
+import java.time.Instant
 import java.util.*
 
 @Entity
@@ -27,7 +27,7 @@ data class SavingGoal(
     val goalIcon: GoalIcon,
 
     @Column(nullable = false)
-    val deadline: LocalDateTime,
+    val deadline: Instant,
 
     @Column(nullable = false)
     val targetAmount: BigDecimal,

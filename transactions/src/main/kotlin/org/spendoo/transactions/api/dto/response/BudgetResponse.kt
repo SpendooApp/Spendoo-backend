@@ -3,7 +3,7 @@ package org.spendoo.transactions.api.dto.response
 import org.spendoo.transactions.entity.Budget
 import org.spendoo.transactions.service.model.CategoryParams
 import java.math.BigDecimal
-import java.time.LocalDateTime
+import java.time.Instant
 
 data class BudgetResponse(
 
@@ -15,9 +15,9 @@ data class BudgetResponse(
 
     val period: Int,
 
-    val startDate: LocalDateTime,
+    val startDate: Instant,
 
-    val endDate: LocalDateTime
+    val endDate: Instant
 )
 
 fun Budget.toBudgetResponse(spentAmount: BigDecimal = BigDecimal.ZERO): BudgetResponse {
@@ -48,7 +48,7 @@ fun CategoryParams.toBudgetResponse(spentAmount: BigDecimal?): BudgetResponse {
         spentAmount = spentAmount,
         spendingPercentage = spendingPercentage,
         period = period ?: 0,
-        startDate = startDate ?: LocalDateTime.now(),
-        endDate = endDate ?: LocalDateTime.now()
+        startDate = startDate ?: Instant.now(),
+        endDate = endDate ?: Instant.now()
     )
 }

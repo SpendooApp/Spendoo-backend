@@ -1,11 +1,6 @@
 package org.spendoo.transactions.service
 
-import org.spendoo.transactions.api.dto.request.CreateExpenseTransactionRequest
-import org.spendoo.transactions.api.dto.request.ExpenseTransactionEntryDto
-import org.spendoo.transactions.api.dto.request.PaymentRequest
-import org.spendoo.transactions.api.dto.request.alignNextDueDate
-import org.spendoo.transactions.api.dto.request.minusReminder
-import org.spendoo.transactions.api.dto.request.toEntity
+import org.spendoo.transactions.api.dto.request.*
 import org.spendoo.transactions.api.dto.response.ScheduledPaymentResponse
 import org.spendoo.transactions.api.dto.response.ScheduledPaymentsDashboardResponse
 import org.spendoo.transactions.api.dto.response.toResponse
@@ -17,8 +12,9 @@ import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
-import java.time.LocalDateTime
-import java.util.UUID
+import java.time.Instant
+import java.time.ZoneOffset
+import java.util.*
 
 @Service
 class ScheduledPaymentService (
@@ -83,14 +79,14 @@ class ScheduledPaymentService (
                     title = currentPayment.title,
                     amount = currentPayment.amount,
                     categoryId = currentPayment.category.id,
-                    transactionDate = LocalDateTime.now(),
+                    transactionDate = Instant.now(),
                     note = "Payment for ${currentPayment.title}"
                 )
             )
         )
         transactionService.createExpenseTransactions(userId, expenseRequest)
 
-        val newNextDueDate = currentPayment.nextDueDate.plusDays(currentPayment.frequency.toLong())
+        val newNextDueDate = currentPayment.nextDueDate.atZone(ZoneOffset.UTC).plusDays(currentPayment.frequency.toLong()).toInstant()
         val newReminderDate = newNextDueDate.minusReminder(currentPayment.reminderPeriod, currentPayment.reminderUnit)
 
         val nextCyclePayment = currentPayment.copy(
@@ -107,7 +103,7 @@ class ScheduledPaymentService (
     fun skipPayment(userId: UUID, paymentId: UUID){
         val currentPayment = getPaymentEntity(paymentId, userId)
 
-        val newNextDueDate = currentPayment.nextDueDate.plusDays(currentPayment.frequency.toLong())
+        val newNextDueDate = currentPayment.nextDueDate.atZone(ZoneOffset.UTC).plusDays(currentPayment.frequency.toLong()).toInstant()
         val newReminderDate = newNextDueDate.minusReminder(currentPayment.reminderPeriod, currentPayment.reminderUnit)
 
         val skippedPayment = currentPayment.copy(
@@ -135,7 +131,7 @@ class ScheduledPaymentService (
     @Transactional(readOnly = true)
     fun getDashboardSummary(userId: UUID): ScheduledPaymentsDashboardResponse {
         val totalAmount = paymentRepository.sumAmountByUserId(userId) ?: BigDecimal.ZERO
-        val upcomingCount = paymentRepository.countUpcomingByUserId(userId, LocalDateTime.now())
+        val upcomingCount = paymentRepository.countUpcomingByUserId(userId, Instant.now())
 
         return ScheduledPaymentsDashboardResponse(
             totalScheduledAmount = totalAmount,

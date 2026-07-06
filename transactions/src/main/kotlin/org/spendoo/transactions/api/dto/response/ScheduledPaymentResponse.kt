@@ -4,19 +4,19 @@ import org.spendoo.transactions.entity.CategoryIcon
 import org.spendoo.transactions.entity.ReminderUnit
 import org.spendoo.transactions.entity.ScheduledPayment
 import java.math.BigDecimal
-import java.time.LocalDateTime
+import java.time.Instant
 import java.util.UUID
 
 data class ScheduledPaymentResponse(
     val id: UUID,
     val title: String,
     val amount: BigDecimal,
-    val startDate: LocalDateTime,
+    val startDate: Instant,
     val categoryId: UUID,
     val categoryName: String,
     val categoryIcon: CategoryIcon,
-    val nextDueDate: LocalDateTime,
-    val nextReminderDate: LocalDateTime,
+    val nextDueDate: Instant,
+    val nextReminderDate: Instant,
     val frequency: Int,
     val reminderPeriod: Int,
     val reminderUnit: ReminderUnit

@@ -7,8 +7,9 @@ import org.spendoo.transactions.entity.Category
 import org.spendoo.transactions.entity.ReminderUnit
 import org.spendoo.transactions.entity.ScheduledPayment
 import java.math.BigDecimal
-import java.time.LocalDateTime
-import java.util.UUID
+import java.time.Instant
+import java.time.ZoneOffset
+import java.util.*
 
 data class PaymentRequest(
 
@@ -22,7 +23,7 @@ data class PaymentRequest(
     val categoryId: UUID,
 
     @field:NotNull
-    val startDate: LocalDateTime,
+    val startDate: Instant,
 
     @field:NotNull
     val frequency: Int,
@@ -34,22 +35,21 @@ data class PaymentRequest(
     val reminderUnit: ReminderUnit,
 )
 
-fun Int.alignNextDueDate(startDate: LocalDateTime): LocalDateTime {
-    val now = LocalDateTime.now()
+fun Int.alignNextDueDate(startDate: Instant): Instant {
+    val now = Instant.now()
     var nextDue = startDate
-
     while (nextDue.isBefore(now)) {
-        nextDue = nextDue.plusDays(this.toLong())
+        nextDue = nextDue.atZone(ZoneOffset.UTC).plusDays(this.toLong()).toInstant()
     }
     return nextDue
 }
 
-fun LocalDateTime.minusReminder(period: Int, unit: ReminderUnit): LocalDateTime {
+fun Instant.minusReminder(period: Int, unit: ReminderUnit): Instant {
     return when (unit) {
-        ReminderUnit.HOUR -> this.minusHours(period.toLong())
-        ReminderUnit.DAY -> this.minusDays(period.toLong())
-        ReminderUnit.WEEK -> this.minusWeeks(period.toLong())
-        ReminderUnit.MONTH -> this.minusMonths(period.toLong())
+        ReminderUnit.HOUR -> this.atZone(ZoneOffset.UTC).minusHours(period.toLong()).toInstant()
+        ReminderUnit.DAY -> this.atZone(ZoneOffset.UTC).minusDays(period.toLong()).toInstant()
+        ReminderUnit.WEEK -> this.atZone(ZoneOffset.UTC).minusWeeks(period.toLong()).toInstant()
+        ReminderUnit.MONTH -> this.atZone(ZoneOffset.UTC).minusMonths(period.toLong()).toInstant()
     }
 }
 

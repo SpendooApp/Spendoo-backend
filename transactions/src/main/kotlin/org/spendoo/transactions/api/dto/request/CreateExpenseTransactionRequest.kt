@@ -5,7 +5,7 @@ import jakarta.validation.constraints.*
 import org.spendoo.transactions.entity.Category
 import org.spendoo.transactions.entity.Transaction
 import java.math.BigDecimal
-import java.time.LocalDateTime
+import java.time.Instant
 import java.util.*
 
 data class CreateExpenseTransactionRequest(
@@ -27,7 +27,7 @@ data class ExpenseTransactionEntryDto(
     val categoryId: UUID,
 
     @field:PastOrPresent(message = "Date cannot be in the future")
-    val transactionDate: LocalDateTime,
+    val transactionDate: Instant,
 
     @field:Size(max = 500, message = "Note cannot exceed 500 characters")
     val note: String?,

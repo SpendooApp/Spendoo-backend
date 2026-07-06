@@ -2,7 +2,7 @@ package org.spendoo.transactions.entity
 
 import jakarta.persistence.*
 import java.math.BigDecimal
-import java.time.LocalDateTime
+import java.time.Instant
 import java.util.*
 
 @Entity
@@ -23,10 +23,10 @@ data class Budget(
     val period: Int,
 
     @Column(nullable = false)
-    val startDate: LocalDateTime,
+    val startDate: Instant,
 
     @Column(nullable = false)
-    val endDate: LocalDateTime,
+    val endDate: Instant,
 
     @Column(nullable = false)
     val isActive: Boolean,

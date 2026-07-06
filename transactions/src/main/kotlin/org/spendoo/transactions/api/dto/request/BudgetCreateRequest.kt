@@ -5,7 +5,8 @@ import jakarta.validation.constraints.PositiveOrZero
 import org.spendoo.transactions.entity.Budget
 import org.spendoo.transactions.entity.Category
 import java.math.BigDecimal
-import java.time.LocalDateTime
+import java.time.Instant
+import java.time.ZoneOffset
 
 data class BudgetCreateRequest(
 
@@ -15,12 +16,12 @@ data class BudgetCreateRequest(
     @field:Min(value = 1, message = "Period must be at least 1")
     val period: Int,
 
-    val startDate: LocalDateTime
+    val startDate: Instant
 )
 
 fun BudgetCreateRequest.toBudget(category: Category, carryOver: BigDecimal, isActive: Boolean = true): Budget {
 
-    val endDate = this.startDate.plusDays(this.period.toLong())
+    val endDate = this.startDate.atZone(ZoneOffset.UTC).plusDays(this.period.toLong()).toInstant()
     return Budget(
         category = category,
         amount = this.amount.toBigDecimal() + carryOver,

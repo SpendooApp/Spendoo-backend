@@ -3,7 +3,7 @@ package org.spendoo.transactions.api.dto.response
 import org.spendoo.transactions.entity.Transaction
 import org.spendoo.transactions.entity.TransactionType
 import java.math.BigDecimal
-import java.time.LocalDateTime
+import java.time.Instant
 import java.util.*
 
 data class TransactionResponse(
@@ -12,7 +12,7 @@ data class TransactionResponse(
     val title: String,
     val amount: BigDecimal,
     val note: String?,
-    val transactionDate: LocalDateTime,
+    val transactionDate: Instant,
     val categoryResponse: CategoryResponseWithBudget?,
     val type: TransactionType,
 )

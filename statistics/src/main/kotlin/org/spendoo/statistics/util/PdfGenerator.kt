@@ -13,7 +13,8 @@ import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import java.io.ByteArrayOutputStream
 import java.math.BigDecimal
-import java.time.LocalDateTime
+import java.time.Instant
+import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.util.*
 
@@ -21,8 +22,8 @@ object PdfGenerator {
 
     fun generateDetailedPdf(
         userId: UUID,
-        startDate: LocalDateTime,
-        endDate: LocalDateTime,
+        startDate: Instant,
+        endDate: Instant,
         reportDataType: ReportDataType,
         theme: Theme,
         lang: String,
@@ -39,8 +40,8 @@ object PdfGenerator {
         val pageColor = if (theme == Theme.DARK) "#F1F5F9" else "#1E293B"
         val fontFamily = if (lang.lowercase().startsWith("ar")) "Amiri" else "Roboto"
 
-        val formatter = DateTimeFormatter.ofPattern("MMM dd yyyy", locale)
-        val periodStr = "${startDate.format(formatter)} - ${endDate.format(formatter)}"
+        val formatter = DateTimeFormatter.ofPattern("MMM dd yyyy", locale).withZone(ZoneOffset.UTC)
+        val periodStr = "${formatter.format(startDate)} - ${formatter.format(endDate)}"
 
         val detailedReportTitle = i18nService.getMessage("detailed_report_title", locale, "Detailed Report")
         val totalEarningsLabel = i18nService.getMessage("total_earnings", locale, "Total earnings")
@@ -108,7 +109,7 @@ object PdfGenerator {
                 val amountClass = if (t.amount >= BigDecimal.ZERO) "amount-in" else "amount-out"
                 val amountFormatted = String.format("%,.2f", t.amount.abs().toDouble())
                 val categoryName = t.category?.categoryName ?: "-"
-                val dateStr = t.transactionDate.format(DateTimeFormatter.ofPattern("yyyy/MM/dd h:mm a", locale))
+                val dateStr = DateTimeFormatter.ofPattern("yyyy/MM/dd h:mm a", locale).withZone(ZoneOffset.UTC).format(t.transactionDate)
                 val noteStr = t.note ?: ""
 
                 val rowHtml = if (lang.lowercase().startsWith("ar")) {

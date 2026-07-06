@@ -34,7 +34,9 @@ class ApiClient(
     fun <T : Any> call(responseType: Class<T>, configure: ApiRequest.() -> Unit): T? {
         val request = ApiRequest().apply(configure)
         val targetPath = if (request.callAIService) {
-            "$aiBaseUrl${request.path}"
+            val base = if (aiBaseUrl.endsWith("/")) aiBaseUrl else "$aiBaseUrl/"
+            val path = if (request.path.startsWith("/")) request.path.substring(1) else request.path
+            "$base$path"
         } else {
             request.path
         }

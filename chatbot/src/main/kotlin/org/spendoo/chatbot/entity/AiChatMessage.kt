@@ -1,7 +1,7 @@
 package org.spendoo.chatbot.entity
 
 import jakarta.persistence.*
-import java.time.LocalDateTime
+import java.time.Instant
 import java.util.UUID
 
 @Entity
@@ -23,5 +23,5 @@ data class AiChatMessage(
     val content: String,
 
     @Column(nullable = false)
-    val timestamp: LocalDateTime = LocalDateTime.now()
+    val timestamp: Instant = Instant.now()
 )

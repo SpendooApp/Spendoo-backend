@@ -2,31 +2,24 @@ package org.spendoo.identity.service
 
 import jakarta.persistence.EntityNotFoundException
 import jakarta.transaction.Transactional
+import org.spendoo.events.identity.UserLoggedInEvent
 import org.spendoo.events.publisher.SpendooEventPublisher
 import org.spendoo.identity.api.dto.request.*
 import org.spendoo.identity.api.dto.response.AuthResponse
-import org.spendoo.identity.entity.EmailVerification
-import org.spendoo.identity.entity.RefreshToken
-import org.spendoo.identity.entity.User
+import org.spendoo.identity.entity.*
 import org.spendoo.identity.exception.InvalidCredentialsException
 import org.spendoo.identity.exception.TokenExpiredException
 import org.spendoo.identity.exception.UnauthorizedException
 import org.spendoo.identity.exception.UserAlreadyExistsException
-import org.spendoo.identity.repository.EmailVerificationRepository
-import org.spendoo.identity.repository.RefreshTokenRepository
-import org.spendoo.identity.repository.UserRepository
+import org.spendoo.identity.repository.*
 import org.spendoo.identity.security.JwtUtil
 import org.spendoo.identity.service.mapper.toEntity
 import org.spendoo.identity.service.mapper.toUserCreatedEvent
-import org.spendoo.events.identity.UserLoggedInEvent
-import org.spendoo.identity.entity.PlanCode
-import org.spendoo.identity.entity.UserSubscription
-import org.spendoo.identity.repository.SubscriptionPlanRepository
-import org.spendoo.identity.repository.UserSubscriptionRepository
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
-import java.time.LocalDateTime
+import java.time.Instant
+import java.time.temporal.ChronoUnit
 import java.util.*
 
 @Service
@@ -128,7 +121,7 @@ class AuthService(
 
         refreshTokenRepository.delete(refreshTokenEntity)
 
-        if (refreshTokenEntity.expiryDate.isBefore(LocalDateTime.now())) {
+        if (refreshTokenEntity.expiryDate.isBefore(Instant.now())) {
             throw TokenExpiredException("Refresh token is expired. Please login again.")
         }
 
@@ -149,7 +142,7 @@ class AuthService(
     }
 
     private fun saveRefreshToken(user: User, token: String, deviceToken: String? = null) {
-        val expiryDate = LocalDateTime.now().plusDays(14)
+        val expiryDate = Instant.now().plus(14, ChronoUnit.DAYS)
 
         refreshTokenRepository.save(
             RefreshToken(token = token, expiryDate = expiryDate, user = user, deviceToken = deviceToken)
@@ -240,19 +233,19 @@ class AuthService(
 
     @Scheduled(cron = "0 0 0 * * *")
     fun clearExpiredRefreshTokens() {
-        val now = LocalDateTime.now()
+        val now = Instant.now()
         refreshTokenRepository.deleteAllByExpiryDateBefore(now)
     }
 
     @Scheduled(cron = "0 0 0 * * *")
     fun clearExpiredOtps() {
-        val now = LocalDateTime.now()
-        otpRepository.deleteAllBySentAtBefore(now.minusMinutes(15))
+        val now = Instant.now()
+        otpRepository.deleteAllBySentAtBefore(now.minus(15, ChronoUnit.MINUTES))
     }
 
     @Scheduled(cron = "0 0 0 * * *")
     fun clearUnverifiedUsers() {
-        val cutoffDate = LocalDateTime.now().minusDays(1)
+        val cutoffDate = Instant.now().minus(1, ChronoUnit.DAYS)
         userRepository.deleteAllByIsVerifiedIsFalseAndCreatedAtBefore(cutoffDate)
     }
 }

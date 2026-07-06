@@ -20,7 +20,8 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.data.domain.PageRequest
 import org.springframework.test.context.ActiveProfiles
 import java.math.BigDecimal
-import java.time.LocalDateTime
+import java.time.Instant
+import java.time.ZoneOffset
 import java.util.*
 
 @SpringBootTest(classes = [SavingGoalsTestApplication::class])
@@ -54,7 +55,7 @@ class SavingGoalServiceIntegrationTest {
         val request = GoalCreateRequest(
             goalName = "BMW",
             targetAmount = BigDecimal("120000000"),
-            deadline = LocalDateTime.now().plusMonths(6),
+            deadline = Instant.now().atZone(ZoneOffset.UTC).plusMonths(6).toInstant(),
             goalIcon = GoalIcon.CAR,
             priority = 4
         )
@@ -90,7 +91,7 @@ class SavingGoalServiceIntegrationTest {
     fun `updateGoal throws IllegalArgumentException if goal does not exist`() {
         val missingGoalId = UUID.randomUUID()
         val updateRequest = GoalUpdateRequest(
-            "PlayStation", BigDecimal("10600.00"), LocalDateTime.now().plusMonths(6), GoalIcon.ENTERTAINMENT, 2
+            "PlayStation", BigDecimal("10600.00"), Instant.now().atZone(ZoneOffset.UTC).plusMonths(6).toInstant(), GoalIcon.ENTERTAINMENT, 2
         )
 
         val exception = assertThrows<IllegalArgumentException> {
@@ -204,7 +205,7 @@ class SavingGoalServiceIntegrationTest {
                 userId = userId,
                 goalName = goalName,
                 targetAmount = targetAmount,
-                deadline = LocalDateTime.now().plusMonths(3),
+                deadline = Instant.now().atZone(ZoneOffset.UTC).plusMonths(3).toInstant(),
                 goalIcon = GoalIcon.MOBILE,
                 priority = 2,
                 isCompleted = false

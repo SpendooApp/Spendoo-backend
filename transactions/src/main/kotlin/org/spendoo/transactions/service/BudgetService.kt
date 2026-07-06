@@ -8,10 +8,11 @@ import org.spendoo.transactions.entity.Category
 import org.spendoo.transactions.entity.LeftOverOptions
 import org.spendoo.transactions.repository.BudgetRepository
 import org.spendoo.transactions.repository.TransactionRepository
-import org.springframework.stereotype.Service
 import org.springframework.http.HttpMethod
+import org.springframework.stereotype.Service
 import java.math.BigDecimal
-import java.time.LocalDateTime
+import java.time.Instant
+import java.time.ZoneOffset
 import java.time.temporal.ChronoUnit
 import java.util.*
 
@@ -22,7 +23,7 @@ class BudgetService(
     private val apiClient: ApiClient
 ) {
 
-    fun createZeroBudget(category: Category, startDate: LocalDateTime = LocalDateTime.now()): Budget {
+    fun createZeroBudget(category: Category, startDate: Instant = Instant.now()): Budget {
         return createBudget(
             request = BudgetCreateRequest(
                 amount = 0.0,
@@ -52,7 +53,7 @@ class BudgetService(
             carryOver = BigDecimal.ZERO,
             period = request.period,
             startDate = alignedStartDate,
-            endDate = alignedStartDate.plusDays(request.period.toLong()),
+            endDate = alignedStartDate.atZone(ZoneOffset.UTC).plusDays(request.period.toLong()).toInstant(),
             isActive = true
         )
 
@@ -109,19 +110,19 @@ class BudgetService(
     }
 
     private fun alignStartDateToActiveCycle(
-        startDate: LocalDateTime,
+        startDate: Instant,
         periodDays: Int,
-        now: LocalDateTime = LocalDateTime.now()
-    ): LocalDateTime {
+        now: Instant = Instant.now()
+    ): Instant {
         val period = periodDays.toLong()
-        val initialEndDate = startDate.plusDays(period)
+        val initialEndDate = startDate.atZone(ZoneOffset.UTC).plusDays(period).toInstant()
 
         if (initialEndDate.isAfter(now)) return startDate
 
         val overdueDays = ChronoUnit.DAYS.between(initialEndDate, now)
         val cyclesToShift = (overdueDays / period) + 1
 
-        return startDate.plusDays(cyclesToShift * period)
+        return startDate.atZone(ZoneOffset.UTC).plusDays(cyclesToShift * period).toInstant()
     }
 
     fun deactivateBudgetForCategory(categoryId: UUID) {

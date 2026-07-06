@@ -20,7 +20,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.server.ResponseStatusException
 import java.time.LocalDate
-import java.time.LocalDateTime
+import java.time.Instant
 import java.util.UUID
 
 @Service
@@ -70,7 +70,7 @@ class ChatbotService(
 
         val updatedSession = session.copy(
             summary = updatedSummary,
-            updatedAt = LocalDateTime.now()
+            updatedAt = Instant.now()
         )
         chatSessionRepository.save(updatedSession)
 
@@ -107,7 +107,7 @@ class ChatbotService(
 
         val resetSession = session.copy(
             summary = "",
-            updatedAt = LocalDateTime.now()
+            updatedAt = Instant.now()
         )
         chatSessionRepository.save(resetSession)
     }

@@ -22,7 +22,8 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.data.domain.PageRequest
 import org.springframework.test.context.ActiveProfiles
 import java.math.BigDecimal
-import java.time.LocalDateTime
+import java.time.Instant
+import java.time.ZoneOffset
 import java.util.*
 
 @SpringBootTest(classes = [TransactionsTestApplication::class])
@@ -64,7 +65,7 @@ class CategoryServiceIntegrationTest {
             categoryIcon = CategoryIcon.FOOD,
             leftOverOptions = LeftOverOptions.MOVE_TO_NEXT_PERIOD,
             priority = 3,
-            budget = BudgetCreateRequest(0.0, 30, LocalDateTime.now())
+            budget = BudgetCreateRequest(0.0, 30, Instant.now())
         )
 
         categoryService.create(categoryCreateRequest, existingUserId)
@@ -84,7 +85,7 @@ class CategoryServiceIntegrationTest {
             categoryIcon = CategoryIcon.UTILITIES,
             leftOverOptions = LeftOverOptions.RESET_TO_ORIGINAL_AMOUNT,
             priority = 2,
-            budget = BudgetCreateRequest(250.0, 30, LocalDateTime.now())
+            budget = BudgetCreateRequest(250.0, 30, Instant.now())
         )
 
         categoryService.create(categoryCreateRequest, existingUserId)
@@ -114,8 +115,8 @@ class CategoryServiceIntegrationTest {
                 amount = BigDecimal.valueOf(500.0),
                 carryOver = BigDecimal.ZERO,
                 period = 30,
-                startDate = LocalDateTime.now().minusDays(2),
-                endDate = LocalDateTime.now().plusDays(28),
+                startDate = Instant.now().atZone(ZoneOffset.UTC).minusDays((2).toLong()).toInstant(),
+                endDate = Instant.now().atZone(ZoneOffset.UTC).plusDays((28).toLong()).toInstant(),
                 isActive = true,
                 category = savedCategory
             )
@@ -130,8 +131,8 @@ class CategoryServiceIntegrationTest {
     @Test
     fun `getById returns only in-range expense spending for active budget`() {
         val savedCategory = createCategory(existingUserId, "Bills", withBudget = false)
-        val startDate = LocalDateTime.now().minusDays(5)
-        val endDate = LocalDateTime.now().plusDays(5)
+        val startDate = Instant.now().atZone(ZoneOffset.UTC).minusDays((5).toLong()).toInstant()
+        val endDate = Instant.now().atZone(ZoneOffset.UTC).plusDays((5).toLong()).toInstant()
         budgetRepository.save(
             Budget(
                 amount = BigDecimal.valueOf(1000.0),
@@ -149,7 +150,7 @@ class CategoryServiceIntegrationTest {
                 title = "In range expense",
                 amount = BigDecimal.valueOf(-120.0),
                 note = null,
-                transactionDate = LocalDateTime.now(),
+                transactionDate = Instant.now(),
                 category = savedCategory
             )
         )
@@ -159,7 +160,7 @@ class CategoryServiceIntegrationTest {
                 title = "Out of range expense",
                 amount = BigDecimal.valueOf(-300.0),
                 note = null,
-                transactionDate = LocalDateTime.now().minusDays(10),
+                transactionDate = Instant.now().atZone(ZoneOffset.UTC).minusDays((10).toLong()).toInstant(),
                 category = savedCategory
             )
         )
@@ -169,7 +170,7 @@ class CategoryServiceIntegrationTest {
                 title = "Income ignored",
                 amount = BigDecimal.valueOf(900.0),
                 note = null,
-                transactionDate = LocalDateTime.now(),
+                transactionDate = Instant.now(),
                 category = savedCategory
             )
         )
@@ -230,7 +231,7 @@ class CategoryServiceIntegrationTest {
             categoryIcon = CategoryIcon.CAR,
             leftOverOptions = LeftOverOptions.MOVE_TO_SAVINGS,
             priority = 1,
-            budget = BudgetCreateRequest(0.0, 14, LocalDateTime.now())
+            budget = BudgetCreateRequest(0.0, 14, Instant.now())
         )
 
         categoryService.update(savedCategory.id, categoryUpdateRequest, existingUserId)
@@ -251,8 +252,8 @@ class CategoryServiceIntegrationTest {
                 amount = BigDecimal.valueOf(400.0),
                 carryOver = BigDecimal.ZERO,
                 period = 30,
-                startDate = LocalDateTime.now().minusDays(2),
-                endDate = LocalDateTime.now().plusDays(28),
+                startDate = Instant.now().atZone(ZoneOffset.UTC).minusDays((2).toLong()).toInstant(),
+                endDate = Instant.now().atZone(ZoneOffset.UTC).plusDays((28).toLong()).toInstant(),
                 isActive = true,
                 category = savedCategory
             )
@@ -262,7 +263,7 @@ class CategoryServiceIntegrationTest {
             categoryIcon = CategoryIcon.DEFAULT,
             leftOverOptions = LeftOverOptions.MOVE_TO_NEXT_PERIOD,
             priority = 2,
-            budget = BudgetCreateRequest(600.0, 30, LocalDateTime.now())
+            budget = BudgetCreateRequest(600.0, 30, Instant.now())
         )
 
         categoryService.update(savedCategory.id, categoryUpdateRequest, existingUserId)
@@ -281,7 +282,7 @@ class CategoryServiceIntegrationTest {
             categoryIcon = CategoryIcon.DEFAULT,
             leftOverOptions = LeftOverOptions.RESET_TO_ORIGINAL_AMOUNT,
             priority = 1,
-            budget = BudgetCreateRequest(100.0, 30, LocalDateTime.now())
+            budget = BudgetCreateRequest(100.0, 30, Instant.now())
         )
 
         val thrownException = assertThrows<IllegalArgumentException> {
@@ -324,8 +325,8 @@ class CategoryServiceIntegrationTest {
     @Test
     fun `getSummary returns aggregated budget spent and added income`() {
         val category = createCategory(existingUserId, "Summary Category", withBudget = false)
-        val startDate = LocalDateTime.now().minusDays(2)
-        val endDate = LocalDateTime.now().plusDays(2)
+        val startDate = Instant.now().atZone(ZoneOffset.UTC).minusDays((2).toLong()).toInstant()
+        val endDate = Instant.now().atZone(ZoneOffset.UTC).plusDays((2).toLong()).toInstant()
 
         budgetRepository.save(
             Budget(
@@ -344,7 +345,7 @@ class CategoryServiceIntegrationTest {
                 title = "Expense in range",
                 amount = BigDecimal.valueOf(-120.0),
                 note = null,
-                transactionDate = LocalDateTime.now(),
+                transactionDate = Instant.now(),
                 category = category
             )
         )
@@ -354,7 +355,7 @@ class CategoryServiceIntegrationTest {
                 title = "Added income",
                 amount = BigDecimal.valueOf(300.0),
                 note = null,
-                transactionDate = LocalDateTime.now(),
+                transactionDate = Instant.now(),
                 category = null
             )
         )
@@ -390,8 +391,8 @@ class CategoryServiceIntegrationTest {
                     amount = budgetAmount,
                     carryOver = BigDecimal.ZERO,
                     period = 30,
-                    startDate = LocalDateTime.now().minusDays(1),
-                    endDate = LocalDateTime.now().plusDays(29),
+                    startDate = Instant.now().atZone(ZoneOffset.UTC).minusDays((1).toLong()).toInstant(),
+                    endDate = Instant.now().atZone(ZoneOffset.UTC).plusDays((29).toLong()).toInstant(),
                     isActive = true,
                     category = category
                 )
@@ -412,7 +413,7 @@ class CategoryServiceIntegrationTest {
                 title = "Food Expense",
                 amount = BigDecimal.valueOf(-500.0),
                 note = null,
-                transactionDate = LocalDateTime.now(),
+                transactionDate = Instant.now(),
                 category = foodCategory
             )
         )
@@ -422,7 +423,7 @@ class CategoryServiceIntegrationTest {
                 title = "Transport Expense",
                 amount = BigDecimal.valueOf(-200.0),
                 note = null,
-                transactionDate = LocalDateTime.now(),
+                transactionDate = Instant.now(),
                 category = transportCategory
             )
         )
@@ -443,7 +444,7 @@ class CategoryServiceIntegrationTest {
                 title = "Salary",
                 amount = BigDecimal.valueOf(3000.0),
                 note = null,
-                transactionDate = LocalDateTime.now(),
+                transactionDate = Instant.now(),
                 category = null
             )
         )

@@ -13,19 +13,16 @@ import org.spendoo.identity.api.dto.request.UpdateProfileRequest
 import org.spendoo.identity.entity.Gender
 import org.spendoo.identity.entity.User
 import org.spendoo.identity.exception.UserNotFoundException
-import org.spendoo.identity.repository.EmailVerificationRepository
-import org.spendoo.identity.repository.FollowCodeRepository
-import org.spendoo.identity.repository.FollowRepository
-import org.spendoo.identity.repository.RefreshTokenRepository
-import org.spendoo.identity.repository.UserRepository
+import org.spendoo.identity.repository.*
 import org.spendoo.identity.service.UserService
 import org.spendoo.storage.service.ImageStorageService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.mock.web.MockMultipartFile
 import org.springframework.test.context.ActiveProfiles
+import java.time.Instant
 import java.time.LocalDate
-import java.time.LocalDateTime
+import java.time.ZoneOffset
 import java.util.*
 
 @SpringBootTest(classes = [IdentityTestApplication::class])
@@ -173,7 +170,7 @@ class UserServiceIntegrationTest {
                 gender = Gender.FEMALE,
                 birthDate = LocalDate.of(1996, 2, 2),
                 isVerified = true,
-                createdAt = LocalDateTime.now().minusDays(2),
+                createdAt = Instant.now().atZone(ZoneOffset.UTC).minusDays(2).toInstant(),
                 imageUrl = imageUrl
             )
         )

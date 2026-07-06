@@ -22,7 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.data.domain.PageRequest
 import org.springframework.test.context.ActiveProfiles
-import java.time.LocalDateTime
+import java.time.Instant
 import java.util.UUID
 
 @SpringBootTest(classes = [ChatbotTestApplication::class])
@@ -86,8 +86,8 @@ class ChatbotServiceIntegrationTest {
             AiChatSession(
                 userId = userId,
                 summary = "Old summary",
-                createdAt = LocalDateTime.now(),
-                updatedAt = LocalDateTime.now()
+                createdAt = Instant.now(),
+                updatedAt = Instant.now()
             )
         )
 
@@ -109,8 +109,8 @@ class ChatbotServiceIntegrationTest {
             AiChatSession(
                 userId = userId,
                 summary = "History test",
-                createdAt = LocalDateTime.now(),
-                updatedAt = LocalDateTime.now()
+                createdAt = Instant.now(),
+                updatedAt = Instant.now()
             )
         )
 
@@ -119,11 +119,11 @@ class ChatbotServiceIntegrationTest {
                 chatSession = session,
                 sender = ChatSender.USER,
                 content = "User msg",
-                timestamp = LocalDateTime.now().minusMinutes(2)
+                timestamp = Instant.now().atZone(java.time.ZoneOffset.UTC).minusMinutes(2).toInstant()
             )
         )
         chatMessageRepository.save(
-            AiChatMessage(chatSession = session, sender = ChatSender.BOT, content = "Bot reply", timestamp = LocalDateTime.now())
+            AiChatMessage(chatSession = session, sender = ChatSender.BOT, content = "Bot reply", timestamp = Instant.now())
         )
 
         val pageable = PageRequest.of(0, 10)
@@ -151,8 +151,8 @@ class ChatbotServiceIntegrationTest {
             AiChatSession(
                 userId = userId,
                 summary = "Some summary that should be cleared",
-                createdAt = LocalDateTime.now(),
-                updatedAt = LocalDateTime.now()
+                createdAt = Instant.now(),
+                updatedAt = Instant.now()
             )
         )
         chatMessageRepository.save(

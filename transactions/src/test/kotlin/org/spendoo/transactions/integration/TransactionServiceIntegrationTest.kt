@@ -12,7 +12,6 @@ import org.spendoo.transactions.repository.BudgetRepository
 import org.spendoo.transactions.repository.CategoryRepository
 import org.spendoo.transactions.repository.ScheduledPaymentRepository
 import org.spendoo.transactions.repository.TransactionRepository
-import org.spendoo.transactions.service.SmartBudgetService
 import org.spendoo.transactions.service.TransactionService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -20,7 +19,8 @@ import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.test.context.ActiveProfiles
 import java.math.BigDecimal
-import java.time.LocalDateTime
+import java.time.Instant
+import java.time.ZoneOffset
 import java.util.*
 
 @SpringBootTest(classes = [TransactionsTestApplication::class])
@@ -63,7 +63,7 @@ class TransactionServiceIntegrationTest {
                     title = "Lunch",
                     amount = BigDecimal.valueOf(50.0),
                     categoryId = existingCategory.id,
-                    transactionDate = LocalDateTime.now(),
+                    transactionDate = Instant.now(),
                     note = "work day"
                 )
             )
@@ -84,7 +84,7 @@ class TransactionServiceIntegrationTest {
                     title = "Taxi",
                     amount = BigDecimal.valueOf(30.0),
                     categoryId = UUID.randomUUID(),
-                    transactionDate = LocalDateTime.now(),
+                    transactionDate = Instant.now(),
                     note = null
                 )
             )
@@ -106,7 +106,7 @@ class TransactionServiceIntegrationTest {
                     title = "Taxi",
                     amount = BigDecimal.valueOf(30.0),
                     categoryId = existingCategory.id,
-                    transactionDate = LocalDateTime.now(),
+                    transactionDate = Instant.now(),
                     note = null
                 )
             )
@@ -126,7 +126,7 @@ class TransactionServiceIntegrationTest {
                 IncomeTransactionEntryDto(
                     title = "Salary",
                     amount = BigDecimal.valueOf(5000.0),
-                    transactionDate = LocalDateTime.now(),
+                    transactionDate = Instant.now(),
                     note = "monthly"
                 )
             )
@@ -146,7 +146,7 @@ class TransactionServiceIntegrationTest {
             createExpenseTransaction(existingUserId, existingCategory, BigDecimal.valueOf(-120.0))
         val transactionUpdateRequest = TransactionUpdateRequest(
             title = "Updated Grocery",
-            transactionDate = LocalDateTime.now(),
+            transactionDate = Instant.now(),
             note = "new note",
             amount = BigDecimal.valueOf(140.0),
             categoryId = existingCategory.id
@@ -163,7 +163,7 @@ class TransactionServiceIntegrationTest {
     fun `updateTransaction throw IllegalArgumentException if transaction does not exist`() {
         val transactionUpdateRequest = TransactionUpdateRequest(
             title = "Missing",
-            transactionDate = LocalDateTime.now(),
+            transactionDate = Instant.now(),
             note = null,
             amount = BigDecimal.valueOf(70.0),
             categoryId = existingCategory.id
@@ -181,7 +181,7 @@ class TransactionServiceIntegrationTest {
         val existingTransaction = createExpenseTransaction(existingUserId, existingCategory, BigDecimal.valueOf(-90.0))
         val transactionUpdateRequest = TransactionUpdateRequest(
             title = "Missing Category",
-            transactionDate = LocalDateTime.now(),
+            transactionDate = Instant.now(),
             note = null,
             amount = BigDecimal.valueOf(90.0),
             categoryId = null
@@ -199,7 +199,7 @@ class TransactionServiceIntegrationTest {
         val existingTransaction = createExpenseTransaction(existingUserId, existingCategory, BigDecimal.valueOf(-90.0))
         val transactionUpdateRequest = TransactionUpdateRequest(
             title = "Missing Category Id",
-            transactionDate = LocalDateTime.now(),
+            transactionDate = Instant.now(),
             note = null,
             amount = BigDecimal.valueOf(90.0),
             categoryId = UUID.randomUUID()
@@ -217,7 +217,7 @@ class TransactionServiceIntegrationTest {
         val existingTransaction = createIncomeTransaction(existingUserId, BigDecimal.valueOf(400.0))
         val transactionUpdateRequest = TransactionUpdateRequest(
             title = "Income cannot become expense",
-            transactionDate = LocalDateTime.now(),
+            transactionDate = Instant.now(),
             note = null,
             amount = BigDecimal.valueOf(400.0),
             categoryId = existingCategory.id
@@ -253,8 +253,8 @@ class TransactionServiceIntegrationTest {
 
     @Test
     fun `getTransactionsByDateRange returns matching transactions if range includes data`() {
-        val oldTransactionDate = LocalDateTime.now().minusDays(10)
-        val newTransactionDate = LocalDateTime.now().minusDays(2)
+        val oldTransactionDate = Instant.now().atZone(ZoneOffset.UTC).minusDays((10).toLong()).toInstant()
+        val newTransactionDate = Instant.now().atZone(ZoneOffset.UTC).minusDays((2).toLong()).toInstant()
         transactionRepository.save(
             Transaction(
                 userId = existingUserId,
@@ -278,8 +278,8 @@ class TransactionServiceIntegrationTest {
 
         val transactionsPage = transactionService.getTransactionsByDateRange(
             existingUserId,
-            LocalDateTime.now().minusDays(5),
-            LocalDateTime.now(),
+            Instant.now().atZone(ZoneOffset.UTC).minusDays((5).toLong()).toInstant(),
+            Instant.now(),
             PageRequest.of(0, 10)
         )
 
@@ -289,8 +289,8 @@ class TransactionServiceIntegrationTest {
 
     @Test
     fun `getTransactionsByDateRange includes start and end boundaries`() {
-        val end = LocalDateTime.of(2026, 1, 20, 10, 0, 0)
-        val start = end.minusDays(2)
+        val end = java.time.LocalDateTime.of(2026, 1, 20, 10, 0, 0).atZone(ZoneOffset.UTC).toInstant()
+        val start = end.atZone(ZoneOffset.UTC).minusDays((2).toLong()).toInstant()
         transactionRepository.save(
             Transaction(
                 userId = existingUserId,
@@ -326,7 +326,7 @@ class TransactionServiceIntegrationTest {
     @Test
     fun `getTransactionsByDateRange excludes transactions from other users`() {
         val otherUserId = UUID.randomUUID()
-        val now = LocalDateTime.now()
+        val now = Instant.now()
         transactionRepository.save(
             Transaction(
                 userId = otherUserId,
@@ -340,8 +340,8 @@ class TransactionServiceIntegrationTest {
 
         val transactionsPage = transactionService.getTransactionsByDateRange(
             existingUserId,
-            now.minusDays(1),
-            now.plusDays(1),
+            now.atZone(ZoneOffset.UTC).minusDays((1).toLong()).toInstant(),
+            now.atZone(ZoneOffset.UTC).plusDays((1).toLong()).toInstant(),
             PageRequest.of(0, 10)
         )
 
@@ -365,8 +365,8 @@ class TransactionServiceIntegrationTest {
                 amount = BigDecimal.valueOf(1000.0),
                 carryOver = BigDecimal.ZERO,
                 period = 30,
-                startDate = LocalDateTime.now().minusDays(1),
-                endDate = LocalDateTime.now().plusDays(29),
+                startDate = Instant.now().atZone(ZoneOffset.UTC).minusDays((1).toLong()).toInstant(),
+                endDate = Instant.now().atZone(ZoneOffset.UTC).plusDays((29).toLong()).toInstant(),
                 isActive = true,
                 category = existingCategory
             )
@@ -376,8 +376,8 @@ class TransactionServiceIntegrationTest {
                 amount = BigDecimal.ZERO,
                 carryOver = BigDecimal.ZERO,
                 period = 30,
-                startDate = LocalDateTime.now().minusDays(1),
-                endDate = LocalDateTime.now().plusDays(29),
+                startDate = Instant.now().atZone(ZoneOffset.UTC).minusDays((1).toLong()).toInstant(),
+                endDate = Instant.now().atZone(ZoneOffset.UTC).plusDays((29).toLong()).toInstant(),
                 isActive = true,
                 category = existingCategory
             )
@@ -400,7 +400,7 @@ class TransactionServiceIntegrationTest {
                 title = "First",
                 amount = BigDecimal.valueOf(10.0),
                 note = null,
-                transactionDate = LocalDateTime.now().minusDays(5),
+                transactionDate = Instant.now().atZone(ZoneOffset.UTC).minusDays((5).toLong()).toInstant(),
                 category = null
             )
         )
@@ -410,7 +410,7 @@ class TransactionServiceIntegrationTest {
                 title = "Second",
                 amount = BigDecimal.valueOf(20.0),
                 note = null,
-                transactionDate = LocalDateTime.now().minusDays(2),
+                transactionDate = Instant.now().atZone(ZoneOffset.UTC).minusDays((2).toLong()).toInstant(),
                 category = null
             )
         )
@@ -462,8 +462,8 @@ class TransactionServiceIntegrationTest {
                 amount = BigDecimal.valueOf(1000.0),
                 carryOver = BigDecimal.ZERO,
                 period = 30,
-                startDate = LocalDateTime.now().minusDays(1),
-                endDate = LocalDateTime.now().plusDays(29),
+                startDate = Instant.now().atZone(ZoneOffset.UTC).minusDays((1).toLong()).toInstant(),
+                endDate = Instant.now().atZone(ZoneOffset.UTC).plusDays((29).toLong()).toInstant(),
                 isActive = true,
                 category = existingCategory
             )
@@ -512,7 +512,7 @@ class TransactionServiceIntegrationTest {
                 title = "Income",
                 amount = amount,
                 note = "income note",
-                transactionDate = LocalDateTime.now(),
+                transactionDate = Instant.now(),
                 category = null
             )
         )
@@ -525,7 +525,7 @@ class TransactionServiceIntegrationTest {
                 title = "Expense",
                 amount = amount,
                 note = "expense note",
-                transactionDate = LocalDateTime.now(),
+                transactionDate = Instant.now(),
                 category = category
             )
         )

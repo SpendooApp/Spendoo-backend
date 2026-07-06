@@ -5,7 +5,7 @@ import org.hibernate.annotations.Immutable
 import org.hibernate.annotations.Subselect
 import org.hibernate.annotations.Synchronize
 import java.math.BigDecimal
-import java.time.LocalDateTime
+import java.time.Instant
 import java.util.*
 
 @Entity
@@ -44,7 +44,7 @@ data class TransactionView(
     val note: String?,
 
     @Column(nullable = false, name = "transaction_date")
-    val transactionDate: LocalDateTime,
+    val transactionDate: Instant,
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")

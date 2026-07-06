@@ -9,11 +9,7 @@ import org.junit.jupiter.api.assertThrows
 import org.spendoo.events.publisher.SpendooEventPublisher
 import org.spendoo.identity.IdentityTestApplication
 import org.spendoo.identity.api.dto.request.*
-import org.spendoo.identity.entity.EmailVerification
-import org.spendoo.identity.entity.Gender
-import org.spendoo.identity.entity.PlanCode
-import org.spendoo.identity.entity.RefreshToken
-import org.spendoo.identity.entity.User
+import org.spendoo.identity.entity.*
 import org.spendoo.identity.exception.InvalidCredentialsException
 import org.spendoo.identity.exception.TokenExpiredException
 import org.spendoo.identity.exception.UnauthorizedException
@@ -29,9 +25,10 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.test.context.ActiveProfiles
+import java.time.Instant
 import java.time.LocalDate
-import java.time.LocalDateTime
-import java.util.UUID
+import java.time.ZoneOffset
+import java.util.*
 
 @SpringBootTest(classes = [IdentityTestApplication::class])
 @ActiveProfiles("test")
@@ -148,7 +145,7 @@ class AuthServiceIntegrationTest {
         emailVerificationRepository.save(
             EmailVerification(
                 otp = "12345",
-                sentAt = LocalDateTime.now().minusMinutes(20),
+                sentAt = Instant.now().atZone(ZoneOffset.UTC).minusMinutes(20).toInstant(),
                 user = user
             )
         )
@@ -165,7 +162,7 @@ class AuthServiceIntegrationTest {
         emailVerificationRepository.save(
             EmailVerification(
                 otp = "12345",
-                sentAt = LocalDateTime.now().minusMinutes(1),
+                sentAt = Instant.now().atZone(ZoneOffset.UTC).minusMinutes(1).toInstant(),
                 user = user
             )
         )
@@ -226,7 +223,7 @@ class AuthServiceIntegrationTest {
     fun `refreshToken throw TokenExpiredException if refresh token is expired`() {
         val user = createUser(email = "expired-refresh@mail.com", isVerified = true)
         refreshTokenRepository.save(
-            RefreshToken(token = "expired-refresh-token", expiryDate = LocalDateTime.now().minusSeconds(1), user = user)
+            RefreshToken(token = "expired-refresh-token", expiryDate = Instant.now().minusSeconds(1), user = user)
         )
         val request = RefreshTokenRequest("expired-refresh-token")
 
@@ -239,7 +236,7 @@ class AuthServiceIntegrationTest {
     fun `refreshToken throw UnauthorizedException if jwt validation fails`() {
         val user = createUser(email = "invalid-jwt@mail.com", isVerified = true)
         refreshTokenRepository.save(
-            RefreshToken(token = "invalid-jwt-token", expiryDate = LocalDateTime.now().plusDays(2), user = user)
+            RefreshToken(token = "invalid-jwt-token", expiryDate = Instant.now().atZone(ZoneOffset.UTC).plusDays(2).toInstant(), user = user)
         )
         every { jwtUtil.validateRefreshToken("invalid-jwt-token") } returns false
         val request = RefreshTokenRequest("invalid-jwt-token")
@@ -253,7 +250,7 @@ class AuthServiceIntegrationTest {
     fun `refreshToken throw UnauthorizedException if refresh token does not belong to user in jwt`() {
         val user = createUser(email = "token-user-mismatch@mail.com", isVerified = true)
         refreshTokenRepository.save(
-            RefreshToken(token = "mismatch-token", expiryDate = LocalDateTime.now().plusDays(2), user = user)
+            RefreshToken(token = "mismatch-token", expiryDate = Instant.now().atZone(ZoneOffset.UTC).plusDays(2).toInstant(), user = user)
         )
         every { jwtUtil.validateRefreshToken("mismatch-token") } returns true
         every { jwtUtil.validateTokenForUser("mismatch-token", user.id) } returns false
@@ -269,7 +266,7 @@ class AuthServiceIntegrationTest {
     fun `refreshToken returns new auth response if refresh token is valid`() {
         val user = createUser(email = "refresh-success@mail.com", isVerified = true)
         refreshTokenRepository.save(
-            RefreshToken(token = "valid-refresh-token", expiryDate = LocalDateTime.now().plusDays(2), user = user)
+            RefreshToken(token = "valid-refresh-token", expiryDate = Instant.now().atZone(ZoneOffset.UTC).plusDays(2).toInstant(), user = user)
         )
         every { jwtUtil.validateRefreshToken("valid-refresh-token") } returns true
         every { jwtUtil.validateTokenForUser("valid-refresh-token", user.id) } returns true
@@ -297,7 +294,7 @@ class AuthServiceIntegrationTest {
     fun `logout returns without exception if refresh token exists for user`() {
         val user = createUser(email = "logout-success@mail.com", isVerified = true)
         refreshTokenRepository.save(
-            RefreshToken(token = "logout-refresh-token", expiryDate = LocalDateTime.now().plusDays(1), user = user)
+            RefreshToken(token = "logout-refresh-token", expiryDate = Instant.now().atZone(ZoneOffset.UTC).plusDays(1).toInstant(), user = user)
         )
         val request = RefreshTokenRequest("logout-refresh-token")
 
@@ -345,7 +342,7 @@ class AuthServiceIntegrationTest {
         emailVerificationRepository.save(
             EmailVerification(
                 otp = "12345",
-                sentAt = LocalDateTime.now().minusMinutes(20),
+                sentAt = Instant.now().atZone(ZoneOffset.UTC).minusMinutes(20).toInstant(),
                 user = user
             )
         )
@@ -362,7 +359,7 @@ class AuthServiceIntegrationTest {
         emailVerificationRepository.save(
             EmailVerification(
                 otp = "12345",
-                sentAt = LocalDateTime.now().minusMinutes(1),
+                sentAt = Instant.now().atZone(ZoneOffset.UTC).minusMinutes(1).toInstant(),
                 user = user
             )
         )
@@ -389,7 +386,7 @@ class AuthServiceIntegrationTest {
         emailVerificationRepository.save(
             EmailVerification(
                 otp = "12345",
-                sentAt = LocalDateTime.now().minusMinutes(20),
+                sentAt = Instant.now().atZone(ZoneOffset.UTC).minusMinutes(20).toInstant(),
                 user = user
             )
         )
@@ -406,7 +403,7 @@ class AuthServiceIntegrationTest {
         emailVerificationRepository.save(
             EmailVerification(
                 otp = "12345",
-                sentAt = LocalDateTime.now().minusMinutes(1),
+                sentAt = Instant.now().atZone(ZoneOffset.UTC).minusMinutes(1).toInstant(),
                 user = user
             )
         )
@@ -449,14 +446,14 @@ class AuthServiceIntegrationTest {
         refreshTokenRepository.save(
             RefreshToken(
                 token = "expired-a",
-                expiryDate = LocalDateTime.now().minusDays(1),
+                expiryDate = Instant.now().atZone(ZoneOffset.UTC).minusDays(1).toInstant(),
                 user = user
             )
         )
         refreshTokenRepository.save(
             RefreshToken(
                 token = "active-a",
-                expiryDate = LocalDateTime.now().plusDays(1),
+                expiryDate = Instant.now().atZone(ZoneOffset.UTC).plusDays(1).toInstant(),
                 user = user
             )
         )
@@ -473,7 +470,7 @@ class AuthServiceIntegrationTest {
         refreshTokenRepository.save(
             RefreshToken(
                 token = "active-only",
-                expiryDate = LocalDateTime.now().plusDays(3),
+                expiryDate = Instant.now().atZone(ZoneOffset.UTC).plusDays(3).toInstant(),
                 user = user
             )
         )
@@ -489,14 +486,14 @@ class AuthServiceIntegrationTest {
         emailVerificationRepository.save(
             EmailVerification(
                 otp = "11111",
-                sentAt = LocalDateTime.now().minusMinutes(20),
+                sentAt = Instant.now().atZone(ZoneOffset.UTC).minusMinutes(20).toInstant(),
                 user = user
             )
         )
         emailVerificationRepository.save(
             EmailVerification(
                 otp = "22222",
-                sentAt = LocalDateTime.now().minusMinutes(5),
+                sentAt = Instant.now().atZone(ZoneOffset.UTC).minusMinutes(5).toInstant(),
                 user = user
             )
         )
@@ -513,7 +510,7 @@ class AuthServiceIntegrationTest {
         emailVerificationRepository.save(
             EmailVerification(
                 otp = "33333",
-                sentAt = LocalDateTime.now().minusMinutes(5),
+                sentAt = Instant.now().atZone(ZoneOffset.UTC).minusMinutes(5).toInstant(),
                 user = user
             )
         )
@@ -525,12 +522,12 @@ class AuthServiceIntegrationTest {
 
     @Test
     fun `clearUnverifiedUsers returns by deleting stale unverified users if any exists`() {
-        createUser(email = "clear-user-old@mail.com", isVerified = false, createdAt = LocalDateTime.now().minusDays(2))
-        createUser(email = "clear-user-new@mail.com", isVerified = false, createdAt = LocalDateTime.now().minusHours(1))
+        createUser(email = "clear-user-old@mail.com", isVerified = false, createdAt = Instant.now().atZone(ZoneOffset.UTC).minusDays(2).toInstant())
+        createUser(email = "clear-user-new@mail.com", isVerified = false, createdAt = Instant.now().atZone(ZoneOffset.UTC).minusHours(1).toInstant())
         createUser(
             email = "clear-user-verified@mail.com",
             isVerified = true,
-            createdAt = LocalDateTime.now().minusDays(2)
+            createdAt = Instant.now().atZone(ZoneOffset.UTC).minusDays(2).toInstant()
         )
 
         authService.clearUnverifiedUsers()
@@ -553,7 +550,7 @@ class AuthServiceIntegrationTest {
         email: String,
         isVerified: Boolean,
         plainPassword: String = "Password@1",
-        createdAt: LocalDateTime = LocalDateTime.now().minusHours(2)
+        createdAt: Instant = Instant.now().atZone(ZoneOffset.UTC).minusHours(2).toInstant()
     ): User {
         val userToSave = User(
             fullName = "Integration User",

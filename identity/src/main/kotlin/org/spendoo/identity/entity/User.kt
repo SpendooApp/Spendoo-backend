@@ -2,7 +2,7 @@ package org.spendoo.identity.entity
 
 import jakarta.persistence.*
 import java.time.LocalDate
-import java.time.LocalDateTime
+import java.time.Instant
 import java.util.UUID
 
 @Entity
@@ -32,7 +32,7 @@ data class User(
     val isVerified: Boolean = false,
 
     @Column(nullable = false, updatable = false)
-    val createdAt: LocalDateTime,
+    val createdAt: Instant,
 
     @Column(nullable = true)
     val imageUrl: String? = null,

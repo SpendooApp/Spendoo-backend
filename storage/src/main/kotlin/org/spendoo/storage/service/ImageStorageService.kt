@@ -11,7 +11,7 @@ import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest
 import software.amazon.awssdk.services.s3.model.ObjectCannedACL
 import software.amazon.awssdk.services.s3.model.PutObjectRequest
-import java.time.LocalDateTime
+import java.time.Instant
 
 @Service
 @EnableConfigurationProperties(StorageProperties::class)
@@ -28,7 +28,7 @@ class ImageStorageService(
         val extension = allowedMimeTypes[mimeType] ?: throw InvalidImageException(mimeType)
         try {
             val fullFileName = "${fileName}.$extension"
-            val randomParameter = LocalDateTime.now().toString()
+            val randomParameter = Instant.now().toString()
             val key = "$folderName/$fullFileName"
             val putReq = createObjectRequest(key, mimeType)
             spendooS3Client.putObject(putReq, RequestBody.fromBytes(file.bytes))
@@ -48,7 +48,7 @@ class ImageStorageService(
         val extension = allowedMimeTypes[contentType] ?: throw InvalidImageException(contentType)
         try {
             val fullFileName = "${fileName}.$extension"
-            val randomParameter = LocalDateTime.now().toString()
+            val randomParameter = Instant.now().toString()
             val key = "$folderName/$fullFileName"
             val putReq = createObjectRequest(key, contentType)
             spendooS3Client.putObject(putReq, RequestBody.fromBytes(bytes))
