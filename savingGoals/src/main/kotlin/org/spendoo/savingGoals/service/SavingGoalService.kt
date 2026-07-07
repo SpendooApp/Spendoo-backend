@@ -125,6 +125,8 @@ class SavingGoalService(
         )
         if (isFirstTimeSaving && amount > BigDecimal.ZERO) {
             spendooEventPublisher.publish(SavingsBalanceUpdatedEvent(userId, true))
+        } else if (amount > BigDecimal.ZERO) {
+            spendooEventPublisher.publish(SavingsBalanceUpdatedEvent(userId, false))
         }
     }
 

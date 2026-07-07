@@ -43,11 +43,10 @@ class AchievementService(
     fun ensureUserAchievementsCreated(userId: UUID) {
         seedDefaultAchievementsIfEmpty()
 
-        var page = 0
         val pageSize = 100
         do {
             val missingPage =
-                achievementRepository.findMissingAchievementsForUser(userId, PageRequest.of(page, pageSize))
+                achievementRepository.findMissingAchievementsForUser(userId, PageRequest.of(0, pageSize))
             val newLinks = missingPage.content.map { achievement ->
                 UserAchievement(
                     userId = userId,
@@ -57,8 +56,7 @@ class AchievementService(
                 )
             }
             userAchievementRepository.saveAll(newLinks)
-            page++
-        } while (missingPage.hasNext() && missingPage.content.isNotEmpty())
+        } while (missingPage.content.isNotEmpty())
     }
 
     @Transactional
@@ -143,7 +141,7 @@ class AchievementService(
     fun checkGoalAchievements(userId: UUID) {
         val completedCount = BigDecimal(savingGoalRepository.countByUserIdAndIsCompletedTrue(userId))
         val highPriorityCount =
-            BigDecimal(savingGoalRepository.countByUserIdAndIsCompletedTrueAndPriorityGreaterThanEqual(userId, 3))
+            BigDecimal(savingGoalRepository.countByUserIdAndIsCompletedTrueAndPriorityGreaterThanEqual(userId, 2))
 
         val userAchievements =
             userAchievementRepository.findAllByUserIdAndAchievementAchievementTypeAndIsUnlockedIsFalse(

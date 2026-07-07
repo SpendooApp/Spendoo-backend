@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.data.domain.PageRequest
 import org.springframework.test.context.ActiveProfiles
+import jakarta.persistence.EntityManager
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.Instant
@@ -33,6 +34,9 @@ class AchievementServiceIntegrationTest {
 
     @Autowired
     private lateinit var userAchievementRepository: UserAchievementRepository
+
+    @Autowired
+    private lateinit var entityManager: EntityManager
 
     @Autowired
     private lateinit var savingGoalRepository: SavingGoalRepository
@@ -70,6 +74,7 @@ class AchievementServiceIntegrationTest {
 
         savingGoalService.addToSavings(userId, depositAmount)
 
+        entityManager.clear()
         val userAchievements = userAchievementRepository.findAllByUserId(userId, PageRequest.of(0, 50)).content
         val l1Badge = userAchievements.find { it.achievement.code == AchievementCode.SAVINGS_L1 }
 
@@ -85,6 +90,7 @@ class AchievementServiceIntegrationTest {
         savingGoalService.addToSavings(userId, BigDecimal(200.0))
 
         // Ensure exactly one achievement entry exists
+        entityManager.clear()
         val userAchievements = userAchievementRepository.findAllByUserId(userId, PageRequest.of(0, 50)).content
         val matches = userAchievements.filter { it.achievement.code == AchievementCode.SAVINGS_L1 }
 
@@ -94,11 +100,12 @@ class AchievementServiceIntegrationTest {
 
     @Test
     fun `assignAmountToGoal awards Savings L4 badge when cumulative savings history reaches 10000`() {
-        savingBalanceRepository.save(SavingBalance(userId = userId, unassignedAmount = BigDecimal(12000.0)))
+        savingBalanceRepository.save(SavingBalance(userId = userId, unassignedAmount = BigDecimal(10000.0)))
         val goal = createAndSaveGoal(targetAmount = BigDecimal(10000.0), priority = 2)
 
         savingGoalService.assignAmountToGoal(goal.id, userId, AssignAmountRequest(amount = BigDecimal(10000.0)))
 
+        entityManager.clear()
         val userAchievements = userAchievementRepository.findAllByUserId(userId, PageRequest.of(0, 50)).content
         val l4Badge = userAchievements.find { it.achievement.code == AchievementCode.SAVINGS_L4 }
 
@@ -126,6 +133,7 @@ class AchievementServiceIntegrationTest {
         savingGoalService.assignAmountToGoal(finalGoal.id, userId, AssignAmountRequest(amount = BigDecimal(100.0)))
 
         // High Five badge is unlocked dynamically
+        entityManager.clear()
         userAchievements = userAchievementRepository.findAllByUserId(userId, PageRequest.of(0, 50)).content
         highFiveBadge = userAchievements.find { it.achievement.code == AchievementCode.HIGH_FIVE }
 
@@ -134,9 +142,9 @@ class AchievementServiceIntegrationTest {
     }
 
     @Test
-    fun `assignAmountToGoal awards Priority Saver when priority goal exceeds 3 is completed`() {
+    fun `assignAmountToGoal awards Priority Saver when priority goal is completed`() {
         savingBalanceRepository.save(SavingBalance(userId = userId, unassignedAmount = BigDecimal(1000.0)))
-        val highPriorityGoal = createAndSaveGoal(targetAmount = BigDecimal(500.0), priority = 4)
+        val highPriorityGoal = createAndSaveGoal(targetAmount = BigDecimal(500.0), priority = 2)
 
         savingGoalService.assignAmountToGoal(
             highPriorityGoal.id,
@@ -144,6 +152,7 @@ class AchievementServiceIntegrationTest {
             AssignAmountRequest(amount = BigDecimal(500.0))
         )
 
+        entityManager.clear()
         val userAchievements = userAchievementRepository.findAllByUserId(userId, PageRequest.of(0, 50)).content
         val priorityBadge = userAchievements.find { it.achievement.code == AchievementCode.PRIORITY_SAVER }
 
@@ -152,9 +161,9 @@ class AchievementServiceIntegrationTest {
     }
 
     @Test
-    fun `assignAmountToGoal does not award Priority Saver when completed goal priority is 3 or less`() {
+    fun `assignAmountToGoal does not award Priority Saver when completed goal priority is less than 2`() {
         savingBalanceRepository.save(SavingBalance(userId = userId, unassignedAmount = BigDecimal(1000.0)))
-        val lowPriorityGoal = createAndSaveGoal(targetAmount = BigDecimal(500.0), priority = 2)
+        val lowPriorityGoal = createAndSaveGoal(targetAmount = BigDecimal(500.0), priority = 1)
 
         savingGoalService.assignAmountToGoal(
             lowPriorityGoal.id,
@@ -162,6 +171,7 @@ class AchievementServiceIntegrationTest {
             AssignAmountRequest(amount = BigDecimal(500.0))
         )
 
+        entityManager.clear()
         val userAchievements = userAchievementRepository.findAllByUserId(userId, PageRequest.of(0, 50)).content
         val priorityBadge = userAchievements.find { it.achievement.code == AchievementCode.PRIORITY_SAVER }
 
@@ -179,6 +189,7 @@ class AchievementServiceIntegrationTest {
 
         achievementService.handleUserLoggedIn(userId)
 
+        entityManager.clear()
         val userAchievements = userAchievementRepository.findAllByUserId(userId, PageRequest.of(0, 50)).content
         val streakBadge = userAchievements.find { it.achievement.code == AchievementCode.LOGIN_STREAK_L1 }
 
@@ -198,6 +209,7 @@ class AchievementServiceIntegrationTest {
 
         achievementService.handleTransactionCreated(userId, 1)
 
+        entityManager.clear()
         val userAchievements = userAchievementRepository.findAllByUserId(userId, PageRequest.of(0, 50)).content
         val streakBadge = userAchievements.find { it.achievement.code == AchievementCode.TRANSACTION_STREAK_L1 }
 
@@ -210,6 +222,7 @@ class AchievementServiceIntegrationTest {
     fun `distinct categories count unlocks CATEG_L1 category explorer`() {
         achievementService.handleTransactionCreated(userId, 3)
 
+        entityManager.clear()
         val userAchievements = userAchievementRepository.findAllByUserId(userId, PageRequest.of(0, 50)).content
         val categoryBadge = userAchievements.find { it.achievement.code == AchievementCode.CATEGORY_L1 }
 
