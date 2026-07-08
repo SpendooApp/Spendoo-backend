@@ -53,7 +53,7 @@ class PushNotificationService(
                 )
 
             if (dataPayload.isNotEmpty()) {
-                messageBuilder.putAllData(dataPayload)
+                messageBuilder.putAllData(dataPayload + mapOf("title" to title, "body" to body))
             }
 
             val message = messageBuilder.build()
