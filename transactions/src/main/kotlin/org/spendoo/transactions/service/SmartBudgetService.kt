@@ -50,6 +50,17 @@ class SmartBudgetService(
             val activeBudget = budgetRepository.findByCategoryIdAndIsActiveIsTrue(categoryId)
                 ?: return
 
+            val categoryParams = categoryRepository.getExistCategoryWithBudgetAndSpending(categoryId, userId)
+            if (categoryParams != null) {
+                val budgetAmount = categoryParams.amount ?: BigDecimal.ZERO
+                val spentAmount = categoryParams.spentAmount ?: BigDecimal.ZERO
+                if (spentAmount.abs() > budgetAmount) {
+                    val actualOverspentAmount = spentAmount.abs() - budgetAmount
+                    suggestSmartAction(userId, category, actualOverspentAmount)
+                    return
+                }
+            }
+
             val startDate = when {
                 activeBudget.period <= 7 -> activeBudget.startDate.atZone(ZoneOffset.UTC).minusWeeks(2)
                 activeBudget.period <= 31 -> activeBudget.startDate.atZone(ZoneOffset.UTC).minusMonths(2)
@@ -79,19 +90,15 @@ class SmartBudgetService(
             } ?: throw IllegalStateException("Failed to get prediction from AI service")
 
             if (!response.predict) {
-                log.info("AI could not make a reliable prediction for user $userId. Proceeding to check history for overspending.")
+                log.info("AI could not make a reliable prediction for user $userId.")
             }
 
             for (bucket in response.buckets) {
                 if (bucket.spending > bucket.budget) {
-                    val overspentAmount = bucket.spending - bucket.budget
-
                     if (bucket.predicted) {
                         sendWarningNotification(userId, category, bucket.startDate)
-                    } else {
-                        suggestSmartAction(userId, category, overspentAmount)
+                        break
                     }
-                    break
                 }
             }
         } catch (e: Exception) {

@@ -149,7 +149,7 @@ interface CategoryRepository : JpaRepository<Category, UUID> {
             SELECT 1 FROM Budget b 
             WHERE b.category.id = c.id 
             AND b.isActive = true 
-            AND (b.amount - COALESCE((SELECT ABS(SUM(t.amount)) FROM Transaction t WHERE t.category.id = c.id AND t.amount < 0), 0)) >= :requiredAmount
+            AND (b.amount - COALESCE((SELECT ABS(SUM(t.amount)) FROM Transaction t WHERE t.category.id = c.id AND t.amount < 0 AND t.transactionDate >= b.startDate AND t.transactionDate < b.endDate), 0)) >= :requiredAmount
         )
         ORDER BY c.priority ASC
     """)
