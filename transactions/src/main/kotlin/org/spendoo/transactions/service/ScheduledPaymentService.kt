@@ -10,6 +10,7 @@ import org.spendoo.transactions.repository.ScheduledPaymentRepository
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
 import java.time.Instant
@@ -68,7 +69,7 @@ class ScheduledPaymentService (
         paymentRepository.delete(payment)
     }
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     fun payScheduledItem(userId: UUID, paymentId: UUID){
         val currentPayment = getPaymentEntity(paymentId, userId)
 

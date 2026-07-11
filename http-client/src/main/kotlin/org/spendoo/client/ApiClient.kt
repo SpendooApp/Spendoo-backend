@@ -1,33 +1,29 @@
 package org.spendoo.client
 
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
-import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter
 import org.spendoo.identity.security.JwtUtil
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.http.MediaType
+import org.springframework.http.converter.json.JacksonJsonHttpMessageConverter
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Component
 import org.springframework.web.client.RestClient
 import org.springframework.web.util.UriComponentsBuilder
 import java.util.*
+import javax.crypto.Mac
+import javax.crypto.spec.SecretKeySpec
 
 @Component
 class ApiClient(
     private val jwtUtil: JwtUtil,
     @Value("\${internal.api.base-url:http://localhost:8080}") baseUrl: String,
-    @Value("\${ai.service.base-url:https://localhost:8000}") private val aiBaseUrl: String
+    @param:Value("\${ai.service.base-url:https://localhost:8000}") private val aiBaseUrl: String,
+    @param:Value("\${spendoo.hmac.secret-key:}") private val hmacSecretKey: String
 ) {
     private val restClient: RestClient = RestClient.builder()
         .baseUrl(baseUrl)
-        .messageConverters { converters ->
-            val objectMapper = jacksonObjectMapper().registerModule(JavaTimeModule())
-            val jacksonConverter = MappingJackson2HttpMessageConverter(objectMapper)
-            val index = converters.indexOfFirst { it is MappingJackson2HttpMessageConverter }
-            if (index != -1) {
-                converters[index] = jacksonConverter
-            } else {
-                converters.add(0, jacksonConverter)
-            }
+        .configureMessageConverters { builder ->
+            builder.registerDefaults()
+            builder.withJsonConverter(JacksonJsonHttpMessageConverter())
         }
         .build()
 
@@ -59,7 +55,29 @@ class ApiClient(
             }
         }
 
-        if (request.body != null) {
+        if (request.callAIService && hmacSecretKey.isNotEmpty()) {
+            val timestamp = java.time.Instant.now().epochSecond.toString()
+            val bodyBytes = if (request.body != null) {
+                val mapper = com.fasterxml.jackson.module.kotlin.jacksonObjectMapper()
+                    .registerModule(com.fasterxml.jackson.datatype.jsr310.JavaTimeModule())
+                mapper.writeValueAsBytes(request.body)
+            } else {
+                ByteArray(0)
+            }
+            val keySpec = SecretKeySpec(hmacSecretKey.toByteArray(Charsets.UTF_8), "HmacSHA256")
+            val mac = Mac.getInstance("HmacSHA256")
+            mac.init(keySpec)
+            mac.update(timestamp.toByteArray(Charsets.UTF_8))
+            val rawHmac = mac.doFinal(bodyBytes)
+            val signature = rawHmac.joinToString("") { "%02x".format(it) }
+
+            requestSpec.header("X-Signature", signature)
+            requestSpec.header("X-Timestamp", timestamp)
+            if (request.body != null) {
+                requestSpec.contentType(MediaType.APPLICATION_JSON)
+                requestSpec.body(bodyBytes)
+            }
+        } else if (request.body != null) {
             requestSpec.body(request.body!!)
         }
 
