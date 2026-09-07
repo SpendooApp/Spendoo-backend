@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - develop
+  pull_request:
+    branches:
+      - develop
 
 jobs:
   deploy:
@@ -17,24 +20,59 @@ jobs:
           mkdir -p app/src/main/resources
           echo "${{ secrets.FIREBASE_CREDENTIALS_BASE64 }}" | base64 -d > app/src/main/resources/spendoo-firebase-adminsdk.json
 
-      - name: Build Docker image
-        run: docker build -t josephsameh/spendoo-backend:latest .
-
-      - name: Push Docker image
+      - name: Log in to Docker Hub
         run: |
           echo ${{ secrets.DOCKER_HUB_PASSWORD }} | docker login -u ${{ secrets.DOCKER_HUB_USERNAME }} --password-stdin
+
+      - name: Build and Push Docker Image
+        run: |
+          docker build \
+            -t josephsameh/spendoo-backend:${{ github.sha }} \
+            -t josephsameh/spendoo-backend:latest .
+          docker push josephsameh/spendoo-backend:${{ github.sha }}
           docker push josephsameh/spendoo-backend:latest
 
-      - name: Deploy on server
-        uses: appleboy/ssh-action@v0.1.5
+      - name: Log in to Azure
+        uses: azure/login@v1
         with:
-          host: ${{ secrets.SERVER_IP }}
-          username: root
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            docker pull josephsameh/spendoo-backend:latest
-            docker stop springboot-container || true
-            docker rm springboot-container || true
-            docker run -d --restart=always --name springboot-container -p 8080:8080 \
-              -e DATABASE_URL="${{ secrets.DATABASE_URL }}" -e DATABASE_USERNAME="${{ secrets.DATABASE_USERNAME }}" -e DATABASE_PASSWORD="${{ secrets.DATABASE_PASSWORD }}" -e JWT_SECRET="${{ secrets.JWT_SECRET }}" -e MAIL_USERNAME="${{ secrets.MAIL_USERNAME }}" -e MAIL_PASSWORD="${{ secrets.MAIL_PASSWORD }}" -e PROFILE_IMAGE_DIRECTORY="${{ secrets.PROFILE_IMAGE_DIRECTORY }}" -e STORAGE_SPENDOO_BUCKET="${{ secrets.STORAGE_SPENDOO_BUCKET }}" -e STORAGE_SPENDOO_CDN_ENDPOINT="${{ secrets.STORAGE_SPENDOO_CDN_ENDPOINT }}" -e STORAGE_SPENDOO_ENDPOINT="${{ secrets.STORAGE_SPENDOO_ENDPOINT }}" -e STORAGE_SPENDOO_KEY="${{ secrets.STORAGE_SPENDOO_KEY }}" -e STORAGE_SPENDOO_SECRET="${{ secrets.STORAGE_SPENDOO_SECRET }}" -e INTERNAL_API_BASE_URL="${{ secrets.INTERNAL_API_BASE_URL }}" -e AI_SERVICE_BASE_URL="${{ secrets.AI_SERVICE_BASE_URL }}" josephsameh/spendoo-backend:latest
-            docker image prune -f
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Sync App Settings to Azure
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az webapp config appsettings set \
+              --name ${{ secrets.AZURE_WEBAPP_NAME }} \
+              --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+              --settings \
+                DATABASE_URL="${{ secrets.DATABASE_URL }}" \
+                DATABASE_USERNAME="${{ secrets.DATABASE_USERNAME }}" \
+                DATABASE_PASSWORD="${{ secrets.DATABASE_PASSWORD }}" \
+                JWT_SECRET="${{ secrets.JWT_SECRET }}" \
+                MAIL_USERNAME="${{ secrets.MAIL_USERNAME }}" \
+                MAIL_PASSWORD="${{ secrets.MAIL_PASSWORD }}" \
+                PROFILE_IMAGE_DIRECTORY="${{ secrets.PROFILE_IMAGE_DIRECTORY }}" \
+                STORAGE_SPENDOO_BUCKET="${{ secrets.STORAGE_SPENDOO_BUCKET }}" \
+                STORAGE_SPENDOO_CDN_ENDPOINT="${{ secrets.STORAGE_SPENDOO_CDN_ENDPOINT }}" \
+                STORAGE_SPENDOO_ENDPOINT="${{ secrets.STORAGE_SPENDOO_ENDPOINT }}" \
+                STORAGE_SPENDOO_KEY="${{ secrets.STORAGE_SPENDOO_KEY }}" \
+                STORAGE_SPENDOO_SECRET="${{ secrets.STORAGE_SPENDOO_SECRET }}" \
+                INTERNAL_API_BASE_URL="${{ secrets.INTERNAL_API_BASE_URL }}" \
+                AI_SERVICE_BASE_URL="${{ secrets.AI_SERVICE_BASE_URL }}" \
+                SPENDOO_HMAC_SECRET_KEY="${{ secrets.SPENDOO_HMAC_SECRET_KEY }}" \
+                DOCKER_ENABLE_CI="true"
+
+      - name: Deploy to Azure App Service
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          images: 'josephsameh/spendoo-backend:${{ github.sha }}'
+
+      - name: Restart Azure App Service
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az webapp restart \
+              --name ${{ secrets.AZURE_WEBAPP_NAME }} \
+              --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }}

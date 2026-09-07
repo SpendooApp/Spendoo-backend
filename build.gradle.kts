@@ -44,6 +44,9 @@ subprojects {
 	plugins.withId("org.jetbrains.kotlin.jvm") {
 		kotlin {
 			jvmToolchain(javaVersion)
+			compilerOptions {
+				freeCompilerArgs.addAll("-Xjsr305=strict", "-Xannotation-default-target=param-property")
+			}
 		}
 	}
 

@@ -8,6 +8,6 @@ data class BudgetStatusBucketDto(
     val spending: BigDecimal,
     val status: BudgetStatus,
     val percentage: BigDecimal,
-    @field:JsonAlias("start_date")
+    @JsonAlias("start_date")
     val startDate: Instant
 )
