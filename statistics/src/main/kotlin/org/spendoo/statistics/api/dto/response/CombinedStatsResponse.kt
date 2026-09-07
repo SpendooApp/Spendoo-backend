@@ -1,12 +1,18 @@
 package org.spendoo.statistics.api.dto.response
 
 import com.fasterxml.jackson.annotation.JsonAlias
+import com.fasterxml.jackson.annotation.JsonProperty
 
 data class CombinedStatsResponse(
-    @field:JsonAlias("financial_stats_forecast")
+    @JsonProperty("financialStats")
+    @JsonAlias("financial_stats_forecast", "financial_stats")
     val financialStats: FinancialStatsResponse,
-    @field:JsonAlias("budget_status")
+    @JsonProperty("budgetStatus")
+    @JsonAlias("budget_status")
     val budgetStatus: BudgetStatusResponse,
-    @field:JsonAlias("top_categories")
+    @JsonProperty("topCategories")
+    @JsonAlias("top_categories")
     val topCategories: TopCategoriesResponse
 )
+
+

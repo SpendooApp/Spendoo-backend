@@ -5,6 +5,6 @@ import java.math.BigDecimal
 
 data class BudgetStatusResponse(
     val buckets: List<BudgetStatusBucketDto>,
-    @field:JsonAlias("highest_spending")
+    @JsonAlias("highest_spending")
     val highestSpending: BigDecimal
 )
